@@ -12,7 +12,8 @@ export default function SistemaLayout({ children }: { children: React.ReactNode 
       <Sidebar />
 
       {/* Área Direita: Ocupa o resto do espaço (flex-1) */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      {/* 🟢 AQUI: Adicionado pt-16 no mobile, e md:pt-0 no PC */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden pt-16 md:pt-0">
         
         {/* Barra Superior agora é sticky e fica dentro desse fluxo */}
         <Topbar tipoUsuario="admin" />
