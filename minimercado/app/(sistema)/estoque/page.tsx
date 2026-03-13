@@ -1,67 +1,58 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ButtonSistema } from '@/components/ui/ButtonSistema';
 
+interface Produto {
+  product_id: number;
+  name: string;
+  category_id: number;
+  category_name?: string; // Virá do JOIN no banco de dados
+  price: number;
+  stock: number;
+}
+
 export default function GerenciarEstoquePage() {
-  // =========================================================================
-  // ESTADOS PRINCIPAIS
-  // =========================================================================
-  const [produtos, setProdutos] = useState([
-    { prdocut_id: 1, name: 'Bolo de Pote', category: 'Doceria/Bigas', price: 8.00, stock: 15 },
-    { prdocut_id: 2, name: 'Refri Lata 350ml', category: 'Geral', price: 5.00, stock: 42 },
-    { prdocut_id: 3, name: 'Salgado Assado', category: 'Geral', price: 7.00, stock: 0 },
-    { prdocut_id: 4, name: 'Livro de Orações', category: 'Livraria', price: 25.00, stock: 8 },
-    { prdocut_id: 5, name: 'Trufa de Chocolate', category: 'Doceria/Bigas', price: 3.50, stock: 20 },
-  ]);
-
-  const categoriasMock = ['Doceria/Bigas', 'Geral', 'Livraria'];
-
-  // =========================================================================
-  // ESTADOS DOS MODAIS (Edição e Exclusão)
-  // =========================================================================
+  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [categorias, setCategorias] = useState<{ id: number; name: string }[]>([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [produtoEditando, setProdutoEditando] = useState<any>(null);
-
-  // 🟢 Novos estados para controlar a Exclusão
+  const [produtoEditando, setProdutoEditando] = useState<Produto | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [produtoParaExcluir, setProdutoParaExcluir] = useState<any>(null);
+  const [produtoParaExcluir, setProdutoParaExcluir] = useState<Produto | null>(null);
 
   const inputClasses = "w-full px-3 py-2.5 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] focus:border-[#0D9488] outline-none transition-all text-gray-700";
-
-  // =========================================================================
-  // FUNÇÕES DE AÇÃO
-  // =========================================================================
   
-  // --- Funções de Edição ---
-  const handleAbrirEdicao = (produto: any) => {
+  const handleAbrirEdicao = (produto: Produto) => {
     setProdutoEditando({ ...produto });
     setIsEditModalOpen(true);
   };
 
   const handleSalvarEdicao = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!produtoEditando) return;
+
+    // TODO: Conectar com Supabase (UPDATE Product SET ... WHERE product_id = ...)
     const listaAtualizada = produtos.map(p => 
-      p.prdocut_id === produtoEditando.prdocut_id ? produtoEditando : p
+      p.product_id === produtoEditando.product_id ? produtoEditando : p
     );
     setProdutos(listaAtualizada);
+    
     setIsEditModalOpen(false);
     setProdutoEditando(null);
   };
 
-  // 🟢 --- Funções de Exclusão ---
-  const handleAbrirExclusao = (produto: any) => {
+  // --- Funções de Exclusão ---
+  const handleAbrirExclusao = (produto: Produto) => {
     setProdutoParaExcluir(produto);
     setIsDeleteModalOpen(true);
   };
 
   const confirmarExclusao = () => {
     if (produtoParaExcluir) {
-      // Filtra a lista removendo apenas o produto que tem o ID igual ao que queremos excluir
-      const listaAtualizada = produtos.filter(p => p.prdocut_id !== produtoParaExcluir.prdocut_id);
+      // TODO: Conectar com Supabase (DELETE FROM Product WHERE product_id = ...)
+      const listaAtualizada = produtos.filter(p => p.product_id !== produtoParaExcluir.product_id);
       setProdutos(listaAtualizada);
-      
-      // Fecha o modal e limpa a memória
+
       setIsDeleteModalOpen(false);
       setProdutoParaExcluir(null);
     }
@@ -100,13 +91,19 @@ export default function GerenciarEstoquePage() {
 
             <tbody className="divide-y divide-gray-100">
               {produtos.map((produto) => (
-                <tr key={produto.prdocut_id} className="hover:bg-gray-50/50 transition-colors">
+                <tr key={produto.product_id} className="hover:bg-gray-50/50 transition-colors">
                   
                   <td className="py-4 px-6 text-sm text-gray-800 font-medium">{produto.name}</td>
-                  <td className="py-4 px-6 text-sm text-gray-600">{produto.category}</td>
+                  
+                  {/* Mostramos o nome da categoria vindo do JOIN, ou um fallback */}
+                  <td className="py-4 px-6 text-sm text-gray-600">
+                    {produto.category_name || `Categoria #${produto.category_id}`}
+                  </td>
+                  
                   <td className="py-4 px-6 text-sm text-gray-800 font-medium">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.price)}
                   </td>
+                  
                   <td className="py-4 px-6 text-sm font-bold text-center">
                     <span className={produto.stock === 0 ? "text-red-500" : "text-gray-700"}>
                       {produto.stock}
@@ -115,7 +112,6 @@ export default function GerenciarEstoquePage() {
                   
                   {/* BOTÕES DE AÇÃO LADO A LADO */}
                   <td className="py-4 px-6 text-center">
-                    {/* 🟢 Colocamos os dois botões dentro de uma div com flex e gap */}
                     <div className="flex items-center justify-center gap-2">
                       <button 
                         onClick={() => handleAbrirEdicao(produto)}
@@ -130,7 +126,6 @@ export default function GerenciarEstoquePage() {
                         Editar
                       </button>
 
-                      {/* 🟢 NOVO BOTÃO DE EXCLUIR */}
                       <button 
                         onClick={() => handleAbrirExclusao(produto)}
                         className="inline-flex items-center gap-1 bg-red-500 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors shadow-sm"
@@ -150,15 +145,19 @@ export default function GerenciarEstoquePage() {
             
           </table>
           
+          {/* ESTADO VAZIO */}
           {produtos.length === 0 && (
-            <div className="p-8 text-center text-gray-500">Nenhum produto cadastrado no estoque ainda.</div>
+            <div className="p-12 text-center flex flex-col items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 text-gray-300 mb-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+              </svg>
+              <h3 className="text-lg font-bold text-gray-800 mb-1">Nenhum produto em estoque</h3>
+              <p className="text-gray-500 text-sm">Os produtos cadastrados aparecerão aqui.</p>
+            </div>
           )}
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* MODAL DE EDIÇÃO DE PRODUTO */}
-      {/* ========================================================================= */}
       {isEditModalOpen && produtoEditando && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
@@ -169,29 +168,65 @@ export default function GerenciarEstoquePage() {
             <form onSubmit={handleSalvarEdicao} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Nome do Produto</label>
-                <input type="text" required value={produtoEditando.name} onChange={(e) => setProdutoEditando({...produtoEditando, name: e.target.value})} className={inputClasses} />
+                <input 
+                  type="text" required 
+                  value={produtoEditando.name} 
+                  onChange={(e) => setProdutoEditando({...produtoEditando, name: e.target.value})} 
+                  className={inputClasses} 
+                />
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Categoria</label>
-                <select required value={produtoEditando.category} onChange={(e) => setProdutoEditando({...produtoEditando, category: e.target.value})} className={inputClasses}>
-                  {categoriasMock.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                </select>
+              
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Categoria</label>
+              <select 
+                required 
+                value={produtoEditando.category_id} 
+                onChange={(e) => setProdutoEditando({...produtoEditando, category_id: Number(e.target.value)})} 
+                className={inputClasses}
+                >
+                  <option value="" disabled>
+                    {categorias.length === 0 ? "Carregando categorias..." : "Selecione..."}
+                  </option>
+                  {categorias.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+              </select>
               </div>
+              
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Preço Unit.</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">R$</span>
-                  <input type="number" step="0.01" min="0" required value={produtoEditando.price} onChange={(e) => { if(Number(e.target.value) >= 0 || e.target.value === '') setProdutoEditando({...produtoEditando, price: e.target.value}) }} className={`${inputClasses} pl-9`} />
+                  <input 
+                    type="number" step="0.01" min="0" required 
+                    value={produtoEditando.price} 
+                    onChange={(e) => { 
+                      if(Number(e.target.value) >= 0 || e.target.value === '') {
+                        setProdutoEditando({...produtoEditando, price: Number(e.target.value)}) 
+                      }
+                    }} 
+                    className={`${inputClasses} pl-9`} 
+                  />
                 </div>
               </div>
+              
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Estoque Atual</label>
-                <input type="number" min="0" required value={produtoEditando.stock} onChange={(e) => { if(Number(e.target.value) >= 0 || e.target.value === '') setProdutoEditando({...produtoEditando, stock: e.target.value}) }} className={inputClasses} />
+                <input 
+                  type="number" min="0" required 
+                  value={produtoEditando.stock} 
+                  onChange={(e) => { 
+                    if(Number(e.target.value) >= 0 || e.target.value === '') {
+                      setProdutoEditando({...produtoEditando, stock: Number(e.target.value)}) 
+                    }
+                  }} 
+                  className={inputClasses} 
+                />
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
-                <ButtonSistema type="submit" variant="primary" className="px-6 py-2">Salvar</ButtonSistema>
-                <ButtonSistema type="button" variant="danger" onClick={() => setIsEditModalOpen(false)} className="px-6 py-2">Cancelar</ButtonSistema>
+                <ButtonSistema type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancelar</ButtonSistema>
+                <ButtonSistema type="submit" variant="primary">Salvar</ButtonSistema>
               </div>
             </form>
           </div>
@@ -199,13 +234,12 @@ export default function GerenciarEstoquePage() {
       )}
 
       {/* ========================================================================= */}
-      {/* 🟢 MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
       {/* ========================================================================= */}
       {isDeleteModalOpen && produtoParaExcluir && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-6 text-center">
             
-            {/* Ícone de Alerta */}
             <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -218,22 +252,11 @@ export default function GerenciarEstoquePage() {
             </p>
             
             <div className="flex justify-center gap-3">
-              <ButtonSistema 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setIsDeleteModalOpen(false);
-                  setProdutoParaExcluir(null);
-                }}
-              >
+              <ButtonSistema type="button" variant="outline" onClick={() => { setIsDeleteModalOpen(false); setProdutoParaExcluir(null); }}>
                 Cancelar
               </ButtonSistema>
               
-              <ButtonSistema 
-                type="button" 
-                variant="danger" 
-                onClick={confirmarExclusao}
-              >
+              <ButtonSistema type="button" variant="danger" onClick={confirmarExclusao}>
                 Sim, Excluir
               </ButtonSistema>
             </div>
