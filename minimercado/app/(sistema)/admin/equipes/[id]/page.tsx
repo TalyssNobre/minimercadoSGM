@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ButtonSistema } from '@/components/ui/ButtonSistema';
 
 export default function IntegrantesPage({ params }: { params: Promise<{ id: string }> }) {
-  // O Next.js 14/15 usa o hook 'use' para desempacotar params dinâmicos
+  // O Next.js 15+ exige o 'use' para desempacotar params assíncronos
   const { id: equipeId } = use(params); 
 
   // =========================================================================
@@ -12,15 +12,11 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
   // =========================================================================
   const [membros, setMembros] = useState<{ member_id: number; team_id: number; name: string }[]>([]);
 
-  // =========================================================================
-  // ESTADOS DOS MODAIS
-  // =========================================================================
-  // Modal de Criação/Edição
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [membroEmEdicao, setMembroEmEdicao] = useState<number | null>(null);
   const [novoNome, setNovoNome] = useState('');
 
-  // 🟢 Modal de Exclusão (Novo)
+  // Modal de Exclusão
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [membroParaExcluir, setMembroParaExcluir] = useState<{ member_id: number; name: string } | null>(null);
 
@@ -43,14 +39,12 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
     e.preventDefault();
     if (!novoNome.trim()) return;
 
-    // TODO: Conectar com Supabase (INSERT / UPDATE na tabela Member)
     if (membroEmEdicao !== null) {
       const listaAtualizada = membros.map(membro => 
         membro.member_id === membroEmEdicao ? { ...membro, name: novoNome } : membro
       );
       setMembros(listaAtualizada);
     } else {
-      // Cria um novo membro e já vincula o team_id da URL
       const novoMembro = { 
         member_id: Date.now(), 
         team_id: Number(equipeId), 
@@ -63,7 +57,6 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
     setIsModalOpen(false);
   };
 
-  // 🟢 Funções do Modal de Exclusão
   const handleAbrirExclusao = (membro: { member_id: number; name: string }) => {
     setMembroParaExcluir(membro);
     setIsDeleteModalOpen(true);
@@ -71,10 +64,8 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
 
   const confirmarExclusao = () => {
     if (membroParaExcluir) {
-      // TODO: Conectar com Supabase (DELETE na tabela Member)
       const listaAtualizada = membros.filter(membro => membro.member_id !== membroParaExcluir.member_id);
       setMembros(listaAtualizada);
-      
       setIsDeleteModalOpen(false);
       setMembroParaExcluir(null);
     }
@@ -85,7 +76,8 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
       
       {/* CABEÇALHO */}
       <div>
-        <Link href="/equipes" className="inline-flex items-center text-sm font-semibold text-gray-500 hover:text-[#0D9488] transition-colors mb-2">
+        {/* 🟢 CORREÇÃO: O link de voltar agora aponta para /admin/equipes */}
+        <Link href="/admin/equipes" className="inline-flex items-center text-sm font-semibold text-gray-500 hover:text-[#0D9488] transition-colors mb-2">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 mr-1">
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
@@ -125,7 +117,7 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
               </button>
               
               <button 
-                onClick={() => handleAbrirExclusao(membro)} // 🟢 Agora abre o modal de confirmação
+                onClick={() => handleAbrirExclusao(membro)}
                 className="text-red-500 hover:text-red-700 transition-colors p-1"
                 title="Excluir integrante"
               >
@@ -154,9 +146,7 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
         </div>
       )}
 
-      {/* ========================================================================= */}
       {/* MODAL MISTO (CRIAR E EDITAR) */}
-      {/* ========================================================================= */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
@@ -185,9 +175,7 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
         </div>
       )}
 
-      {/* ========================================================================= */}
       {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
-      {/* ========================================================================= */}
       {isDeleteModalOpen && membroParaExcluir && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-6 text-center">

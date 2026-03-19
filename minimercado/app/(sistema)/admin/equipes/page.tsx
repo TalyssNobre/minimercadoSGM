@@ -5,20 +5,18 @@ import { ButtonSistema } from '@/components/ui/ButtonSistema';
 
 export default function EquipesPage() {
   // =========================================================================
-  // ESTADOS PRINCIPAIS (Agora com a propriedade 'color' de volta!)
+  // ESTADOS PRINCIPAIS
   // =========================================================================
   const [equipes, setEquipes] = useState<{ team_id: number; name: string; color: string }[]>([]);
 
   // =========================================================================
   // ESTADOS DOS MODAIS
   // =========================================================================
-  // Modal de Criação/Edição
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [equipeEmEdicao, setEquipeEmEdicao] = useState<number | null>(null);
   const [novoNome, setNovoNome] = useState('');
-  const [novaCor, setNovaCor] = useState('#0D9488'); // 🟢 Estado da cor de volta!
+  const [novaCor, setNovaCor] = useState('#0D9488'); 
 
-  // Modal de Exclusão
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [equipeParaExcluir, setEquipeParaExcluir] = useState<{ team_id: number; name: string } | null>(null);
 
@@ -29,7 +27,7 @@ export default function EquipesPage() {
   const handleAbrirModalNovo = () => {
     setEquipeEmEdicao(null);
     setNovoNome('');
-    setNovaCor('#0D9488'); // Reseta para a cor padrão
+    setNovaCor('#0D9488');
     setIsModalOpen(true);
   };
 
@@ -37,7 +35,7 @@ export default function EquipesPage() {
     e.stopPropagation(); 
     setEquipeEmEdicao(equipe.team_id);
     setNovoNome(equipe.name);
-    setNovaCor(equipe.color); // Puxa a cor atual da equipe
+    setNovaCor(equipe.color);
     setIsModalOpen(true);
   };
 
@@ -46,13 +44,11 @@ export default function EquipesPage() {
     if (!novoNome.trim()) return;
     
     if (equipeEmEdicao !== null) {
-      // 🟢 Salva a edição mantendo a nova cor
       const listaAtualizada = equipes.map(equipe => 
         equipe.team_id === equipeEmEdicao ? { ...equipe, name: novoNome, color: novaCor } : equipe
       );
       setEquipes(listaAtualizada);
     } else {
-      // 🟢 Cria uma nova equipe já com a cor escolhida
       const novaEquipe = { team_id: Date.now(), name: novoNome, color: novaCor };
       setEquipes([...equipes, novaEquipe]);
     }
@@ -77,6 +73,9 @@ export default function EquipesPage() {
     }
   };
 
+  const formatCurrency = (value: number) => 
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
   return (
     <div className="space-y-6 relative">
       
@@ -97,8 +96,9 @@ export default function EquipesPage() {
         {equipes.map((equipe) => (
           <div key={equipe.team_id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col hover:-translate-y-1">
             
-            <Link href={`/equipes/${equipe.team_id}`} className="block cursor-pointer">
-              {/* TOPO DO CARD - 🟢 Usando a cor salva no estado */}
+            {/* 🟢 CORREÇÃO DO LINK: Adicionado o prefixo /admin */}
+            <Link href={`/admin/equipes/${equipe.team_id}`} className="block cursor-pointer">
+              {/* TOPO DO CARD */}
               <div 
                 className="px-4 py-4 flex justify-center items-center text-center min-h-[4rem]" 
                 style={{ backgroundColor: equipe.color }}
@@ -120,7 +120,7 @@ export default function EquipesPage() {
             <div className="px-4 pb-4 bg-white">
               <div className="w-full h-px bg-gray-100 mb-3"></div>
 
-              {/* BOTÕES DE AÇÃO LADO A LADO */}
+              {/* BOTÕES DE AÇÃO */}
               <div className="flex items-center justify-center gap-4 w-full relative z-10">
                 <button 
                   onClick={(e) => handleAbrirModalEditar(equipe, e)}
@@ -152,9 +152,7 @@ export default function EquipesPage() {
         )}
       </div>
 
-      {/* ========================================================================= */}
       {/* MODAL MISTO (CRIAR E EDITAR) */}
-      {/* ========================================================================= */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm md:max-w-md overflow-hidden flex flex-col">
@@ -175,7 +173,6 @@ export default function EquipesPage() {
                 />
               </div>
               
-              {/* 🟢 VOLTOU: Campo de seleção de cor */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Cor de Identificação</label>
                 <div className="flex items-center gap-3 p-2.5 border border-gray-300 rounded-md bg-white">
@@ -199,7 +196,7 @@ export default function EquipesPage() {
         </div>
       )}
 
-      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO (Mantido igual) */}
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
       {isDeleteModalOpen && equipeParaExcluir && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-6 text-center">
