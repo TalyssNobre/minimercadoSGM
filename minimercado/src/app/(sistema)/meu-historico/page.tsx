@@ -1,34 +1,36 @@
 'use client';
 import React, { useMemo, useState, useEffect } from 'react';
 
-// =========================================================================
-// INTERFACES (100% FIEL AO SEU DER)
-// =========================================================================
 
-// Tabela: User
+
+
+
+
 interface User {
   id: number; // No seu DER o id do User é int8
   name: string;
   user_id: string; // O UUID que liga com auth.users
 }
 
-// Tabela: Team
+
 interface Team {
   name: string;
 }
 
-// Tabela: member
+
 interface Member {
   name: string;
-  Team?: Team; // O Supabase costuma trazer o nome da tabela no JOIN
+  Team?: Team; 
 }
 
-// Tabela: Product
+
+
 interface Product {
   name: string;
 }
 
-// Tabela: Item_sale
+
+
 interface ItemSale {
   quantity: number; // No DER é numeric
   Product?: Product; 
@@ -74,7 +76,7 @@ export default function MeuHistoricoPage() {
     carregarDadosDoSupabase();
   }, []);
 
-  // Total Geral usa a coluna EXATA do seu DER: "total_value"
+
   const totalGeralVendas = useMemo(() => {
     return vendas.reduce((acc, curr) => acc + (curr.total_value || 0), 0);
   }, [vendas]);
@@ -82,7 +84,7 @@ export default function MeuHistoricoPage() {
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-  // Como no seu banco a data é tipo "date", precisamos formatar para o padrão BR na tela
+
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('pt-BR');
