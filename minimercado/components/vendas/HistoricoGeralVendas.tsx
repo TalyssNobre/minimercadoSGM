@@ -109,7 +109,7 @@ export default function HistoricoGeralVendas() {
         <table className="w-full text-left border-collapse min-w-[1000px]">
           <thead className="bg-gray-100 border-b border-gray-200">
             <tr>
-              <th className="py-3 px-4 text-sm font-bold text-gray-700 w-24">Data/Hora</th>
+              <th className="py-3 px-4 text-sm font-bold text-gray-700 w-24">Data</th>
               <th className="py-3 px-4 text-sm font-bold text-gray-700 w-48">Operador</th>
               <th className="py-3 px-4 text-sm font-bold text-gray-700 w-48">Cliente</th>
               <th className="py-3 px-4 text-sm font-bold text-gray-700">Itens da Compra</th>
