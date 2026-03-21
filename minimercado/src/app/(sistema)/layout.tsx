@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
-import Topbar from "@/components/layout/Topbar";
-import Sidebar from "@/components/layout/Sidebar";
+import Topbar from "@/src/components/layout/Topbar";
+import Sidebar from "@/src/components/layout/Sidebar";
 
 export default function SistemaLayout({ children }: { children: React.ReactNode }) {
   return (

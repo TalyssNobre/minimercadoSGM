@@ -1,5 +1,5 @@
 import React from 'react';
-import HistoricoGeralVendas from '@/components/vendas/HistoricoGeralVendas';
+import HistoricoGeralVendas from '@/src/components/vendas/HistoricoGeralVendas';
 
 export default function HistoricoVendasPage() {
   return (

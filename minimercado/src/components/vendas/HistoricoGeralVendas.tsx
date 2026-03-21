@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useMemo } from 'react';
-import { ButtonSistema } from '@/components/ui/ButtonSistema';
+import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
 
 // =========================================================================
 // INTERFACES (Tipagens baseadas no DER)

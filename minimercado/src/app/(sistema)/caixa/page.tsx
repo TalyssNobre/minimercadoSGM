@@ -1,5 +1,5 @@
 import React from 'react';
-import FrenteCaixa from '@/components/pdv/FrenteCaixa';
+import FrenteCaixa from '@/src/components/pdv/FrenteCaixa';
 
 export default function CaixaPage() {
   return (

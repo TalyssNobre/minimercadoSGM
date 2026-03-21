@@ -1,5 +1,5 @@
 import React from 'react';
-import FormularioProduto from '@/components/forms/FormularioProduto';
+import FormularioProduto from '@/src/components/forms/FormularioProduto';
 
 export default function CadastroProdutoPage() {
   return (

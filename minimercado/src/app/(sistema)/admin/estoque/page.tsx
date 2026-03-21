@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ButtonSistema } from '@/components/ui/ButtonSistema';
+import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
 
 interface Produto {
   product_id: number;

@@ -1,5 +1,5 @@
 import React from 'react';
-import ExtratoFiado from '@/components/extratos/ExtratoFiado';
+import ExtratoFiado from '@/src/components/extratos/ExtratoFiado';
 
 export default function ExtratosPage() {
   return (

@@ -1,5 +1,5 @@
 import React from 'react';
-import DashboardFinanceiro from '@/components/dashboard/DashboardFinanceiro';
+import DashboardFinanceiro from '@/src/components/dashboard/DashboardFinanceiro';
 
 export default function DashboardPage() {
   return (

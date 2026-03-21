@@ -1,30 +1,47 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { ButtonSistema } from '@/components/ui/ButtonSistema';
+import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
+import { supabase } from '@/src/lib/supabase'; // Caminho que está a funcionar na sua máquina
 
 export default function FormularioProduto() {
+  // Estados do Produto (Baseados na tabela Product)
   const [nome, setNome] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
   const [preco, setPreco] = useState('');
   const [estoque, setEstoque] = useState('');
   
+  // Estados da Imagem (Para o campo image_url)
   const [imagem, setImagem] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  // Estados de Categoria (Baseados na tabela Category)
   const [categorias, setCategorias] = useState<{ id: string | number; name: string }[]>([]);
   const [isModalCategoriaOpen, setIsModalCategoriaOpen] = useState(false);
   const [novaCategoriaNome, setNovaCategoriaNome] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
+  // =========================================================================
+  // 1. BUSCAR CATEGORIAS AO CARREGAR (SELECT)
+  // =========================================================================
+  useEffect(() => {
+    async function fetchCategorias() {
+      const { data, error } = await supabase.from('Category').select('id, name');
+      if (data) setCategorias(data);
+      if (error) console.error("Erro ao buscar categorias:", error);
+    }
+    fetchCategorias();
+  }, []);
 
-
+  // Limpa a memória da imagem temporária
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
   }, [previewUrl]);
 
-
   const inputClasses = "w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] focus:border-[#0D9488] outline-none transition-all placeholder-gray-400";
 
-  
+  // =========================================================================
+  // LÓGICA VISUAL DA IMAGEM
+  // =========================================================================
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -40,29 +57,106 @@ export default function FormularioProduto() {
     setImagem(null); setPreviewUrl(null);
   };
 
-  const handleSalvarCategoria = (e: React.FormEvent) => {
+  // =========================================================================
+  // 2. SALVAR NOVA CATEGORIA NO BANCO (INSERT com ID manual)
+  // =========================================================================
+  const handleSalvarCategoria = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novaCategoriaNome.trim()) return;
-    const novaCat = { id: Date.now(), name: novaCategoriaNome };
-    setCategorias([...categorias, novaCat]); 
-    setCategoriaId(novaCat.id.toString());   
-    setNovaCategoriaNome('');
-    setIsModalCategoriaOpen(false);
+
+    try {
+      // 🟢 Cria um ID numérico único na hora
+      const idGerado = Date.now(); 
+
+      const { data, error } = await supabase
+        .from('Category')
+        .insert([{ 
+          id: idGerado, // 🟢 Envia o ID para o banco não reclamar
+          name: novaCategoriaNome 
+        }])
+        .select()
+        .single(); 
+
+      if (error) throw error;
+
+      // Atualiza a interface
+      setCategorias([...categorias, data]); 
+      setCategoriaId(data.id.toString());   
+      setNovaCategoriaNome('');
+      setIsModalCategoriaOpen(false);
+    } catch (error) {
+      console.error("Erro ao criar categoria:", error);
+      alert("Erro ao criar categoria. Veja a consola (F12) para detalhes.");
+    }
   };
 
-  const handleSalvarProduto = (e: React.FormEvent) => {
+  // =========================================================================
+  // 3. SALVAR IMAGEM NO STORAGE E PRODUTO NO BANCO (INSERT com ID manual)
+  // =========================================================================
+  const handleSalvarProduto = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Salvar:", { nome, categoriaId, preco, estoque, image: imagem?.name });
-    alert("Produto salvo com sucesso! (Aguardando Supabase)");
-    setNome(''); setCategoriaId(''); setPreco(''); setEstoque(''); 
-    handleRemoveImage(e as any);
+    setIsLoading(true);
+
+    try {
+      let imageUrlSalvaNoBanco = null;
+
+      // Se tem imagem, salva no Bucket (Storage) chamado 'produtos'
+      if (imagem) {
+        const fileExt = imagem.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('produtos') // ⚠️ Lembre-se de criar este bucket no Supabase!
+          .upload(filePath, imagem);
+
+        if (uploadError) throw uploadError;
+
+        // Pega a URL pública gerada
+        const { data: publicUrlData } = supabase.storage
+          .from('produtos')
+          .getPublicUrl(filePath);
+
+        imageUrlSalvaNoBanco = publicUrlData.publicUrl;
+      }
+
+      // 🟢 Cria um ID numérico único para o Produto também
+      const idProdutoGerado = Date.now();
+
+      // Salva o produto na tabela Product
+      const { error: produtoError } = await supabase
+        .from('Product')
+        .insert([
+          {
+            id: idProdutoGerado, // 🟢 Envia o ID manual do Produto
+            name: nome,
+            category_id: parseInt(categoriaId), 
+            price: parseFloat(preco),           
+            stock: parseInt(estoque) || 0,      
+            image: imageUrlSalvaNoBanco     
+          }
+        ]);
+
+      if (produtoError) throw produtoError;
+
+      alert("Produto registado com sucesso no banco de dados! 🚀");
+      
+      // Limpa tudo
+      setNome(''); setCategoriaId(''); setPreco(''); setEstoque(''); 
+      handleRemoveImage(e as any);
+
+    } catch (error) {
+      console.error("Erro ao salvar o produto:", error);
+      alert("Erro ao salvar. Verifique a consola para mais detalhes.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <>
       <form onSubmit={handleSalvarProduto} className="space-y-6 md:space-y-8">
         
-        {/* Usamos flex-col no mobile e grid no PC para evitar esmagamento */}
         <div className="flex flex-col md:grid md:grid-cols-2 gap-6">
           
           <div>
@@ -71,11 +165,10 @@ export default function FormularioProduto() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Categoria da Receita*</label>
-            {/* O flex-col sm:flex-row garante que em telas muito pequenas (iPhone) o botão fique embaixo do select */}
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Categoria do Produto*</label>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <select required value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)} className={`${inputClasses} flex-grow text-gray-700`}>
-                <option value="" disabled>{categorias.length === 0 ? "Cadastre uma categoria ao lado..." : "Selecione..."}</option>
+                <option value="" disabled>{categorias.length === 0 ? "Carregando categorias..." : "Selecione..."}</option>
                 {categorias.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
               </select>
               <ButtonSistema type="button" onClick={() => setIsModalCategoriaOpen(true)} className="px-4 py-2.5 text-xs whitespace-nowrap capitalize flex-shrink-0 w-full sm:w-auto h-[46px]">
@@ -120,11 +213,13 @@ export default function FormularioProduto() {
 
         <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-4">
           <ButtonSistema type="button" variant="outline" className="w-full sm:w-auto">Cancelar</ButtonSistema>
-          <ButtonSistema type="submit" variant="primary" className="w-full sm:w-auto">Salvar Produto</ButtonSistema>
+          <ButtonSistema type="submit" variant="primary" className="w-full sm:w-auto" disabled={isLoading}>
+            {isLoading ? 'A guardar...' : 'Salvar Produto'}
+          </ButtonSistema>
         </div>
       </form>
 
-      {/* MODAL CATEGORIA */}
+      {/* MODAL DE CATEGORIA */}
       {isModalCategoriaOpen && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-md overflow-hidden">

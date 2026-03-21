@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ButtonSistema } from '@/components/ui/ButtonSistema';
+import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
 
 export default function EquipesPage() {
   // =========================================================================

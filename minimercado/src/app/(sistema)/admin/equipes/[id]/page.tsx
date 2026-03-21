@@ -1,7 +1,7 @@
 'use client';
 import React, { use, useState } from 'react';
 import Link from 'next/link';
-import { ButtonSistema } from '@/components/ui/ButtonSistema';
+import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
 
 export default function IntegrantesPage({ params }: { params: Promise<{ id: string }> }) {
   // O Next.js 15+ exige o 'use' para desempacotar params assíncronos
