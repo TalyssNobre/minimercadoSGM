@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
+import { supabase } from '@/src/lib/supabase';
 
 interface Produto {
-  product_id: number;
+  id: number;
   name: string;
   category_id: number;
-  category_name?: string; // Virá do JOIN no banco de dados
+  category_name?: string; 
   price: number;
   stock: number;
 }
@@ -21,40 +22,110 @@ export default function GerenciarEstoquePage() {
   const [produtoParaExcluir, setProdutoParaExcluir] = useState<Produto | null>(null);
 
   const inputClasses = "w-full px-3 py-2.5 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] focus:border-[#0D9488] outline-none transition-all text-gray-700";
-  
+
+  useEffect(() => {
+    buscarProdutos();
+    buscarCategorias();
+  }, []);
+
+  async function buscarCategorias() {
+    const { data } = await supabase.from('Category').select('id, name');
+    if (data) setCategorias(data);
+  }
+
+  async function buscarProdutos() {
+    // 🟢 Fazendo o JOIN com a tabela Category para pegar o nome
+    const { data, error } = await supabase
+      .from('Product')
+      .select(`
+        id,
+        name,
+        category_id,
+        price,
+        stock,
+        Category ( name )
+      `)
+      .order('name', { ascending: true }); // Ordena por ordem alfabética
+
+    if (error) {
+      console.error("Erro ao buscar produtos:", error);
+      return;
+    }
+
+    if (data) {
+      // Formatando o resultado para encaixar na nossa Interface Produto
+      const produtosFormatados = data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        category_id: item.category_id,
+        price: item.price,
+        stock: item.stock,
+        category_name: item.Category?.name || 'Sem Categoria'
+      }));
+      setProdutos(produtosFormatados);
+    }
+  }
+
   const handleAbrirEdicao = (produto: Produto) => {
     setProdutoEditando({ ...produto });
     setIsEditModalOpen(true);
   };
 
-  const handleSalvarEdicao = (e: React.FormEvent) => {
+  const handleSalvarEdicao = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!produtoEditando) return;
 
-    // TODO: Conectar com Supabase (UPDATE Product SET ... WHERE product_id = ...)
-    const listaAtualizada = produtos.map(p => 
-      p.product_id === produtoEditando.product_id ? produtoEditando : p
-    );
-    setProdutos(listaAtualizada);
-    
-    setIsEditModalOpen(false);
-    setProdutoEditando(null);
+    try {
+      // 🟢 Atualiza os dados no Supabase
+      const { error } = await supabase
+        .from('Product')
+        .update({
+          name: produtoEditando.name,
+          category_id: produtoEditando.category_id,
+          price: produtoEditando.price,
+          stock: produtoEditando.stock
+        })
+        .eq('id', produtoEditando.id);
+
+      if (error) throw error;
+
+      // Atualiza a tela sem precisar recarregar a página inteira
+      buscarProdutos(); 
+      setIsEditModalOpen(false);
+      setProdutoEditando(null);
+      alert("Produto atualizado com sucesso!");
+
+    } catch (error) {
+      console.error("Erro ao atualizar:", error);
+      alert("Erro ao atualizar o produto. Verifique o console.");
+    }
   };
 
-  // --- Funções de Exclusão ---
   const handleAbrirExclusao = (produto: Produto) => {
     setProdutoParaExcluir(produto);
     setIsDeleteModalOpen(true);
   };
 
-  const confirmarExclusao = () => {
-    if (produtoParaExcluir) {
-      // TODO: Conectar com Supabase (DELETE FROM Product WHERE product_id = ...)
-      const listaAtualizada = produtos.filter(p => p.product_id !== produtoParaExcluir.product_id);
-      setProdutos(listaAtualizada);
+  const confirmarExclusao = async () => {
+    if (!produtoParaExcluir) return;
 
+    try {
+      // 🟢 Deleta o produto no Supabase usando o ID
+      const { error } = await supabase
+        .from('Product')
+        .delete()
+        .eq('id', produtoParaExcluir.id);
+
+      if (error) throw error;
+
+      // Remove da tela visualmente
+      setProdutos(produtos.filter(p => p.id !== produtoParaExcluir.id));
       setIsDeleteModalOpen(false);
       setProdutoParaExcluir(null);
+
+    } catch (error) {
+      console.error("Erro ao excluir:", error);
+      alert("Erro ao excluir o produto.");
     }
   };
 
@@ -67,7 +138,7 @@ export default function GerenciarEstoquePage() {
           Gerenciamento de Estoque
         </h1>
         
-        <Link href="/produtos">
+        <Link href="/admin/produtos">
           <ButtonSistema type="button" variant="primary" className="gap-2">
             <span className="text-xl leading-none">+</span> Novo Produto
           </ButtonSistema>
@@ -91,13 +162,13 @@ export default function GerenciarEstoquePage() {
 
             <tbody className="divide-y divide-gray-100">
               {produtos.map((produto) => (
-                <tr key={produto.product_id} className="hover:bg-gray-50/50 transition-colors">
+                <tr key={produto.id} className="hover:bg-gray-50/50 transition-colors">
                   
                   <td className="py-4 px-6 text-sm text-gray-800 font-medium">{produto.name}</td>
                   
-                  {/* Mostramos o nome da categoria vindo do JOIN, ou um fallback */}
+
                   <td className="py-4 px-6 text-sm text-gray-600">
-                    {produto.category_name || `Categoria #${produto.category_id}`}
+                    {produto.category_name}
                   </td>
                   
                   <td className="py-4 px-6 text-sm text-gray-800 font-medium">
@@ -158,6 +229,7 @@ export default function GerenciarEstoquePage() {
         </div>
       </div>
 
+      {/* MODAL DE EDIÇÃO */}
       {isEditModalOpen && produtoEditando && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
@@ -233,9 +305,10 @@ export default function GerenciarEstoquePage() {
         </div>
       )}
 
-      {/* ========================================================================= */}
+
       {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
-      {/* ========================================================================= */}
+
+
       {isDeleteModalOpen && produtoParaExcluir && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-6 text-center">
