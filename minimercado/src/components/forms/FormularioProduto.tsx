@@ -1,46 +1,73 @@
 'use client';
+
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
-import { supabase } from '@/src/lib/supabase'; // Caminho que está a funcionar na sua máquina
+
+// Imports dos Controllers
+import { createProduct } from '@/src/Server/controllers/ProductController'; 
+import { getAllCategory, createCategory } from '@/src/Server/controllers/CategoryController'; 
+
+// Interfaces para Tipagem TS
+interface Categoria {
+  id: string | number;
+  name: string;
+}
+
+interface ControllerResponse {
+  success: boolean;
+  data?: any;
+  message?: string;
+}
 
 export default function FormularioProduto() {
-  // Estados do Produto (Baseados na tabela Product)
+  const router = useRouter();
+  
+  // States do Formulário
   const [nome, setNome] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
   const [preco, setPreco] = useState('');
   const [estoque, setEstoque] = useState('');
   
-  // Estados da Imagem (Para o campo image_url)
+  // States de Imagem
   const [imagem, setImagem] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  // Estados de Categoria (Baseados na tabela Category)
-  const [categorias, setCategorias] = useState<{ id: string | number; name: string }[]>([]);
+  
+  // States de Controle
+  const [isLoading, setIsLoading] = useState(false);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [isModalCategoriaOpen, setIsModalCategoriaOpen] = useState(false);
   const [novaCategoriaNome, setNovaCategoriaNome] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+
+  const inputClasses = "w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] focus:border-[#0D9488] outline-none transition-all placeholder-gray-400 text-gray-800";
 
   // =========================================================================
-  // 1. BUSCAR CATEGORIAS AO CARREGAR (SELECT)
+  // 1. CARREGAR CATEGORIAS
   // =========================================================================
   useEffect(() => {
-    async function fetchCategorias() {
-      const { data, error } = await supabase.from('Category').select('id, name');
-      if (data) setCategorias(data);
-      if (error) console.error("Erro ao buscar categorias:", error);
+    async function loadCategorias() {
+      try {
+        const response = await getAllCategory() as ControllerResponse;
+        
+        if (response.success && Array.isArray(response.data)) {
+          setCategorias(response.data);
+        } else {
+          console.error("Erro ao carregar categorias:", response.message);
+        }
+      } catch (error) {
+        console.error("Erro na requisição de categorias:", error);
+      }
     }
-    fetchCategorias();
+    loadCategorias();
   }, []);
 
-  // Limpa a memória da imagem temporária
+  // Limpa cache da imagem ao desmontar
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
   }, [previewUrl]);
 
-  const inputClasses = "w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] focus:border-[#0D9488] outline-none transition-all placeholder-gray-400";
-
   // =========================================================================
-  // LÓGICA VISUAL DA IMAGEM
+  // 2. MANIPULAÇÃO DE IMAGEM
   // =========================================================================
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -51,103 +78,73 @@ export default function FormularioProduto() {
     }
   };
 
-  const handleRemoveImage = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleRemoveImage = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setImagem(null); setPreviewUrl(null);
+    setImagem(null);
+    setPreviewUrl(null);
   };
 
   // =========================================================================
-  // 2. SALVAR NOVA CATEGORIA NO BANCO (INSERT com ID manual)
+  // 3. SALVAR NOVA CATEGORIA
   // =========================================================================
   const handleSalvarCategoria = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novaCategoriaNome.trim()) return;
 
     try {
-      // 🟢 Cria um ID numérico único na hora
-      const idGerado = Date.now(); 
+      const response = await createCategory({ name: novaCategoriaNome }) as ControllerResponse;
 
-      const { data, error } = await supabase
-        .from('Category')
-        .insert([{ 
-          id: idGerado, // 🟢 Envia o ID para o banco não reclamar
-          name: novaCategoriaNome 
-        }])
-        .select()
-        .single(); 
-
-      if (error) throw error;
-
-      // Atualiza a interface
-      setCategorias([...categorias, data]); 
-      setCategoriaId(data.id.toString());   
-      setNovaCategoriaNome('');
-      setIsModalCategoriaOpen(false);
+      if (response.success && response.data) {
+        setCategorias(prev => [...prev, response.data]);
+        setCategoriaId(response.data.id.toString());
+        setNovaCategoriaNome('');
+        setIsModalCategoriaOpen(false);
+      } else {
+        alert(response.message || "Erro ao criar categoria");
+      }
     } catch (error) {
-      console.error("Erro ao criar categoria:", error);
-      alert("Erro ao criar categoria. Veja a consola (F12) para detalhes.");
+      alert("Erro de conexão ao criar categoria.");
     }
   };
 
   // =========================================================================
-  // 3. SALVAR IMAGEM NO STORAGE E PRODUTO NO BANCO (INSERT com ID manual)
+  // 4. SALVAR PRODUTO (USANDO FORMDATA PARA O CONTROLLER)
   // =========================================================================
   const handleSalvarProduto = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!categoriaId) return alert("Por favor, selecione uma categoria.");
+    
     setIsLoading(true);
 
     try {
-      let imageUrlSalvaNoBanco = null;
-
-      // Se tem imagem, salva no Bucket (Storage) chamado 'produtos'
+      // ✅ Criando FormData para enviar ao Server Action / Controller
+      const formData = new FormData();
+      formData.append('name', nome);
+      formData.append('category', categoriaId);
+      formData.append('price', preco);
+      formData.append('stock', estoque || '0');
+      
       if (imagem) {
-        const fileExt = imagem.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
-        const filePath = `${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('produtos') // ⚠️ Lembre-se de criar este bucket no Supabase!
-          .upload(filePath, imagem);
-
-        if (uploadError) throw uploadError;
-
-        // Pega a URL pública gerada
-        const { data: publicUrlData } = supabase.storage
-          .from('produtos')
-          .getPublicUrl(filePath);
-
-        imageUrlSalvaNoBanco = publicUrlData.publicUrl;
+        formData.append('imagem', imagem);
       }
 
-      // 🟢 Cria um ID numérico único para o Produto também
-      const idProdutoGerado = Date.now();
+      const response = await createProduct(formData) as ControllerResponse;
 
-      // Salva o produto na tabela Product
-      const { error: produtoError } = await supabase
-        .from('Product')
-        .insert([
-          {
-            id: idProdutoGerado, // 🟢 Envia o ID manual do Produto
-            name: nome,
-            category_id: parseInt(categoriaId), 
-            price: parseFloat(preco),           
-            stock: parseInt(estoque) || 0,      
-            image: imageUrlSalvaNoBanco     
-          }
-        ]);
-
-      if (produtoError) throw produtoError;
-
-      alert("Produto registado com sucesso no banco de dados! 🚀");
-      
-      // Limpa tudo
-      setNome(''); setCategoriaId(''); setPreco(''); setEstoque(''); 
-      handleRemoveImage(e as any);
-
+      if (response.success) {
+        alert("Produto registrado com sucesso! 🚀");
+        // Reset do formulário
+        setNome('');
+        setCategoriaId('');
+        setPreco('');
+        setEstoque('');
+        handleRemoveImage();
+        router.refresh(); // Atualiza os dados da listagem ao fundo
+      } else {
+        alert(response.message || "Erro ao salvar produto");
+      }
     } catch (error) {
-      console.error("Erro ao salvar o produto:", error);
-      alert("Erro ao salvar. Verifique a consola para mais detalhes.");
+      console.error("Erro no envio:", error);
+      alert("Erro de conexão com o servidor.");
     } finally {
       setIsLoading(false);
     }
@@ -155,82 +152,86 @@ export default function FormularioProduto() {
 
   return (
     <>
-      <form onSubmit={handleSalvarProduto} className="space-y-6 md:space-y-8">
+      <form onSubmit={handleSalvarProduto} className="space-y-6 md:space-y-8 p-4 bg-white rounded-xl shadow-sm">
         
         <div className="flex flex-col md:grid md:grid-cols-2 gap-6">
-          
+          {/* Nome */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Nome do Produto*</label>
             <input type="text" required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Bolo de Pote" className={inputClasses} />
           </div>
 
+          {/* Categoria */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Categoria do Produto*</label>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <select required value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)} className={`${inputClasses} flex-grow text-gray-700`}>
-                <option value="" disabled>{categorias.length === 0 ? "Carregando categorias..." : "Selecione..."}</option>
-                {categorias.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+              <select required value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)} className={`${inputClasses} flex-grow`}>
+                <option value="" disabled>
+                  {categorias.length === 0 ? "Carregando..." : "Selecione..."}
+                </option>
+                {categorias.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
               </select>
-              <ButtonSistema type="button" onClick={() => setIsModalCategoriaOpen(true)} className="px-4 py-2.5 text-xs whitespace-nowrap capitalize flex-shrink-0 w-full sm:w-auto h-[46px]">
-                + Nova Categoria
+              <ButtonSistema type="button" onClick={() => setIsModalCategoriaOpen(true)} className="px-4 py-2.5 text-xs h-[46px] whitespace-nowrap">
+                + Nova
               </ButtonSistema>
             </div>
           </div>
 
+          {/* Preço */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Preço de Venda (R$)*</label>
-            <input type="number" step="0.01" min="0" required value={preco} onChange={(e) => { if(Number(e.target.value) >= 0 || e.target.value === '') setPreco(e.target.value) }} placeholder="0,00" className={inputClasses} />
+            <input type="number" step="0.01" min="0" required value={preco} onChange={(e) => setPreco(e.target.value)} placeholder="0,00" className={inputClasses} />
           </div>
 
+          {/* Estoque */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Estoque Inicial</label>
-            <input type="number" min="0" value={estoque} onChange={(e) => { if(Number(e.target.value) >= 0 || e.target.value === '') setEstoque(e.target.value) }} placeholder="0" className={inputClasses} />
+            <input type="number" min="0" value={estoque} onChange={(e) => setEstoque(e.target.value)} placeholder="0" className={inputClasses} />
           </div>
-
         </div>
 
-        {/* ÁREA DE IMAGEM */}
+        {/* Upload de Imagem */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Imagem do Produto</label>
-          <div className="w-full aspect-video md:aspect-[3/1] lg:aspect-video border-2 border-dashed border-gray-300 bg-gray-50/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors relative group overflow-hidden">
+          <div className="w-full aspect-video md:aspect-[3/1] border-2 border-dashed border-gray-300 bg-gray-50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors relative group overflow-hidden">
             <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
             
             {previewUrl ? (
-              <div className="relative w-full h-full flex items-center justify-center">
-                <img src={previewUrl} alt="Preview" className="w-full h-full object-contain bg-gray-100" />
-                <button type="button" onClick={handleRemoveImage} className="absolute top-3 right-3 z-20 bg-red-600 text-white rounded-full p-2 shadow-lg opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700" title="Remover imagem">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 md:w-5 md:h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              <div className="relative w-full h-full">
+                <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
+                <button type="button" onClick={(e) => { e.stopPropagation(); handleRemoveImage(); }} className="absolute top-2 right-2 z-20 bg-red-600 text-white rounded-full p-2 hover:bg-red-700 transition-colors shadow-md">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col items-center text-gray-400 group-hover:text-[#0D9488] transition-colors p-4 md:p-6 text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 md:w-10 md:h-10 mb-2 md:mb-3"><path d="M12 9a3.75 3.75 0 100 7.5A3.75 3.75 0 0012 9z" /><path fillRule="evenodd" d="M9.344 3.071a49.52 49.52 0 015.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 01-3 3h-15a3 3 0 01-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 001.11-.71l.822-1.315a2.942 2.942 0 012.332-1.39zM6.75 12.75a5.25 5.25 0 1110.5 0 5.25 5.25 0 01-10.5 0z" clipRule="evenodd" /></svg>
-                <span className="text-xs md:text-sm font-medium">Clique ou arraste uma imagem do produto</span>
+              <div className="flex flex-col items-center text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10 mb-2"><path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" /></svg>
+                <span className="text-sm font-medium">Clique para selecionar imagem</span>
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-4">
-          <ButtonSistema type="button" variant="outline" className="w-full sm:w-auto">Cancelar</ButtonSistema>
-          <ButtonSistema type="submit" variant="primary" className="w-full sm:w-auto" disabled={isLoading}>
-            {isLoading ? 'A guardar...' : 'Salvar Produto'}
+        <div className="flex justify-end gap-3">
+          <ButtonSistema type="button" variant="outline" onClick={() => router.back()}>Cancelar</ButtonSistema>
+          <ButtonSistema type="submit" variant="primary" disabled={isLoading}>
+            {isLoading ? 'Salvando...' : 'Salvar Produto'}
           </ButtonSistema>
         </div>
       </form>
 
-      {/* MODAL DE CATEGORIA */}
+      {/* Modal Categoria */}
       {isModalCategoriaOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
-          <div className="bg-white rounded-lg shadow-2xl w-full max-w-md overflow-hidden">
-            <form onSubmit={handleSalvarCategoria} className="p-6 md:p-8 space-y-6">
-              <h2 className="text-xl font-bold text-gray-800">Nova Categoria</h2>
-              <input type="text" required value={novaCategoriaNome} onChange={(e) => setNovaCategoriaNome(e.target.value)} placeholder="Nome da Categoria" className={inputClasses} />
-              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
-                <ButtonSistema type="button" variant="outline" onClick={() => setIsModalCategoriaOpen(false)} className="w-full sm:w-auto">Cancelar</ButtonSistema>
-                <ButtonSistema type="submit" variant="primary" className="w-full sm:w-auto">Salvar</ButtonSistema>
-              </div>
-            </form>
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+            <h2 className="text-lg font-bold mb-4">Nova Categoria</h2>
+            <input type="text" autoFocus value={novaCategoriaNome} onChange={(e) => setNovaCategoriaNome(e.target.value)} placeholder="Nome da categoria" className={inputClasses} onKeyDown={(e) => e.key === 'Enter' && handleSalvarCategoria(e as any)} />
+            <div className="flex justify-end gap-2 mt-6">
+              <ButtonSistema type="button" variant="outline" onClick={() => setIsModalCategoriaOpen(false)}>Cancelar</ButtonSistema>
+              <ButtonSistema type="button" onClick={handleSalvarCategoria}>Salvar</ButtonSistema>
+            </div>
           </div>
         </div>
       )}

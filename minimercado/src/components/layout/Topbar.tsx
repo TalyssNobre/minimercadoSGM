@@ -1,6 +1,9 @@
 'use client';
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+// ✅ Importação corrigida para o Controller
+import { logoutController } from '@/src/Server/controllers/UserController';  
 
 interface TopbarProps {
   tipoUsuario: 'admin' | 'operador';
@@ -8,21 +11,44 @@ interface TopbarProps {
 
 export default function Topbar({ tipoUsuario }: TopbarProps) {
   const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = () => {
-    router.push('/');
+  const handleLogout = async () => {
+    // Evita cliques duplos enquanto processa
+    if (isLoggingOut) return;
+    
+    setIsLoggingOut(true);
+
+    try {
+      // 1. Chama o Controller
+      const resposta = await logoutController();
+      
+      // 2. Verifica 'success' (padrão que definimos no back)
+      if (!resposta.success) {
+        // Se der erro (ex: problema na rede), mostra a mensagem que veio do back
+        alert(resposta.message || "Erro ao sair do sistema."); 
+      } else {
+        console.log("Logout realizado:", resposta.message); 
+        
+        // 3. Limpa o cache das rotas protegidas
+        router.refresh(); 
+        
+        // 4. Redireciona para a home/login
+        router.push('/');
+      }
+    } catch (error) {
+      console.error("Erro fatal ao fazer logout:", error);
+      alert("Erro de conexão com o servidor.");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
-    /* 🟢 MUDANÇA AQUI: Trocamos 'fixed' por 'sticky' e removemos o 'top-0' fixo */
-    /* Isso faz a barra ocupar 100% apenas do espaço disponível ao lado da Sidebar */
     <nav className="w-full bg-verde-principal h-16 text-white shadow-lg px-6 flex justify-between items-center sticky top-0 z-[50]">
-      
-      {/* LADO ESQUERDO: Espaço para o ícone de menu (hambúrguer) se quiser adicionar depois */}
+      {/* LADO ESQUERDO: Espaço para o ícone de menu (vazio por enquanto) */}
       <div className="flex items-center">
-        <div className="w-10">
-           {/* Aqui você pode colocar o ícone de abrir/fechar a sidebar futuramente */}
-        </div>
+        <div className="w-10"></div>
       </div>
 
       {/* CENTRO: Logo e Texto "Segue-me" */}
@@ -33,7 +59,7 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
         <span className="text-xl md:text-2xl font-medium tracking-wide">Segue-me</span>
       </div>
 
-      {/* LADO DIREITO: Usuário e Botão de Sair (Agora ficarão visíveis!) */}
+      {/* LADO DIREITO: Usuário e Botão de Sair */}
       <div className="flex items-center space-x-3">
         <span className="text-xs md:text-sm font-semibold capitalize tracking-wide hidden sm:block">
           {tipoUsuario}
@@ -41,15 +67,22 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
         
         <button 
           onClick={handleLogout}
-          className="bg-white/10 hover:bg-red-500 p-2 rounded-full transition-all"
+          disabled={isLoggingOut}
+          className={`p-2 rounded-full transition-all flex items-center justify-center min-w-[40px] ${
+            isLoggingOut ? 'bg-gray-500 cursor-not-allowed opacity-50' : 'bg-white/10 hover:bg-red-500'
+          }`}
           title="Sair do sistema"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-white">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-          </svg>
+          {isLoggingOut ? (
+            // Spinner simples ou texto de carregando
+            <span className="animate-pulse text-[10px] font-bold">...</span>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-white">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+            </svg>
+          )}
         </button>
       </div>
-
     </nav>
   );
 }
