@@ -23,15 +23,10 @@ export const createProduct = async({data, imagem}) => {
             const fileExt = imagem.name.split('.').pop();
             const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
 
-            const { error: uploadError } = await supabase.storage
-                .from('produtos')
-                .upload(fileName, imagem);
-
+            const { error: uploadError } = await supabase.storage.from('produtos').upload(fileName, imagem);
             if (uploadError) return { error: "Erro ao fazer upload da imagem no Storage." };
 
-        const { data: publicUrlData } = supabase.storage
-            .from('produtos')
-            .getPublicUrl(fileName);
+        const { data: publicUrlData } = supabase.storage.from('produtos').getPublicUrl(fileName);
 
         imageUrl = publicUrlData.publicUrl;
     }
@@ -45,9 +40,9 @@ export const createProduct = async({data, imagem}) => {
     // 5. Instancia a Entity e chama o Model
     try {
         const productEntity = new Product(finalData); // A Entity valida os dados aqui
-        return await ProductModel.createProduct(productEntity);
+        const results = await ProductModel.createProduct(productEntity);
+        return {success: true, product : results, message : "Produto cadastrado com sucesso!"}
     } catch (error) {
-        // Se a Entity barrar algo (falta de preço, nome, etc), cai aqui
         return { error: error.message };
     }
 };

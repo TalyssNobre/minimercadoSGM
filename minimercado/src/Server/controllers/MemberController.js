@@ -3,6 +3,7 @@ import { authAdmin } from "@/src/Server/utils/auth";
 import { formatText } from "@/src/Server/utils/formatter";
 import * as MemberService from "@/src/Server/services/MemberService"
 import { revalidatePath } from "next/cache";
+import { getSupabaseServer, getSupabaseAdmin } from "@/src/lib/supabaseServer";
 
 export async function createMember(dataFront) {
     try{
@@ -11,7 +12,8 @@ export async function createMember(dataFront) {
         if (data.name) {
             data.name = formatText(data.name);
         }
-        const results = await MemberService.createMember({
+        const supabase = getSupabaseAdmin();
+        const results = await MemberService.createMember(supabase,{
         data: data 
         });
         if (results.error) return { success: false, message: results.error };
@@ -29,7 +31,8 @@ export async function updateMember(dataFront) {
         if (data.name) {
             data.name = formatText(data.name);
         }
-        const results = await MemberService.updateMember({
+        const supabase = getSupabaseAdmin();
+        const results = await MemberService.updateMember(supabase,{
             data: data
         });
         if (results.error) return { success: false, message: results.error };
@@ -42,7 +45,8 @@ export async function updateMember(dataFront) {
 
 export async function getAllMember() {
     try{
-    const results = await MemberService.getAllMember();
+    const supabase = await getSupabaseServer();
+    const results = await MemberService.getAllMember(supabase);
     if (!results || results.error) {
         return { success: false, data: [], message: results.error };
     }
@@ -54,7 +58,8 @@ export async function getAllMember() {
 
 export async function getMemberById(id) {
     try{
-        const results = await MemberService.getMemberById(id);
+        const supabase = await getSupabaseServer();
+        const results = await MemberService.getMemberById(supabase, id);
         if (results.error) return { success: false, message: results.error };
         revalidatePath("/membro");
         return { success: true, message: "Membro encontrado!" };
@@ -66,7 +71,8 @@ export async function getMemberById(id) {
 export async function deleteMember(id) {
     try{
         await authAdmin();
-        const results = await MemberService.deleteMember(id);
+        const supabase = getSupabaseAdmin();
+        const results = await MemberService.deleteMember(supabase, id);
         if(results.error) { return{sucess: false, message: results.error}
         }
 

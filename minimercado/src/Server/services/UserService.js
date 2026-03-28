@@ -14,15 +14,14 @@ export const createUser = async ({data}) => {
     }
     try {
         const { data: authData, error: authError } = await supabase.auth.signUp({email: emailexisting,password: data.senha || data.password,options: {
-                data: {name: data.nome, profile: data.profile || 'operador'} }});
+                data: {name: data.nome, profile: data.profile || 'Operador'} }});
         if (authError) {
             return { erro: "Erro na autenticação: " + authError.message };
         }
         const userEntity = new User({
             id: authData.user.id,
-            name: name,
             email: email,
-            profile: data.profile || 'operador'
+            profile: data.profile || 'Operador'
         });
 
         const results = await UserModel.createUser(userEntity);

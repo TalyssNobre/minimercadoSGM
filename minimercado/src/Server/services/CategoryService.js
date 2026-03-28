@@ -14,7 +14,7 @@ export const createCategory = async ({data}) => {
     try{
         const categoryEntity  = new Category(data);
         const results = await CategoryModel.createCategory(categoryEntity);
-        return {success: true, categoria : results}
+        return {success: true, category : results}
     }catch(error){
         return { error: error.message };
     }
@@ -23,7 +23,7 @@ export const createCategory = async ({data}) => {
 /*export const getAllCategory = async () => {
     try{
         const results = await CategoryModel.getAllCategory();
-        return{success : true, team : results.data}
+        return{success : true, category : results.data}
     } catch(error){
         return{error: error.message}
     }  
@@ -33,7 +33,7 @@ export const getAllCategory = async() => {
     const supabase = await getSupabaseServer();
      try{
         const results = await CategoryModel.getAllCategory();
-        return{success : true, categoria : results}
+        return{success : true, category : results}
     } catch(error){
         return{error: error.message}
     }
@@ -47,7 +47,7 @@ export const getCategoryById = async ({data}) => {
     }
     try{
         const results = await CategoryModel.getCategoryById(id);
-        return{success : true, categoria : results}
+        return{success : true, category : results}
     }catch(error){
         return{error: error.message}
     }

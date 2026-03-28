@@ -1,32 +1,35 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+
 export async function getSupabaseServer() {
-  const cookieStore = await cookies();
+  const cookieStore = await cookies(); // No Next 15, isso é uma Promise
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
     {
       cookies: {
-        get(name) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
         },
-        set(name, value, options) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({ name, value, ...options });
-          } catch (error) {
-            // O erro aqui é ignorado de propósito por causa do Next.js
-          }
-        },
-        remove(name, options) {
-          try {
-            // Para deletar o cookie no Next.js
-            cookieStore.set({ name, value: '', ...options }); 
-          } catch (error) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Ignora se for chamado em Server Component
           }
         },
       },
     }
+  );
+}
+
+export function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY // 👈 A chave secreta sem NEXT_PUBLIC
   );
 }

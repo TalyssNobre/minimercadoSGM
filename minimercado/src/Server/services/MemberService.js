@@ -1,6 +1,7 @@
-'use server'
 import {getSupabaseServer} from "@/src/lib/supabaseServer";
-import {getTeamById} from "@/src/actions/TeamActions"
+import {getTeamById} from "../services/TeamService";
+import * as MemberModel from "../models/MemberModel";
+import Member from "../entitys/MemberEntity";
 
 export const createMember = async ({data})=> {
     const supabase = await getSupabaseServer();
@@ -15,36 +16,54 @@ export const createMember = async ({data})=> {
     if(searchTeamById.error){
         return{error : "Integrante não vinculado a um Time"}
     }
-
-    const {data: newMember} = await supabase.from("Member").insert([data]).select().single();
-    return{success: true, memberNew: newMember}
+    try{
+        const memberEntity  = new Member(data);
+        const results = await MemberModel.createMember(memberEntity);
+        return {success: true, member : results}
+    }catch(error){
+        return { error: error.message };
+    }
 }
 
-export const getAllMember = async() => {
-    const supabase = await getSupabaseServer();
-
-    const {data} = await supabase.from("Member").select("*");
-    return {sucess : true, members: data}
-}
-
-export const getMemberById = async({data}) => {
-    const supabase = await getSupabaseServer();
-    const {data: memberId} = await supabase.from("Member").select("*").eq("id", data.id).single();
-    if(!memberId){
-        return{error: "Membro não cadastrado"}
-    } return{sucess: true, memberById: memberId}
-}
 export const updateMember = async ({data}) => {
     const supabase = await getSupabaseServer();
 
     const memberId = data.id;
-    const newMember = data.name;
     const {data : memberexisting} = await supabase.from("Member").select("*").eq("id", memberId).single();
     if(!memberexisting){
         return{error :  "o Membro não existe"}
     }
-    const {data: dataUpdate} = await supabase.from("Member").update({name : newMember}).eq("id", memberId).select();
-    return { sucess : true, memberUpdate : dataUpdate}
+    try{
+        const memberEntity  = new Member(data)
+        const results = await TeamModel.updateMember(memberEntity);
+        return {success: true, member : results}
+    }catch(error){
+        return { error: error.message };
+    }
+}
+
+export const getAllMember = async() => {
+    const supabase = await getSupabaseServer();
+     try{
+        const results = await MemberModel.getAllMember();
+        return{success : true, member : results}
+    } catch(error){
+        return{error: error.message}
+    }
+}
+
+export const getMemberById = async({id}) => {
+    const supabase = await getSupabaseServer();
+    const {data: memberId} = await supabase.from("Member").select("*").eq("id", id).single()
+    if(!memberId){
+    return{erro: "Usuario não encontrado"};
+    }
+   try{
+        const results = await MemberModel.getMemberById(id);
+        return{success : true, member : results}
+    }catch(error){
+        return{error: error.message}
+    }
 }
 
 export const deleteMember = async({data}) => {

@@ -1,6 +1,7 @@
 'use server'
 
 import { authAdmin } from "@/src/Server/utils/auth";
+import {getSupabaseAdmin} from "@/src/lib/supabaseServer"
 import * as UserService from "@/src/Server/services/UserService";
 import { revalidatePath } from "next/cache";
 
@@ -61,10 +62,10 @@ export async function registerUserAction(formData) {
         await authAdmin();
 
         // 2. EXTRAÇÃO: Pega os dados do formulário
-        const rawData = Object.fromEntries(formData.entries());
+        const data = Object.fromEntries(formData.entries());
         
         // 3. EXECUÇÃO: Chama o Service (que vai usar a Entity e o Model)
-        const result = await UserService.createUser({ data: rawData });
+        const result = await UserService.createUser({ data: data });
 
         if (result.error) {
             return { success: false, message: result.error };

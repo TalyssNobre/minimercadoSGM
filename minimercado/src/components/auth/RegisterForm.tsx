@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/Button"; 
-import { createUser } from "@/src/Server/actions/UserActions"; 
+import { registerUserAction } from "@/src/Server/controllers/UserController"; 
 
 
 export function RegisterForm() {
@@ -31,7 +31,7 @@ export function RegisterForm() {
     try {
       const dadosUsuario = { nome, email, senha, profile: perfil };
 
-      const resposta = await createUser({ data: dadosUsuario });
+      const resposta = await registerUserAction({ data: dadosUsuario });
 
       if (resposta.erro) {
         setMensagem({ tipo: "erro", texto: resposta.erro });

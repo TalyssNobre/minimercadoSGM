@@ -44,22 +44,23 @@ export default function FormularioProduto() {
   // =========================================================================
   // 1. CARREGAR CATEGORIAS
   // =========================================================================
-  useEffect(() => {
-    async function loadCategorias() {
-      try {
-        const response = await getAllCategory() as ControllerResponse;
-        
-        if (response.success && Array.isArray(response.data)) {
-          setCategorias(response.data);
-        } else {
-          console.error("Erro ao carregar categorias:", response.message);
+ useEffect(() => {
+    async function carregarDados() {
+      const response = await getAllCategory() as any;
+      
+      console.log("Chegou no useEffect:", response); // Sempre bom manter esse log pra debug
+
+      if (response?.success) {
+        // 💡 PEGADINHA: Se vier 'categoria', usamos ela. Se vier 'data', usamos ela.
+        const listaBruta = response.category || response.data;
+
+        if (Array.isArray(listaBruta)) {
+          setCategorias(listaBruta);
         }
-      } catch (error) {
-        console.error("Erro na requisição de categorias:", error);
       }
     }
-    loadCategorias();
-  }, []);
+    carregarDados();
+}, []);
 
   // Limpa cache da imagem ao desmontar
   useEffect(() => {

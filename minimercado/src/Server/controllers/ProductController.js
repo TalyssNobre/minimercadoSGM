@@ -7,14 +7,10 @@ import { revalidatePath } from "next/cache";
 export async function createProduct(dataFront) {
     try {
         await authAdmin();
-        // A LINHA MÁGICA:
         const data = Object.fromEntries(dataFront.entries());
         if (data.name) {
             data.name = formatText(data.name);
         }
-        
-        // Pegamos a imagem separada porque o Object.fromEntries 
-        // às vezes se confunde com arquivos dependendo da versão.
         const imagem = dataFront.get("imagem"); 
 
         const results = await ProductService.createProduct({ 

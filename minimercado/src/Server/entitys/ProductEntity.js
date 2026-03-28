@@ -16,9 +16,10 @@ export default class Product{
          if (!this.name || !this.category_id || !this.price || !this.stock) {
       throw new Error("Campos obrigatórios faltando");
     }
-        if(this.price < 0 ){
+        if(this.price < 0 || this.stock < 0 ){
         throw new Error("Preço não pode ser negativo")
         }
+        
         if(!this.isActive && !this.id) {
       throw new Error("Id está faltando");
     }
