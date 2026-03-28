@@ -1,6 +1,6 @@
 import {getSupabaseServer} from "@/src/lib/supabaseServer";
 import * as TeamModel from "../models/TeamModel";
-import Team from "../entitys/TeamEntityEntity";
+import Team from "../entitys/TeamEntity";
 
 
 export const createTeam = async ({data}) =>{

@@ -50,7 +50,7 @@ export async function getAllTeams() {
     if (!results || results.error) {
             return { success: false, data: [], message: results.error };
         }
-        return { success: true, data: results };
+        return { success: true, data: results.team };
     } catch (error) {
         return { success: false, data: [], message: error.message };
     }

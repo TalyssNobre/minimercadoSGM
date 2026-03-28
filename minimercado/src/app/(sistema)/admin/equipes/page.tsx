@@ -2,7 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
-import { supabase } from '@/src/lib/supabase'; 
+
+// 🟢 1. IMPORTANDO AS FUNÇÕES DO SEU BACKEND
+import { getAllTeams, createTeam, updateTeam, deleteTeam } from '@/src/Server/controllers/TeamController';
 
 interface Equipe {
   id: number;
@@ -24,34 +26,48 @@ export default function EquipesPage() {
   const [equipeParaExcluir, setEquipeParaExcluir] = useState<Equipe | null>(null);
 
   // =========================================================================
-  // 1. BUSCAR EQUIPES
+  // 1. BUSCAR EQUIPES (Conectado ao Backend)
   // =========================================================================
   const buscarEquipes = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('Team')
-        .select(`
-          id, 
-          name, 
-          color,
-          member(count)
-        `)
-        .order('name', { ascending: true });
-
-      if (error) throw error;
+      const response = await getAllTeams() as any;
       
-      if (data) {
-        const formatadas = data.map((e: any) => ({
+      console.log("🔎 Resposta exata do Backend:", response);
+
+      if (response?.success) {
+        
+        let listaBruta = [];
+
+        // 🛡️ O FUNIL EXATO (Baseado no seu Print):
+        if (response.data && Array.isArray(response.data.team)) {
+          // Se vier empacotado no controller: { success: true, data: { team: [...] } }
+          listaBruta = response.data.team; 
+        } 
+        else if (Array.isArray(response.team)) {
+          // Se vier direto: { success: true, team: [...] }
+          listaBruta = response.team;
+        } 
+        else if (Array.isArray(response.data)) {
+          // Fallback caso o backend mude futuramente para mandar a lista direto em data
+          listaBruta = response.data;
+        }
+
+        // Fazemos o map com segurança absoluta!
+        const formatadas = listaBruta.map((e: any) => ({
           id: e.id,
           name: e.name,
           color: e.color,
-          memberCount: e.member?.[0]?.count || 0
+          memberCount: e.member?.[0]?.count || e.memberCount || 0 
         }));
+        
         setEquipes(formatadas);
+
+      } else {
+        console.error("Erro ao buscar do backend:", response?.message);
       }
     } catch (error) {
-      console.error("Erro ao buscar equipes:", error);
+      console.error("Erro fatal ao buscar equipes:", error);
     } finally {
       setIsLoading(false);
     }
@@ -62,44 +78,48 @@ export default function EquipesPage() {
   }, []);
 
   // =========================================================================
-  // 2. SALVAR EQUIPE
+  // 2. SALVAR EQUIPE (Conectado ao Backend)
   // =========================================================================
   const handleSalvarEquipe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novoNome.trim()) return;
     
     try {
+      const formData = new FormData();
+      formData.append('name', novoNome);
+      formData.append('color', novaCor);
+
+      let response;
+
       if (equipeEmEdicao !== null) {
-        const { error } = await supabase
-          .from('Team')
-          .update({ name: novoNome, color: novaCor })
-          .eq('id', equipeEmEdicao);
-        if (error) throw error;
+        formData.append('id', equipeEmEdicao.toString());
+        response = await updateTeam(formData);
       } else {
-        const idGerado = Date.now();
-        const { error } = await supabase
-          .from('Team')
-          .insert([{ id: idGerado, name: novoNome, color: novaCor }]);
-        if (error) throw error;
+        response = await createTeam(formData);
       }
       
+      if (!response.success) {
+        alert("Erro retornado pelo servidor: " + response.message);
+        return;
+      }
+
       await buscarEquipes(); 
       setIsModalOpen(false);
       setNovoNome('');
       setEquipeEmEdicao(null);
+
     } catch (error) {
-      alert("Erro ao salvar no banco.");
+      alert("Erro de conexão ao salvar a equipe.");
+      console.error(error);
     }
   };
 
   // =========================================================================
-  // 3. EXCLUIR EQUIPE (COM VALIDAÇÃO DE INTEGRANTES)
+  // 3. EXCLUIR EQUIPE (Conectado ao Backend)
   // =========================================================================
   const confirmarExclusao = async () => {
     if (!equipeParaExcluir) return;
 
-    // 🟢 A MÁGICA ESTÁ AQUI:
-    // Se o contador for maior que zero, impedimos a exclusão antes mesmo de tentar
     if (equipeParaExcluir.memberCount && equipeParaExcluir.memberCount > 0) {
       alert(`⚠️ Ação Negada: A equipe "${equipeParaExcluir.name}" possui integrantes ativos. Para excluí-la, remova todos os integrantes primeiro.`);
       setIsDeleteModalOpen(false);
@@ -108,23 +128,23 @@ export default function EquipesPage() {
     }
 
     try {
-      const { error } = await supabase
-        .from('Team')
-        .delete()
-        .eq('id', equipeParaExcluir.id);
+      const response = await deleteTeam(equipeParaExcluir.id);
       
-      if (error) throw error;
+      if (response.success === false || response.sucess === false) {
+         alert("Erro ao excluir: " + response.message);
+         return;
+      }
 
       setEquipes(equipes.filter(e => e.id !== equipeParaExcluir.id));
       setIsDeleteModalOpen(false);
       setEquipeParaExcluir(null);
+
     } catch (error) {
       console.error("Erro ao excluir equipe:", error);
       alert("Erro técnico ao tentar excluir. Tente novamente.");
     }
   };
 
-  
   return (
   <div className="space-y-6 relative">
      <div className="flex justify-between items-center border-b pb-4">
@@ -218,7 +238,6 @@ export default function EquipesPage() {
       {isDeleteModalOpen && equipeParaExcluir && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-xl p-6 text-center max-w-sm shadow-2xl">
-            {/* 🟢 SE TIVER INTEGRANTES, MOSTRAMOS UM AVISO DIFERENTE NO MODAL */}
             {equipeParaExcluir.memberCount && equipeParaExcluir.memberCount > 0 ? (
               <>
                 <div className="text-amber-500 text-4xl mb-4">⚠️</div>
