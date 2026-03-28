@@ -57,11 +57,20 @@ export async function getAllTeams() {
 }
 
 export async function getTeamById(id) {
-    try{
-        const results = await TeamService.getTeamById(id)
-        if(results.error) return{success : false, message: results.error};
-        return { success: true, message: "Time encontrado" };
-    }catch (error) {
+    try {
+        // results aqui será o que o Service retornou: { success: true, team: {id, name...} }
+        const results = await TeamService.getTeamById(id);
+
+        if (results.error) {
+            return { success: false, message: results.error };
+        }
+
+        return { 
+            success: true, 
+            data: results.team, 
+            message: "Time encontrado" 
+        };
+    } catch (error) {
         return { success: false, message: error.message };
     }   
 }

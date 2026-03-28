@@ -49,16 +49,18 @@ export const getAllTeams = async() => {
     }
 }
 
-export const getTeamById = async ({id}) => {
-    const {data: teamId} = await supabase.from("Team").select("*").eq("id", id).single()
-    if(!teamId){
-    return{erro: "Usuario não encontrado"};
-    }
-    try{
+export const getTeamById = async (id) => {
+    try {
+        // Chamamos a model diretamente passando o ID
         const results = await TeamModel.getTeamById(id);
-        return{success : true, team : results}
-    }catch(error){
-        return{error: error.message}
+        
+        if (!results) {
+            return { error: "Time não encontrado" };
+        }
+
+        return { success: true, team: results };
+    } catch (error) {
+        return { error: error.message };
     }
 }
 

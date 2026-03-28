@@ -1,4 +1,4 @@
-"user server"
+"use server"
 import { authAdmin } from "@/src/Server/utils/auth";
 import { formatText } from "@/src/Server/utils/formatter";
 import * as MemberService from "@/src/Server/services/MemberService"

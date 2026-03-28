@@ -29,7 +29,7 @@ export const getAllTeams = async() => {
 export const getTeamById = async(id) => {
     const supabase = await getSupabaseServer();
 
-    const{data,error} = await supabase.from("Team").select("*").eq("id", id).single();
+    const{data,error} = await supabase.from("Team").select("*").eq("id", id).maybeSingle();
    if(error){ throw new Error(error.message);
     } return data;
 }
