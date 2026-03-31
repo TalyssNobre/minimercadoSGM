@@ -128,7 +128,11 @@ export default function EquipesPage() {
     }
 
     try {
+<<<<<<< HEAD
       const response = await deleteTeam( equipeParaExcluir.id);
+=======
+      const response = await deleteTeam(equipeParaExcluir.id);
+>>>>>>> c5dc8ace440e2dd2e6bc16856145050e6c4ed5ce
       
       if (response.success === false || response.sucess === false) {
          alert("Erro ao excluir: " + response.message);

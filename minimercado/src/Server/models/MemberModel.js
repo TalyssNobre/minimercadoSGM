@@ -13,6 +13,17 @@ export const updateMember = async(id, memberEntity) => {
    const supabase = await getSupabaseServer();
 
    const{data,error} = await supabase.from("member").update(memberEntity).eq("id", id).select().single();
+<<<<<<< HEAD
+=======
+   if(error){ throw new Error(error.message);
+    } return data;
+}
+
+export const getAllMember = async() => {
+    const supabase = await getSupabaseServer();
+
+    const{data,error} = await supabase.from("member").select("*").order("name", { ascending: true });
+>>>>>>> c5dc8ace440e2dd2e6bc16856145050e6c4ed5ce
    if(error){ throw new Error(error.message);
     } return data;
 }

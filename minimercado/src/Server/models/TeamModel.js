@@ -20,7 +20,12 @@ export const updateTeam = async(id, teamEntity) => {ss
 export const getAllTeams = async() => {
     const supabase = await getSupabaseServer();
 
+<<<<<<< HEAD
     const{data,error} = await supabase.from("Team").select("id, name, color, member(count)").order('name', { ascending: true });
+=======
+    const{data,error} = await supabase.from("Team").select('id, name, color, member(count)') // 🟢 TEM QUE TER ESSE member(count)
+   .order('name', { ascending: true });
+>>>>>>> c5dc8ace440e2dd2e6bc16856145050e6c4ed5ce
    if(error){ throw new Error(error.message);
     } return data;
 }
@@ -41,3 +46,5 @@ export const deleteTeam = async({id}) =>{
        if(error){ throw new Error(error.message);
     } return data;
 }
+
+

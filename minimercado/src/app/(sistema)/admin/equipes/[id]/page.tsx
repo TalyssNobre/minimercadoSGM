@@ -2,7 +2,11 @@
 import React, { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
-import { supabase } from '@/src/lib/supabase';
+
+// 🟢 1. IMPORTANDO AS FUNÇÕES DO SEU BACKEND
+import { getAllMember, createMember, updateMember, deleteMember } from '@/src/Server/controllers/MemberController';
+// 🟢 Importamos o TeamController para pegar o Nome da Equipe!
+import { getTeamById } from '@/src/Server/controllers/TeamController'; 
 
 interface Membro {
   id: number;
@@ -23,55 +27,130 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
   const [membroEmEdicao, setMembroEmEdicao] = useState<number | null>(null);
   const [novoNome, setNovoNome] = useState('');
 
-  
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [membroParaExcluir, setMembroParaExcluir] = useState<Membro | null>(null);
 
+  // =========================================================================
+  // 1. BUSCAR DADOS (Equipe e Membros)
+  // =========================================================================
   const fetchDados = async () => {
     if (isNaN(equipeId)) return;
     setIsLoading(true);
+    
     try {
-      const { data: teamData } = await supabase.from('Team').select('name').eq('id', equipeId).maybeSingle();
-      if (teamData) setNomeEquipe(teamData.name);
-      const { data, error } = await supabase.from('member').select('*').eq('team_id', equipeId).order('name', { ascending: true });
-      if (error) throw error;
-      setMembros(data || []);
+      // 🟢 A. BUSCAR O NOME DA EQUIPE
+      const teamResponse = await getTeamById(equipeId) as any;
+      if (teamResponse?.success && teamResponse?.data) {
+        // Tentamos extrair o nome independente de como o backend empacotou
+        const name = teamResponse.data.name || teamResponse.data[0]?.name || teamResponse.data.team?.name;
+        if (name) setNomeEquipe(name);
+      }
+
+      // 🟢 B. BUSCAR OS MEMBROS
+      const membersResponse = await getAllMember() as any;
+      
+      if (membersResponse?.success) {
+        let listaBruta = [];
+
+        // 🛡️ O FUNIL DE SEGURANÇA (Igual fizemos em Equipes)
+        if (membersResponse.data && Array.isArray(membersResponse.data.member)) {
+          listaBruta = membersResponse.data.member;
+        } else if (membersResponse.data && Array.isArray(membersResponse.data.data)) {
+          listaBruta = membersResponse.data.data;
+        } else if (Array.isArray(membersResponse.data)) {
+          listaBruta = membersResponse.data;
+        }
+
+        // 🟢 C. FILTRAR E MAPEAR
+        // Como o backend traz "todos os membros", o Frontend filtra só os dessa equipe
+        const membrosDestaEquipe = listaBruta.filter((m: any) => m.team_id === equipeId);
+
+        const formatadas = membrosDestaEquipe.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          team_id: m.team_id
+        }));
+        
+        setMembros(formatadas);
+      } else {
+        console.error("Erro ao buscar membros:", membersResponse?.message);
+      }
+
     } catch (error) {
-      console.error("Erro:", error);
+      console.error("Erro fatal:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => { fetchDados(); }, [equipeId]);
+  useEffect(() => { 
+    fetchDados(); 
+  }, [equipeId]);
 
+  // =========================================================================
+  // 2. SALVAR MEMBRO (Criar ou Atualizar)
+  // =========================================================================
   const handleSalvarMembro = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novoNome.trim()) return;
+    
     try {
+      // 🟢 Criando o FormData que o backend espera!
+      const formData = new FormData();
+      formData.append('name', novoNome);
+      formData.append('team_id', equipeId.toString());
+
+      let response;
+
       if (membroEmEdicao !== null) {
-        await supabase.from('member').update({ name: novoNome }).eq('id', membroEmEdicao);
+        formData.append('id', membroEmEdicao.toString());
+        response = await updateMember(formData);
       } else {
-        await supabase.from('member').insert([{ id: Date.now(), name: novoNome, team_id: equipeId }]);
+        response = await createMember(formData);
       }
+
+      if (!response?.success) {
+        alert("Erro retornado pelo servidor: " + response?.message);
+        return;
+      }
+
       setNovoNome('');
       setMembroEmEdicao(null);
       setIsModalOpen(false);
+      
+      // Atualiza a tela após o sucesso
       fetchDados();
+
     } catch (error) {
-      alert("Erro ao salvar!");
+      alert("Erro de conexão ao salvar!");
+      console.error(error);
     }
   };
 
+  // =========================================================================
+  // 3. EXCLUIR MEMBRO
+  // =========================================================================
   const confirmarExclusao = async () => {
     if (!membroParaExcluir) return;
     try {
-      await supabase.from('member').delete().eq('id', membroParaExcluir.id);
+      // 🟢 Chama o controller de exclusão
+      const response = await deleteMember(membroParaExcluir.id);
+      
+      // Verificando sucesso (com proteção de digitação 'sucess')
+      if (response?.success === false || (response as any)?.sucess === false) {
+         alert("Erro ao excluir: " + response.message);
+         return;
+      }
+
       setIsDeleteModalOpen(false);
       setMembroParaExcluir(null);
+      
+      // Atualiza a tela
       fetchDados();
+
     } catch (error) {
       console.error(error);
+      alert("Erro técnico ao excluir.");
     }
   };
 
