@@ -1,6 +1,6 @@
 export default class Team{
     constructor({id, name, color}){
-        this.team_id = id;
+        this.id = id;
         this.name = name;
         this.color = color;
 

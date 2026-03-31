@@ -5,7 +5,6 @@ import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
 
 // 🟢 1. IMPORTANDO AS FUNÇÕES DO SEU BACKEND
 import { getAllMember, createMember, updateMember, deleteMember } from '@/src/Server/controllers/MemberController';
-// 🟢 Importamos o TeamController para pegar o Nome da Equipe!
 import { getTeamById } from '@/src/Server/controllers/TeamController'; 
 
 interface Membro {
@@ -38,21 +37,19 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
     setIsLoading(true);
     
     try {
-      // 🟢 A. BUSCAR O NOME DA EQUIPE
+      // 🟢 Busca do time mantida sem chaves (Padrão Novo)
       const teamResponse = await getTeamById(equipeId) as any;
+      
       if (teamResponse?.success && teamResponse?.data) {
-        // Tentamos extrair o nome independente de como o backend empacotou
-        const name = teamResponse.data.name || teamResponse.data[0]?.name || teamResponse.data.team?.name;
+        const name = teamResponse.data.name || teamResponse.data.team?.name;
         if (name) setNomeEquipe(name);
       }
 
-      // 🟢 B. BUSCAR OS MEMBROS
       const membersResponse = await getAllMember() as any;
       
       if (membersResponse?.success) {
         let listaBruta = [];
 
-        // 🛡️ O FUNIL DE SEGURANÇA (Igual fizemos em Equipes)
         if (membersResponse.data && Array.isArray(membersResponse.data.member)) {
           listaBruta = membersResponse.data.member;
         } else if (membersResponse.data && Array.isArray(membersResponse.data.data)) {
@@ -61,8 +58,6 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
           listaBruta = membersResponse.data;
         }
 
-        // 🟢 C. FILTRAR E MAPEAR
-        // Como o backend traz "todos os membros", o Frontend filtra só os dessa equipe
         const membrosDestaEquipe = listaBruta.filter((m: any) => m.team_id === equipeId);
 
         const formatadas = membrosDestaEquipe.map((m: any) => ({
@@ -95,7 +90,7 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
     if (!novoNome.trim()) return;
     
     try {
-      // 🟢 Criando o FormData que o backend espera!
+      // 🟢 FormData envia tudo exatamente como o seu Controller pediu
       const formData = new FormData();
       formData.append('name', novoNome);
       formData.append('team_id', equipeId.toString());
@@ -103,14 +98,15 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
       let response;
 
       if (membroEmEdicao !== null) {
+        // Envia o ID na edição para o backend saber quem atualizar
         formData.append('id', membroEmEdicao.toString());
         response = await updateMember(formData);
       } else {
         response = await createMember(formData);
       }
 
-      if (!response?.success) {
-        alert("Erro retornado pelo servidor: " + response?.message);
+      if (!response?.success && !(response as any)?.sucess) {
+        alert("Erro retornado pelo servidor: " + (response?.message || "Erro desconhecido"));
         return;
       }
 
@@ -118,7 +114,6 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
       setMembroEmEdicao(null);
       setIsModalOpen(false);
       
-      // Atualiza a tela após o sucesso
       fetchDados();
 
     } catch (error) {
@@ -133,10 +128,9 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
   const confirmarExclusao = async () => {
     if (!membroParaExcluir) return;
     try {
-      // 🟢 Chama o controller de exclusão
+      // 🟢 Deletando pelo novo padrão: ID solto, sem chaves!
       const response = await deleteMember(membroParaExcluir.id);
       
-      // Verificando sucesso (com proteção de digitação 'sucess')
       if (response?.success === false || (response as any)?.sucess === false) {
          alert("Erro ao excluir: " + response.message);
          return;
@@ -145,7 +139,6 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
       setIsDeleteModalOpen(false);
       setMembroParaExcluir(null);
       
-      // Atualiza a tela
       fetchDados();
 
     } catch (error) {
@@ -165,7 +158,7 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
       <div className="flex justify-between items-center border-b pb-6">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-800 tracking-tight">
-            Integrantes: <span className="text-[#0D9488]">{nomeEquipe || `Equipe #${equipeIdRaw}`}</span>
+            Integrantes: <span className="text-[#0D9488]">{nomeEquipe || `Carregando...`}</span>
           </h1>
           <p className="text-gray-500 text-sm mt-1 font-medium">Lista de colaboradores ativos.</p>
         </div>
@@ -208,7 +201,6 @@ export default function IntegrantesPage({ params }: { params: Promise<{ id: stri
           ))
         )}
 
-        {/* 🟢 MENSAGEM DE NENHUM INTEGRANTE CADASTRADO */}
         {!isLoading && membros.length === 0 && (
           <div className="col-span-full py-16 flex flex-col items-center justify-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
             <p className="text-gray-400 font-medium">Nenhum integrante cadastrado nesta equipe.</p>

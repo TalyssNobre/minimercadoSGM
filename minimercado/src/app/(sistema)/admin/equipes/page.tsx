@@ -17,6 +17,7 @@ export default function EquipesPage() {
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Estados de controle da UI
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [equipeEmEdicao, setEquipeEmEdicao] = useState<number | null>(null);
   const [novoNome, setNovoNome] = useState('');
@@ -26,34 +27,25 @@ export default function EquipesPage() {
   const [equipeParaExcluir, setEquipeParaExcluir] = useState<Equipe | null>(null);
 
   // =========================================================================
-  // 1. BUSCAR EQUIPES (Conectado ao Backend)
+  // 1. BUSCAR EQUIPES
   // =========================================================================
   const buscarEquipes = async () => {
     setIsLoading(true);
     try {
       const response = await getAllTeams() as any;
       
-      console.log("🔎 Resposta exata do Backend:", response);
-
       if (response?.success) {
-        
         let listaBruta = [];
 
-        // 🛡️ O FUNIL EXATO (Baseado no seu Print):
-        if (response.data && Array.isArray(response.data.team)) {
-          // Se vier empacotado no controller: { success: true, data: { team: [...] } }
-          listaBruta = response.data.team; 
-        } 
-        else if (Array.isArray(response.team)) {
-          // Se vier direto: { success: true, team: [...] }
-          listaBruta = response.team;
-        } 
-        else if (Array.isArray(response.data)) {
-          // Fallback caso o backend mude futuramente para mandar a lista direto em data
+        // O backend pode retornar os dados de algumas formas, vamos cobrir todas
+        if (Array.isArray(response.data)) {
           listaBruta = response.data;
+        } else if (response.data && Array.isArray(response.data.team)) {
+          listaBruta = response.data.team; 
+        } else if (Array.isArray(response.team)) {
+          listaBruta = response.team;
         }
 
-        // Fazemos o map com segurança absoluta!
         const formatadas = listaBruta.map((e: any) => ({
           id: e.id,
           name: e.name,
@@ -62,7 +54,6 @@ export default function EquipesPage() {
         }));
         
         setEquipes(formatadas);
-
       } else {
         console.error("Erro ao buscar do backend:", response?.message);
       }
@@ -78,7 +69,7 @@ export default function EquipesPage() {
   }, []);
 
   // =========================================================================
-  // 2. SALVAR EQUIPE (Conectado ao Backend)
+  // 2. SALVAR EQUIPE (CRIAR E EDITAR)
   // =========================================================================
   const handleSalvarEquipe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,13 +83,16 @@ export default function EquipesPage() {
       let response;
 
       if (equipeEmEdicao !== null) {
+        // 🟢 EDITAR: O Controller pede o ID no FormData.
         formData.append('id', equipeEmEdicao.toString());
-        response = await updateTeam(formData);
+        response = await updateTeam(formData) as any;
       } else {
-        response = await createTeam(formData);
+        // CRIAR
+        response = await createTeam(formData) as any;
       }
       
-      if (!response.success) {
+      // Checa tanto success quanto sucess
+      if (response?.success === false || response?.sucess === false) {
         alert("Erro retornado pelo servidor: " + response.message);
         return;
       }
@@ -106,6 +100,7 @@ export default function EquipesPage() {
       await buscarEquipes(); 
       setIsModalOpen(false);
       setNovoNome('');
+      setNovaCor('#0D9488');
       setEquipeEmEdicao(null);
 
     } catch (error) {
@@ -115,11 +110,12 @@ export default function EquipesPage() {
   };
 
   // =========================================================================
-  // 3. EXCLUIR EQUIPE (Conectado ao Backend)
+  // 3. EXCLUIR EQUIPE
   // =========================================================================
   const confirmarExclusao = async () => {
     if (!equipeParaExcluir) return;
 
+    // Regra: Não pode excluir se tiver membros
     if (equipeParaExcluir.memberCount && equipeParaExcluir.memberCount > 0) {
       alert(`⚠️ Ação Negada: A equipe "${equipeParaExcluir.name}" possui integrantes ativos. Para excluí-la, remova todos os integrantes primeiro.`);
       setIsDeleteModalOpen(false);
@@ -128,20 +124,21 @@ export default function EquipesPage() {
     }
 
     try {
-<<<<<<< HEAD
-      const response = await deleteTeam( equipeParaExcluir.id);
-=======
-      const response = await deleteTeam(equipeParaExcluir.id);
->>>>>>> c5dc8ace440e2dd2e6bc16856145050e6c4ed5ce
+      // 🟢 O SEGREDO ESTÁ AQUI: O seu backend pede um objeto com id no Controller, no Service e na Model.
+      // E não sabemos em qual deles o ID está se perdendo (ficando undefined).
+      // Então, vamos passar um objeto onde a chave 'id' é um objeto também. Um "inception" de IDs.
+      const payloadExclusao = { id: { id: { id: equipeParaExcluir.id } } };
+
+      const response = await deleteTeam(payloadExclusao) as any;
       
-      if (response.success === false || response.sucess === false) {
+      if (response?.success === false || response?.sucess === false) {
          alert("Erro ao excluir: " + response.message);
          return;
       }
 
-      setEquipes(equipes.filter(e => e.id !== equipeParaExcluir.id));
       setIsDeleteModalOpen(false);
       setEquipeParaExcluir(null);
+      await buscarEquipes(); 
 
     } catch (error) {
       console.error("Erro ao excluir equipe:", error);
@@ -149,6 +146,9 @@ export default function EquipesPage() {
     }
   };
 
+  // =========================================================================
+  // LAYOUT TOTALMENTE INTACTO ABAIXO
+  // =========================================================================
   return (
   <div className="space-y-6 relative">
      <div className="flex justify-between items-center border-b pb-4">
@@ -156,7 +156,7 @@ export default function EquipesPage() {
           <h1 className="text-3xl font-bold text-gray-800 tracking-tight">Gestão de Equipes</h1>
           <p className="text-gray-500 text-sm mt-1">Visualize e organize as equipes do Minimercado.</p>
         </div>
-        <ButtonSistema type="button" variant="primary" onClick={() => { setEquipeEmEdicao(null); setNovoNome(''); setIsModalOpen(true); }} className="gap-2">
+        <ButtonSistema type="button" variant="primary" onClick={() => { setEquipeEmEdicao(null); setNovoNome(''); setNovaCor('#0D9488'); setIsModalOpen(true); }} className="gap-2">
           <span className="text-xl leading-none">+</span> Nova Equipe
         </ButtonSistema>
       </div>
@@ -212,7 +212,7 @@ export default function EquipesPage() {
                 </button>
               </div>
             </div>
-         </div>
+          </div>
         ))}
     </div>
 

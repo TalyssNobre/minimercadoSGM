@@ -13,7 +13,7 @@ export async function createMember(dataFront) {
             data.name = formatText(data.name);
         }
         const supabase = getSupabaseAdmin();
-        const results = await MemberService.createMember(supabase,{
+        const results = await MemberService.createMember({
         data: data 
         });
         if (results.error) return { success: false, message: results.error };
@@ -27,12 +27,13 @@ export async function createMember(dataFront) {
 export async function updateMember(dataFront) {
     try{
         await authAdmin();
+        const id = dataFront.get("id");
         const data  = Object.fromEntries(dataFront.entries());
         if (data.name) {
             data.name = formatText(data.name);
         }
         const supabase = getSupabaseAdmin();
-        const results = await MemberService.updateMember(supabase,{
+        const results = await MemberService.updateMember({
             data: data
         });
         if (results.error) return { success: false, message: results.error };
@@ -72,7 +73,7 @@ export async function deleteMember(id) {
     try{
         await authAdmin();
         const supabase = getSupabaseAdmin();
-        const results = await MemberService.deleteMember(supabase, id);
+        const results = await MemberService.deleteMember(id);
         if(results.error) { return{sucess: false, message: results.error}
         }
 

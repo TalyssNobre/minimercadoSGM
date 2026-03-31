@@ -1,6 +1,6 @@
 export default class Member{
     constructor({id, name, team_id}){
-        this.member_id = id;
+        this.id = id;
         this.name = name;
         this.team_id = team_id;
 

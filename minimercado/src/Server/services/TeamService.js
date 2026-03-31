@@ -22,17 +22,16 @@ export const createTeam = async ({data}) =>{
     }
 }
 
-export const updateTeam = async ({data}) => {
+export const updateTeam = async ({data, id }) => {
     const supabase = await getSupabaseServer();
-    const teamName = data.name;
 
-    const {data : teamexisting} = await supabase.from("Team").select("*").eq("name", teamName).maybeSingle();
+    const {data : teamexisting} = await supabase.from("Team").select("*").eq("id", id).maybeSingle();
     if(!teamexisting ){
         return{error: "Time inexistente"}
     }
     try{
         const teamEntity  = new Team(data);
-        const results = await TeamModel.updateTeam(teamEntity);
+        const results = await TeamModel.updateTeam(id, teamEntity);
         return {success: true, team : results}
     }catch(error){
         return { error: error.message };

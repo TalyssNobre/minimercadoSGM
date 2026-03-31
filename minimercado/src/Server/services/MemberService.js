@@ -7,12 +7,12 @@ export const createMember = async ({data})=> {
     const supabase = await getSupabaseServer();
 
     const member = data.name;
-    const {data: memberexisting} = await supabase.from("Member").select("*").eq("name", member).single();
+    const {data: memberexisting} = await supabase.from("member").select("*").eq("name", member).single();
     if(memberexisting){
         return{error : "Membro já cadastrado"}
     } 
 
-    const searchTeamById = await getTeamById({ data: { id: data.team_id } });
+    const searchTeamById = await getTeamById(data.team_id);
     if(searchTeamById.error){
         return{error : "Integrante não vinculado a um Time"}
     }
@@ -25,17 +25,16 @@ export const createMember = async ({data})=> {
     }
 }
 
-export const updateMember = async ({data}) => {
+export const updateMember = async (id, {data}) => {
     const supabase = await getSupabaseServer();
 
-    const memberId = data.id;
-    const {data : memberexisting} = await supabase.from("Member").select("*").eq("id", memberId).single();
+    const {data : memberexisting} = await supabase.from("member").select("*").eq("id", id).single();
     if(!memberexisting){
         return{error :  "o Membro não existe"}
     }
     try{
         const memberEntity  = new Member(data)
-        const results = await TeamModel.updateMember(memberEntity);
+        const results = await MemberModel.updateMember(memberEntity);
         return {success: true, member : results}
     }catch(error){
         return { error: error.message };
@@ -52,9 +51,9 @@ export const getAllMember = async() => {
     }
 }
 
-export const getMemberById = async({id}) => {
+export const getMemberById = async(id) => {
     const supabase = await getSupabaseServer();
-    const {data: memberId} = await supabase.from("Member").select("*").eq("id", id).single()
+    const {data: memberId} = await supabase.from("member").select("*").eq("id", id).single()
     if(!memberId){
     return{erro: "Usuario não encontrado"};
     }
@@ -66,11 +65,11 @@ export const getMemberById = async({id}) => {
     }
 }
 
-export const deleteMember = async({data}) => {
+export const deleteMember = async(id) => {
     const supabase = await getSupabaseServer();
 
     const memberId = data.id
-    const {error} = await supabase.from("Member").delete().eq("id", memberId).single();
+    const {error} = await supabase.from("member").delete().eq("id", memberId).single();
     if(error){
         return {success: false, error: error.message}
     }

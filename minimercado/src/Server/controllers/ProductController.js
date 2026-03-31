@@ -50,7 +50,7 @@ export async function updateProduct(dataFront) {
     }
 } 
 
- export async function getAllProducts() {
+ /* export async function getAllProducts() {
     try{
         const results = await ProductService.getAllProducts() 
     if (!results || results.error) {
@@ -60,9 +60,9 @@ export async function updateProduct(dataFront) {
     } catch (error) {
         return { success: false, data: [], message: error.message };
     }
-}
+} */
 
-export async function getProductById(id) {
+/*export async function getProductById(id) {
     try{
         const results = await ProductService.getProductById(id)
          if(results.error) { return{success: false, message: results.error}
@@ -70,9 +70,9 @@ export async function getProductById(id) {
     }catch(error){
         return { success: false, message: "Erro de conexão" };
     }
-}
+} */
 
-export async function deleteProduct (id) {
+/* export async function deleteProduct (id) {
     try{
         await authAdmin();
         const results = await ProductService.deleteProduct(id)
@@ -84,4 +84,4 @@ export async function deleteProduct (id) {
     }catch(error){
         return { success: false, message: "Erro de conexão" };
     }
-}
+} */
