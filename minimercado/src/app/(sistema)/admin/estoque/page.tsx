@@ -2,7 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
-import { supabase } from '@/src/lib/supabase';
+
+// 🟢 1. IMPORTANDO AS FUNÇÕES DO SEU BACKEND
+import { getAllProducts, updateProduct, deleteProduct } from '@/src/Server/controllers/ProductController';
+import { getAllCategory } from '@/src/Server/controllers/CategoryController'; 
 
 interface Produto {
   id: number;
@@ -24,48 +27,67 @@ export default function GerenciarEstoquePage() {
   const inputClasses = "w-full px-3 py-2.5 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] focus:border-[#0D9488] outline-none transition-all text-gray-700";
 
   useEffect(() => {
-    buscarProdutos();
-    buscarCategorias();
+    carregarDados();
   }, []);
 
-  async function buscarCategorias() {
-    const { data } = await supabase.from('Category').select('id, name');
-    if (data) setCategorias(data);
+  // =========================================================================
+  // 1. BUSCAR DADOS (Categorias e depois Produtos)
+  // =========================================================================
+  async function carregarDados() {
+    try {
+      // 🟢 A. Buscar Categorias (com funil de segurança)
+      let listaCategorias: any[] = [];
+      const catResponse = await getAllCategory() as any;
+      
+      if (catResponse?.success) {
+        const catData = catResponse.data || catResponse.category || catResponse;
+        if (Array.isArray(catData)) listaCategorias = catData;
+        else if (catData?.data && Array.isArray(catData.data)) listaCategorias = catData.data;
+        
+        setCategorias(listaCategorias);
+      }
+
+      // 🟢 B. Buscar Produtos (com funil de segurança absoluto)
+      const prodResponse = await getAllProducts() as any;
+      
+      if (prodResponse?.success) {
+        let listaProdutos: any[] = [];
+        const prodData = prodResponse.data || prodResponse.product || prodResponse;
+
+        // O Frontend agora acha a array de qualquer jeito
+        if (Array.isArray(prodData)) {
+          listaProdutos = prodData;
+        } else if (prodData?.product && Array.isArray(prodData.product)) {
+          listaProdutos = prodData.product;
+        } else if (prodData?.data && Array.isArray(prodData.data)) {
+          listaProdutos = prodData.data;
+        }
+
+        // 🟢 C. Cruzamos os dados
+        const produtosFormatados = listaProdutos.map((item: any) => {
+          const categoriaEncontrada = listaCategorias.find(c => c.id === item.category_id);
+          return {
+            id: item.id,
+            name: item.name || 'Produto sem nome',
+            category_id: item.category_id,
+            price: Number(item.price) || 0,
+            stock: Number(item.stock) || 0,
+            category_name: categoriaEncontrada?.name || 'Sem Categoria'
+          };
+        });
+        
+        setProdutos(produtosFormatados);
+      } else {
+        console.error("Erro ao buscar produtos:", prodResponse?.message);
+      }
+    } catch (error) {
+      console.error("Erro fatal ao carregar dados:", error);
+    }
   }
 
-  async function buscarProdutos() {
-    // 🟢 Fazendo o JOIN com a tabela Category para pegar o nome
-    const { data, error } = await supabase
-      .from('Product')
-      .select(`
-        id,
-        name,
-        category_id,
-        price,
-        stock,
-        Category ( name )
-      `)
-      .order('name', { ascending: true }); // Ordena por ordem alfabética
-
-    if (error) {
-      console.error("Erro ao buscar produtos:", error);
-      return;
-    }
-
-    if (data) {
-      // Formatando o resultado para encaixar na nossa Interface Produto
-      const produtosFormatados = data.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        category_id: item.category_id,
-        price: item.price,
-        stock: item.stock,
-        category_name: item.Category?.name || 'Sem Categoria'
-      }));
-      setProdutos(produtosFormatados);
-    }
-  }
-
+  // =========================================================================
+  // 2. SALVAR EDIÇÃO
+  // =========================================================================
   const handleAbrirEdicao = (produto: Produto) => {
     setProdutoEditando({ ...produto });
     setIsEditModalOpen(true);
@@ -76,24 +98,28 @@ export default function GerenciarEstoquePage() {
     if (!produtoEditando) return;
 
     try {
-      // 🟢 Atualiza os dados no Supabase
-      const { error } = await supabase
-        .from('Product')
-        .update({
-          name: produtoEditando.name,
-          category_id: produtoEditando.category_id,
-          price: produtoEditando.price,
-          stock: produtoEditando.stock
-        })
-        .eq('id', produtoEditando.id);
+      const formData = new FormData();
+      
+      // 🟢 CORREÇÃO FRONTEND: String() é imune a nulos e não dá crash!
+      formData.append('id', String(produtoEditando.id));
+      formData.append('name', produtoEditando.name);
+      formData.append('category_id', String(produtoEditando.category_id || ''));
+      formData.append('price', String(produtoEditando.price || 0));
+      formData.append('stock', String(produtoEditando.stock || 0));
+      
+      // 🟢 CORREÇÃO FRONTEND: Enviando a chave "image" vazia pro seu Controller não ficar órfão
+      formData.append('image', ''); 
 
-      if (error) throw error;
+      const response = await updateProduct(formData) as any;
 
-      // Atualiza a tela sem precisar recarregar a página inteira
-      buscarProdutos(); 
+      if (!response?.success && !(response as any)?.sucess) {
+        alert("Erro ao atualizar: " + (response?.message || "Desconhecido"));
+        return;
+      }
+
+      await carregarDados(); 
       setIsEditModalOpen(false);
       setProdutoEditando(null);
-      alert("Produto atualizado com sucesso!");
 
     } catch (error) {
       console.error("Erro ao atualizar:", error);
@@ -101,6 +127,9 @@ export default function GerenciarEstoquePage() {
     }
   };
 
+  // =========================================================================
+  // 3. EXCLUIR PRODUTO
+  // =========================================================================
   const handleAbrirExclusao = (produto: Produto) => {
     setProdutoParaExcluir(produto);
     setIsDeleteModalOpen(true);
@@ -110,16 +139,15 @@ export default function GerenciarEstoquePage() {
     if (!produtoParaExcluir) return;
 
     try {
-      // 🟢 Deleta o produto no Supabase usando o ID
-      const { error } = await supabase
-        .from('Product')
-        .delete()
-        .eq('id', produtoParaExcluir.id);
+      // 🟢 Exclusão seguindo o padrão ID direto
+      const response = await deleteProduct(produtoParaExcluir.id) as any;
 
-      if (error) throw error;
+      if (response?.success === false || (response as any)?.sucess === false) {
+        alert("Erro ao excluir: " + response?.message);
+        return;
+      }
 
-      // Remove da tela visualmente
-      setProdutos(produtos.filter(p => p.id !== produtoParaExcluir.id));
+      await carregarDados();
       setIsDeleteModalOpen(false);
       setProdutoParaExcluir(null);
 
@@ -129,10 +157,12 @@ export default function GerenciarEstoquePage() {
     }
   };
 
+  // =========================================================================
+  // LAYOUT INTACTO ABAIXO
+  // =========================================================================
   return (
     <div className="max-w-6xl mx-auto py-6 relative">
       
-      {/* CABEÇALHO DA PÁGINA */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800 tracking-tight">
           Gerenciamento de Estoque
@@ -145,7 +175,6 @@ export default function GerenciarEstoquePage() {
         </Link>
       </div>
 
-      {/* CONTAINER DA TABELA */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -166,7 +195,6 @@ export default function GerenciarEstoquePage() {
                   
                   <td className="py-4 px-6 text-sm text-gray-800 font-medium">{produto.name}</td>
                   
-
                   <td className="py-4 px-6 text-sm text-gray-600">
                     {produto.category_name}
                   </td>
@@ -181,7 +209,6 @@ export default function GerenciarEstoquePage() {
                     </span>
                   </td>
                   
-                  {/* BOTÕES DE AÇÃO LADO A LADO */}
                   <td className="py-4 px-6 text-center">
                     <div className="flex items-center justify-center gap-2">
                       <button 
@@ -216,7 +243,6 @@ export default function GerenciarEstoquePage() {
             
           </table>
           
-          {/* ESTADO VAZIO */}
           {produtos.length === 0 && (
             <div className="p-12 text-center flex flex-col items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 text-gray-300 mb-4">
@@ -229,7 +255,6 @@ export default function GerenciarEstoquePage() {
         </div>
       </div>
 
-      {/* MODAL DE EDIÇÃO */}
       {isEditModalOpen && produtoEditando && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
@@ -242,7 +267,7 @@ export default function GerenciarEstoquePage() {
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Nome do Produto</label>
                 <input 
                   type="text" required 
-                  value={produtoEditando.name} 
+                  value={produtoEditando.name || ''} 
                   onChange={(e) => setProdutoEditando({...produtoEditando, name: e.target.value})} 
                   className={inputClasses} 
                 />
@@ -252,7 +277,7 @@ export default function GerenciarEstoquePage() {
               <label className="block text-sm font-semibold text-gray-700 mb-1">Categoria</label>
               <select 
                 required 
-                value={produtoEditando.category_id} 
+                value={produtoEditando.category_id || ''} 
                 onChange={(e) => setProdutoEditando({...produtoEditando, category_id: Number(e.target.value)})} 
                 className={inputClasses}
                 >
@@ -271,7 +296,7 @@ export default function GerenciarEstoquePage() {
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">R$</span>
                   <input 
                     type="number" step="0.01" min="0" required 
-                    value={produtoEditando.price} 
+                    value={produtoEditando.price ?? ''} 
                     onChange={(e) => { 
                       if(Number(e.target.value) >= 0 || e.target.value === '') {
                         setProdutoEditando({...produtoEditando, price: Number(e.target.value)}) 
@@ -286,7 +311,7 @@ export default function GerenciarEstoquePage() {
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Estoque Atual</label>
                 <input 
                   type="number" min="0" required 
-                  value={produtoEditando.stock} 
+                  value={produtoEditando.stock ?? ''} 
                   onChange={(e) => { 
                     if(Number(e.target.value) >= 0 || e.target.value === '') {
                       setProdutoEditando({...produtoEditando, stock: Number(e.target.value)}) 
@@ -304,10 +329,6 @@ export default function GerenciarEstoquePage() {
           </div>
         </div>
       )}
-
-
-      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
-
 
       {isDeleteModalOpen && produtoParaExcluir && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">

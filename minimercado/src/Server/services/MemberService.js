@@ -25,16 +25,16 @@ export const createMember = async ({data})=> {
     }
 }
 
-export const updateMember = async (id, {data}) => {
+export const updateMember = async (id, data) => {
     const supabase = await getSupabaseServer();
-
-    const {data : memberexisting} = await supabase.from("member").select("*").eq("id", id).single();
+ console.log("Chegando", id, data)
+    const {data : memberexisting} = await supabase.from("member").select("*").eq("id", id).maybeSingle();
     if(!memberexisting){
         return{error :  "o Membro não existe"}
     }
     try{
         const memberEntity  = new Member(data)
-        const results = await MemberModel.updateMember(memberEntity);
+        const results = await MemberModel.updateMember(id, memberEntity);
         return {success: true, member : results}
     }catch(error){
         return { error: error.message };
@@ -68,8 +68,7 @@ export const getMemberById = async(id) => {
 export const deleteMember = async(id) => {
     const supabase = await getSupabaseServer();
 
-    const memberId = data.id
-    const {error} = await supabase.from("member").delete().eq("id", memberId).single();
+    const {error} = await supabase.from("member").delete().eq("id", id).single();
     if(error){
         return {success: false, error: error.message}
     }

@@ -3,7 +3,7 @@ import { authAdmin } from "@/src/Server/utils/auth";
 import { formatText } from "@/src/Server/utils/formatter";
 import * as MemberService from "@/src/Server/services/MemberService"
 import { revalidatePath } from "next/cache";
-import { getSupabaseServer, getSupabaseAdmin } from "@/src/lib/supabaseServer";
+import { getSupabaseServer} from "@/src/lib/supabaseServer";
 
 export async function createMember(dataFront) {
     try{
@@ -12,7 +12,7 @@ export async function createMember(dataFront) {
         if (data.name) {
             data.name = formatText(data.name);
         }
-        const supabase = getSupabaseAdmin();
+      
         const results = await MemberService.createMember({
         data: data 
         });
@@ -32,10 +32,10 @@ export async function updateMember(dataFront) {
         if (data.name) {
             data.name = formatText(data.name);
         }
-        const supabase = getSupabaseAdmin();
-        const results = await MemberService.updateMember({
-            data: data
-        });
+
+        const results = await MemberService.updateMember(
+            id, data
+        );
         if (results.error) return { success: false, message: results.error };
         revalidatePath("/membro");
         return { success: true, message: "Membro cadastrado!" };
@@ -72,7 +72,7 @@ export async function getMemberById(id) {
 export async function deleteMember(id) {
     try{
         await authAdmin();
-        const supabase = getSupabaseAdmin();
+
         const results = await MemberService.deleteMember(id);
         if(results.error) { return{sucess: false, message: results.error}
         }
