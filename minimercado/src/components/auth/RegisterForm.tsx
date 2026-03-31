@@ -12,7 +12,7 @@ export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
-  const [perfil, setPerfil] = useState("OPERADOR");
+  const [perfil, setPerfil] = useState("Operador");
   
   const [isLoading, setIsLoading] = useState(false);
   const [mensagem, setMensagem] = useState({ tipo: "", texto: "" });
@@ -33,8 +33,8 @@ export function RegisterForm() {
 
       const resposta = await registerUserAction({ data: dadosUsuario });
 
-      if (resposta.erro) {
-        setMensagem({ tipo: "erro", texto: resposta.erro });
+      if (resposta.success) {
+        setMensagem({ tipo: "erro", texto : resposta.success });
       } else {
         setMensagem({ tipo: "sucesso", texto: "Usuário cadastrado com sucesso!" });
         setNome(""); setEmail(""); setSenha(""); setConfirmarSenha("");
@@ -81,7 +81,7 @@ export function RegisterForm() {
       <div className="flex flex-col gap-1.5">
         <label htmlFor="perfil" className="text-sm font-bold text-gray-700">Perfil de Acesso</label>
         <select id="perfil" value={perfil} onChange={(e) => setPerfil(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#0D9488] outline-none transition-all cursor-pointer">
-          <option value="OPERADOR">Operador</option>
+          <option value="Operador">Operador</option>
           <option value="Admin">Administrador</option>
         </select>
       </div>

@@ -1,11 +1,12 @@
 import { formatText } from "../utils/formatter";
 
 export default class User {
-    constructor({ id, name, email, profile }) {
+    constructor({ id, name, email, profile, user_id}) {
         this.id = id; 
         this.name = formatText(name); 
         this.email = email?.toLowerCase().trim();
-        this.profile = profile || 'operador';
+        this.profile = profile || 'Operador';
+        this.user_id = user_id;
 
         this.validate();
     }
@@ -18,7 +19,7 @@ export default class User {
             throw new Error("E-mail inválido.");
         }
         // Garante que só existam esses dois cargos no sistema
-        const validProfiles = ['admin', 'operador'];
+        const validProfiles = ['Admin', 'Operador'];
         if (!validProfiles.includes(this.profile)) {
             throw new Error("Perfil de acesso inválido.");
         }

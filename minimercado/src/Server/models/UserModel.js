@@ -1,21 +1,16 @@
 import { getSupabaseServer } from "@/src/lib/supabaseServer";
 
-/**
- * Cria o perfil do usuário na tabela 'User' após o Auth disparar.
- * @param {User} user - Instância da UserEntity
- */
-export const createUser = async (user) => {
+export const createUser = async (userEntity) => {
     const supabase = await getSupabaseServer();
 
     const { data, error } = await supabase
         .from("User")
         .insert([
             {
-                id: user.id, // O ID que veio do supabase.auth
+                user_id: user.id,
                 name: user.name,
                 email: user.email,
                 profile: user.profile,
-                created_at: new Date()
             }
         ])
         .select()

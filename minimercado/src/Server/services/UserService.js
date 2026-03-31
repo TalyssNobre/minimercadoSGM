@@ -1,35 +1,32 @@
-import { getSupabaseServer } from '@/src/lib/supabaseServer';
+import { getSupabaseServer, getSupabaseAdmin } from '@/src/lib/supabaseServer';
 import User from "../entitys/UserEntity";
 import * as UserModel from "../models/UserModel";
 
 
 
+
 export const createUser = async ({data}) => {
-    const supabase = await getSupabaseServer();
-    const emailexisting = data.email.toLowerCase().trim();
-    
-    const {data: userexisitng} = await supabase.from("User").select("*").eq("email", emailexisting).single();
-     if (userexisitng) {
-        return { erro: "E-mail já cadastrado" };
-    }
     try {
-        const { data: authData, error: authError } = await supabase.auth.signUp({email: emailexisting,password: data.senha || data.password,options: {
-                data: {name: data.nome, profile: data.profile || 'Operador'} }});
-        if (authError) {
-            return { erro: "Erro na autenticação: " + authError.message };
-        }
         const userEntity = new User({
-            id: authData.user.id,
-            email: email,
-            profile: data.profile || 'Operador'
+            id: 'validacao-apenas', 
+            name: data.nome,
+            email: data.email,
+            profile: data.profile
         });
 
-        const results = await UserModel.createUser(userEntity);
-        return { sucesso: true, user: results};
+        const supabase = await getSupabaseAdmin();
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: data.email,
+            password: data.senha,
+        });
 
+        if (authError){ throw new Error(authError.message);}
+        userEntity.id = authData.user.id;
+        await UserModel.createUser(userEntity);
+
+        return { success: true };
     } catch (error) {
-        console.error("Erro fatal no servidor:", error);
-        return { erro: "Erro interno no servidor." };
+        return { error: error.message };
     }
 }
 

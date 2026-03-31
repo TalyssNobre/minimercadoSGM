@@ -30,7 +30,7 @@ export default function FormularioProduto() {
   const [estoque, setEstoque] = useState('');
   
   // States de Imagem
-  const [imagem, setImagem] = useState<File | null>(null);
+  const [image, setImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
   // States de Controle
@@ -74,14 +74,14 @@ export default function FormularioProduto() {
     const file = e.target.files?.[0];
     if (file) {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
-      setImagem(file);
+      setImage(file);
       setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
   const handleRemoveImage = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setImagem(null);
+    setImage(null);
     setPreviewUrl(null);
   };
 
@@ -121,12 +121,12 @@ export default function FormularioProduto() {
       // ✅ Criando FormData para enviar ao Server Action / Controller
       const formData = new FormData();
       formData.append('name', nome);
-      formData.append('category', categoriaId);
+      formData.append('category_id', categoriaId);
       formData.append('price', preco);
       formData.append('stock', estoque || '0');
       
-      if (imagem) {
-        formData.append('imagem', imagem);
+      if (image) {
+        formData.append('image', image);
       }
 
       const response = await createProduct(formData) as ControllerResponse;

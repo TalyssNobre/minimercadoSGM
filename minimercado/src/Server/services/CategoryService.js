@@ -39,11 +39,11 @@ export const getAllCategory = async() => {
     }
 }
 
-export const getCategoryById = async ({data}) => {
+export const getCategoryById = async ({id}) => {
     const supabase = await getSupabaseServer();
-    const {data : categoryId} =  await supabase.from("Category"). select("id", id).single();
+    const {data : categoryId} =  await supabase.from("Category"). select("*").eq("id", id).single();
     if(!categoryId){
-        return{ erro : "Categoria Inexistente"}
+        return{ error : "Categoria Inexistente"}
     }
     try{
         const results = await CategoryModel.getCategoryById(id);

@@ -5,10 +5,6 @@ import {getSupabaseAdmin} from "@/src/lib/supabaseServer"
 import * as UserService from "@/src/Server/services/UserService";
 import { revalidatePath } from "next/cache";
 
-/**
- * Action para criar um novo usuário (Admin ou Operador)
- * REGRA: Apenas um Admin logado pode executar isso.
- */
 
 export async function loginController({ email, password }) {
     try {
@@ -56,39 +52,30 @@ export async function logoutController() {
     }
 }
 
-export async function registerUserAction(formData) {
+export async function registerUserAction(dataFront) { // Mudei o nome para payload pra ficar claro
     try {
-        // 1. SEGURANÇA: Se não for Admin, o authorizeAdmin joga o erro pro catch
         await authAdmin();
 
-        // 2. EXTRAÇÃO: Pega os dados do formulário
-        const data = Object.fromEntries(formData.entries());
-        
-        // 3. EXECUÇÃO: Chama o Service (que vai usar a Entity e o Model)
+        const data = dataFront.data; 
         const result = await UserService.createUser({ data: data });
 
-        if (result.error) {
-            return { success: false, message: result.error };
+        const erroReal = result.error || result.erro;
+        if (erroReal) {
+            return { success: false, message: erroReal };
         }
 
-        revalidatePath("/admin/users"); // Atualiza a lista de usuários no front
+        revalidatePath("/admin/users");
         return { success: true, message: "Usuário criado com sucesso!" };
 
     } catch (error) {
-        // Captura erros de validação da Entity ou falta de permissão do Admin
         return { success: false, message: error.message };
     }
 }
 
-/**
- * Action para deletar um usuário
- */
-export async function deleteUserAction(id) {
+export async function deleteUserAction({id}) {
     try {
-        await authAdmin(); // Trava de segurança
-        
-        const result = await UserService.deleteUser(id);
-        
+        await authAdmin(); 
+        const result = await UserService.deleteUser(id); 
         revalidatePath("/admin/users");
         return { success: true, message: "Usuário removido do sistema." };
     } catch (error) {

@@ -50,13 +50,13 @@ export async function getAllTeams() {
     if (!results || results.error) {
             return { success: false, data: [], message: results.error };
         }
-        return { success: true, data: results };
+        return { success: true, data: results.team };
     } catch (error) {
         return { success: false, data: [], message: error.message };
     }
 }
 
-export async function getTeamById(id) {
+export async function getTeamById({id}) {
     try{
         const results = await TeamService.getTeamById(id)
         if(results.error) return{success : false, message: results.error};
@@ -66,7 +66,7 @@ export async function getTeamById(id) {
     }   
 }
 
-export async function deleteTeam(id) {
+export async function deleteTeam({id}) {
     try{
         await authAdmin();
         const results = await TeamService.deleteTeam(id)
