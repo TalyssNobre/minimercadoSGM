@@ -61,7 +61,7 @@ try{
     if(!productexisting){
         return{error :  "o Membro não existe"}
     }
-    let imageUrl = productCurrent.image;
+    let imageUrl = productexisting.image;
     if (imagem && imagem.size > 0) {
             const fileExt = imagem.name.split('.').pop();
             const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -89,5 +89,39 @@ try{
         return { error: error.message };
     }
 }
+export const getAllProducts = async()=> {
+    try{
+        const results = await ProductModel.getAllProducts();
+        return{success: true, product: results}
+    }catch(error){
+        return{error: error.message}
+    }
+}
 
+export const getProductById = async(id) => {
+    const supabase =  getSupabaseServer();
+    const {data : productexisting, error : searchError} = await supabase.from("Product").select("*").eq("name", id).maybeSingle();
+        if(!productexisting){
+            return{ error : "Produto não encontrado"}
+        }
+        try{
+            const results = await ProductModel.getProductById(id);
+            return{success : true, product : results}
+        }catch(error){
+            return{error: error.message}
+        }
+}
 
+export const deleteProduct = async(id) =>{
+    const supabase = await getSupabaseServer();
+     const {data : productexisting, error : searchError} = await supabase.from("Product").select("*").eq("id", id).maybeSingle();
+        if(!productexisting){
+            return{ error : "Produto não encontrado"}
+        }
+        try{
+            const results = await ProductModel.deleteProduct(id);
+            return{success : true, product : results}
+        }catch(error){
+            return{error : error.message}
+        }
+}

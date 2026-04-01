@@ -1,4 +1,4 @@
-/*'use client';
+'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
@@ -361,4 +361,4 @@ export default function GerenciarEstoquePage() {
 
     </div>
   );
-}*/
+}

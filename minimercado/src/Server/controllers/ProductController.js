@@ -50,7 +50,7 @@ export async function updateProduct(dataFront) {
     }
 } 
 
-/*export async function getAllProducts() {
+export async function getAllProducts() {
     try{
         const results = await ProductService.getAllProducts() 
     if (!results || results.error) {
@@ -70,7 +70,7 @@ export async function getProductById(id) {
     }catch(error){
         return { success: false, message: "Erro de conexão" };
     }
-} 
+}
 
  export async function deleteProduct (id) {
     try{
@@ -84,4 +84,4 @@ export async function getProductById(id) {
     }catch(error){
         return { success: false, message: "Erro de conexão" };
     }
-} */
+} 
