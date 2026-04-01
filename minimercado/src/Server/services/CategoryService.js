@@ -6,8 +6,8 @@ import * as CategoryModel from "../models/CategoryModel"
 export const createCategory = async ({data}) => {
     const supabase = await getSupabaseServer();
     
-    const categoryexisting = data.name.toLowerCase();
-    const {data: categorynew} = await supabase.from("Category").select("*").eq("name", categoryexisting).single();
+    const Name = data.name;
+    const {data: categorynew} = await supabase.from("Category").select("*").eq("name", Name).maybeSingle();
     if(categorynew){
         return{erro : "Categoria já existente"}
     }
@@ -19,15 +19,6 @@ export const createCategory = async ({data}) => {
         return { error: error.message };
     }
 }
-
-/*export const getAllCategory = async () => {
-    try{
-        const results = await CategoryModel.getAllCategory();
-        return{success : true, category : results.data}
-    } catch(error){
-        return{error: error.message}
-    }  
-}*/
 
 export const getAllCategory = async() => {
     const supabase = await getSupabaseServer();

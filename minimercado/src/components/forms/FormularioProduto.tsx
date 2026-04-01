@@ -89,24 +89,30 @@ export default function FormularioProduto() {
   // 3. SALVAR NOVA CATEGORIA
   // =========================================================================
   const handleSalvarCategoria = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!novaCategoriaNome.trim()) return;
+  e.preventDefault();
+  if (!novaCategoriaNome.trim()) return;
 
-    try {
-      const response = await createCategory({ name: novaCategoriaNome }) as ControllerResponse;
+  try {
+    // 1. Criamos o FormData em vez de um objeto { name: ... }
+    const formData = new FormData();
+    formData.append('name', novaCategoriaNome);
 
-      if (response.success && response.data) {
-        setCategorias(prev => [...prev, response.data]);
-        setCategoriaId(response.data.id.toString());
-        setNovaCategoriaNome('');
-        setIsModalCategoriaOpen(false);
-      } else {
-        alert(response.message || "Erro ao criar categoria");
-      }
-    } catch (error) {
-      alert("Erro de conexão ao criar categoria.");
+    // 2. Enviamos o formData para o controller
+    const response = await createCategory(formData) as ControllerResponse;
+
+    if (response.success && response.data) {
+      setCategorias(prev => [...prev, response.data]);
+      setCategoriaId(response.data.id.toString());
+      setNovaCategoriaNome('');
+      setIsModalCategoriaOpen(false);
+    } else {
+      alert(response.message || "Erro ao criar categoria");
     }
-  };
+  } catch (error) {
+    console.error("Erro ao criar categoria:", error);
+    alert("Erro de conexão ao criar categoria.");
+  }
+};
 
   // =========================================================================
   // 4. SALVAR PRODUTO (USANDO FORMDATA PARA O CONTROLLER)

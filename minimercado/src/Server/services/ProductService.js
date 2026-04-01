@@ -77,8 +77,6 @@ try{
                 .getPublicUrl(fileName);
 
             imageUrl = publicUrlData.publicUrl;
-            
-            // Opcional: Aqui você poderia deletar a imagem ANTIGA do Storage para não encher o banco
         }
 
         // 3. Valida os novos dados com a Entity

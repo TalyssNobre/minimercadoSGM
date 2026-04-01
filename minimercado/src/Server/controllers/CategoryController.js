@@ -11,12 +11,10 @@ import { formatText } from "@/src/Server/utils/formatter";
         if (data.name) {
             data.name = formatText(data.name);
         }
-        const results = await categoryService.createCategory({
-        data: data
-    });
+        const results = await categoryService.createCategory({data: data});
     if (results.error) return { success: false, message: results.error };
             revalidatePath("/categoria");
-            return { success: true, message: "Categoria cadastrada!" };
+            return { success: true, data: results.category, message: "Categoria cadastrada!" };
     }catch(error){
         return { success: false, message: error.message };
     }
