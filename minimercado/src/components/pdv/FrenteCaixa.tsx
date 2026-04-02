@@ -6,6 +6,8 @@ import { getAllTeams } from '@/src/Server/controllers/TeamController';
 import { getAllMember } from '@/src/Server/controllers/MemberController';
 import { getAllCategory } from '@/src/Server/controllers/CategoryController';
 import { getAllProducts } from '@/src/Server/controllers/ProductController';
+import { createSale } from '@/src/Server/controllers/SaleController';
+import { getLoggedUserController } from '@/src/Server/controllers/UserController';
 
 // Tipagens
 interface Produto {
@@ -28,9 +30,6 @@ interface Membro {
 }
 
 export default function FrenteCaixa() {
-  // =========================================================================
-  // ESTADOS
-  // =========================================================================
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [membros, setMembros] = useState<Membro[]>([]);
   const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -39,7 +38,6 @@ export default function FrenteCaixa() {
   const [selectedTeam, setSelectedTeam] = useState<Equipe | null>(null);
   const [selectedMember, setSelectedMember] = useState<Membro | null>(null);
 
-  // Estados para controlar a abertura dos dropdowns customizados
   const [isTeamDropdownOpen, setIsTeamDropdownOpen] = useState(false);
   const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
 
@@ -48,14 +46,11 @@ export default function FrenteCaixa() {
 
   const [cart, setCart] = useState<{ product: Produto; quantity: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFinalizando, setIsFinalizando] = useState(false);
 
-  // Refs para fechar ao clicar fora
   const teamRef = useRef<HTMLDivElement>(null);
   const memberRef = useRef<HTMLDivElement>(null);
 
-  // =========================================================================
-  // 1. CARREGAR DADOS INICIAIS
-  // =========================================================================
   useEffect(() => {
     async function fetchDados() {
       setIsLoading(true);
@@ -74,13 +69,8 @@ export default function FrenteCaixa() {
           listaCat.forEach((c: any) => catMap.set(c.id, c.name));
         }
 
-        if (teamsResp?.success) {
-          setEquipes(teamsResp.data || teamsResp.team || []);
-        }
-
-        if (membersResp?.success) {
-          setMembros(membersResp.data || membersResp.member || []);
-        }
+        if (teamsResp?.success) setEquipes(teamsResp.data || teamsResp.team || []);
+        if (membersResp?.success) setMembros(membersResp.data || membersResp.member || []);
 
         if (productsResp?.success) {
           const listaProdutos = productsResp.data || productsResp.product || [];
@@ -101,7 +91,6 @@ export default function FrenteCaixa() {
     fetchDados();
   }, []);
 
-  // Fechar dropdowns ao clicar fora
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (teamRef.current && !teamRef.current.contains(event.target as Node)) setIsTeamDropdownOpen(false);
@@ -111,9 +100,6 @@ export default function FrenteCaixa() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // =========================================================================
-  // LÓGICA DE FILTRAGEM
-  // =========================================================================
   const membrosFiltrados = useMemo(() => {
     if (!selectedTeam) return [];
     return membros.filter(m => m.team_id === selectedTeam.id);
@@ -131,9 +117,6 @@ export default function FrenteCaixa() {
     return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   }, [cart]);
 
-  // =========================================================================
-  // FUNÇÕES DO CARRINHO
-  // =========================================================================
   const addToCart = (produto: Produto) => {
     setCart(prev => {
       const existing = prev.find(item => item.product.id === produto.id);
@@ -156,13 +139,54 @@ export default function FrenteCaixa() {
 
   const removeFromCart = (productId: number) => setCart(prev => prev.filter(item => item.product.id !== productId));
 
+  // =========================================================================
+  // 🟢 FUNÇÃO DE FINALIZAÇÃO (ESTRITAMENTE IGUAL AO SEU BACKEND)
+  // =========================================================================
   const handleFinalizarVenda = async (statusVenda: 'PAGO' | 'PENDENTE') => {
     if (cart.length === 0) return alert("O carrinho está vazio!");
     if (!selectedMember) return alert("Selecione um cliente para finalizar!");
+    if (isFinalizando) return;
 
-    console.log("🛒 Venda:", { member_id: selectedMember.id, total_value: cartTotal, status: statusVenda });
-    alert(`Venda registrada como ${statusVenda}`);
-    setCart([]);
+    setIsFinalizando(true);
+
+    try {
+      const userResp = await getLoggedUserController();
+      if (!userResp.success || !userResp.user) throw new Error("Vendedor não identificado.");
+
+      // O seu Back (SaleController) usa Object.fromEntries(dataFront.entries())
+      // Portanto, precisamos enviar um FormData.
+      const formData = new FormData();
+      formData.append('member_id', selectedMember.id.toString());
+     formData.append('user_id', (userResp.user as any)?.id?.toString() || '');
+      
+      // O seu Back (SaleEntity) valida: status === 'Pago'
+      formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
+
+      // O seu Back (SaleEntity) calcula o total usando a chave 'unit_price'
+      const itensCarrinho = cart.map(item => ({
+        product_id: item.product.id,
+        quantity: item.quantity,
+        unit_price: item.product.price
+      }));
+
+      // O seu Back (SaleController) faz JSON.parse(data.cart)
+      formData.append('cart', JSON.stringify(itensCarrinho));
+
+      const resposta = await createSale(formData) as any;
+
+      if (resposta.success) {
+        alert("Venda realizada com sucesso!");
+        setCart([]);
+        setSelectedMember(null);
+        setSelectedTeam(null);
+      } else {
+        alert("Erro: " + (resposta.message || resposta.error));
+      }
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setIsFinalizando(false);
+    }
   };
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -173,12 +197,10 @@ export default function FrenteCaixa() {
       {/* LADO ESQUERDO: SELEÇÃO E PRODUTOS */}
       <div className="flex-1 space-y-6">
         
-        {/* SELEÇÃO DE CLIENTE (COM SCROLL) */}
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
           <h2 className="text-sm font-semibold text-gray-700 mb-3">Seleção de Cliente</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
-            {/* Dropdown Equipe */}
             <div className="relative" ref={teamRef}>
               <button 
                 type="button"
@@ -204,7 +226,6 @@ export default function FrenteCaixa() {
               )}
             </div>
 
-            {/* Dropdown Integrante */}
             <div className="relative" ref={memberRef}>
               <button 
                 type="button"
@@ -238,7 +259,6 @@ export default function FrenteCaixa() {
           </div>
         </div>
 
-        {/* LISTA DE PRODUTOS */}
         <div>
           <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="relative w-full md:w-64">
@@ -266,10 +286,6 @@ export default function FrenteCaixa() {
 
           {isLoading ? (
             <div className="text-center py-10 text-gray-500 animate-pulse font-medium">Carregando estoque...</div>
-          ) : produtosFiltrados.length === 0 ? (
-            <div className="bg-white rounded-xl p-12 text-center text-gray-500 border border-gray-200 border-dashed">
-              Nenhum produto encontrado.
-            </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {produtosFiltrados.map(produto => (
@@ -336,8 +352,20 @@ export default function FrenteCaixa() {
               <span className="text-xl font-black text-[#0D9488]">{formatCurrency(cartTotal)}</span>
             </div>
             <div className="space-y-3">
-              <button onClick={() => handleFinalizarVenda('PAGO')} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl text-sm shadow-md active:scale-95 transition-all">PAGO NO ATO</button>
-              <button onClick={() => handleFinalizarVenda('PENDENTE')} className="w-full bg-[#B89822] hover:bg-[#9B7F1B] text-white font-bold py-3.5 rounded-xl text-sm shadow-md active:scale-95 transition-all">PENDENTE / FIADO</button>
+              <button 
+                disabled={isFinalizando}
+                onClick={() => handleFinalizarVenda('PAGO')} 
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl text-sm shadow-md active:scale-95 transition-all disabled:opacity-50"
+              >
+                {isFinalizando ? 'PROCESSANDO...' : 'PAGO NO ATO'}
+              </button>
+              <button 
+                disabled={isFinalizando}
+                onClick={() => handleFinalizarVenda('PENDENTE')} 
+                className="w-full bg-[#B89822] hover:bg-[#9B7F1B] text-white font-bold py-3.5 rounded-xl text-sm shadow-md active:scale-95 transition-all disabled:opacity-50"
+              >
+                {isFinalizando ? 'PROCESSANDO...' : 'PENDENTE / FIADO'}
+              </button>
             </div>
           </div>
         </div>

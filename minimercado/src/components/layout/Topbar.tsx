@@ -16,40 +16,36 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
   const [cargoUsuario, setCargoUsuario] = useState<string>(tipoUsuario);
 
   const [showTopbar, setShowTopbar] = useState(true);
-  
-  // 🟢 CORREÇÃO 1: Usando useRef para o React não se perder no scroll!
   const lastScrollY = useRef(0);
 
-  // 🟢 EFEITO DO SCROLL BLINDADO
   useEffect(() => {
     const handleScroll = (e: any) => {
-      // Pega o scroll de onde quer que ele esteja vindo (div interna ou janela)
       const currentScrollY = e.target.scrollTop || window.scrollY;
-
       if (currentScrollY === undefined) return;
 
-      // Se desceu mais de 50px, esconde. Se subiu, mostra.
       if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
         setShowTopbar(false); 
       } else {
         setShowTopbar(true);  
       }
-      
-      // Atualiza a anotação silenciosamente
       lastScrollY.current = currentScrollY;
     };
 
-    // O "true" faz ele escutar tudo na tela
     window.addEventListener('scroll', handleScroll, true);
     return () => window.removeEventListener('scroll', handleScroll, true);
-  }, []); // <-- O segredo está aqui: array vazio! O espião é ligado apenas uma vez.
+  }, []);
 
   useEffect(() => {
     async function fetchUser() {
       try {
         const resposta = await getLoggedUserController();
         if (resposta.success && resposta.user) {
-          const primeiroNome = resposta.user.name.split(' ')[0];
+          
+          // 🟢 PROTEÇÃO AQUI: 
+          // Se o nome vier nulo do banco, usamos 'Usuário' como padrão para não dar erro no split.
+          const nomeParaSplit = resposta.user.name || 'Usuário';
+          const primeiroNome = nomeParaSplit.split(' ')[0];
+          
           setNomeUsuario(primeiroNome);
           
           if (resposta.user.profile) {
@@ -86,8 +82,6 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
 
   return (
     <nav 
-      // 🟢 CORREÇÃO 2: Trocamos o Translate por Margem Negativa (-mt-20). 
-      // Isso faz a barra sumir E puxa o sistema inteiro pra cima, dando mais espaço!
       className={`w-full bg-verde-principal h-20 text-white shadow-lg px-6 flex justify-between items-center sticky top-0 z-[50] transition-all duration-300 ease-in-out 
       ${showTopbar ? 'mt-0' : '-mt-20'}`}
     >

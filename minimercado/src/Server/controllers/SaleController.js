@@ -1,16 +1,14 @@
 'use server'
-import {getSupabaseAdmin, getSupabaseAdmin} from "../../lib/supabaseServer"
-import {AuthAdmin} from "../utils/auth"
 import * as SaleService from "../services/SaleService"
 import { revalidatePath } from "next/cache";
 
 export const createSale = async(dataFront) =>{
     try{
-        await AuthAdmin();
+
         const data = Object.fromEntries(dataFront.entries());
 
         const itensCarrinho = JSON.parse(data.cart);
-
+        console.log("chegando", data,itensCarrinho);
         const results = await SaleService.createSale({
             data: data,
             itensCarrinho: itensCarrinho

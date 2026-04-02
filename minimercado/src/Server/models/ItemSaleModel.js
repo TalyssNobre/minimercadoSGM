@@ -1,4 +1,4 @@
-import { getSupabaseServer } from '@/src/utils/supabase';
+import { getSupabaseServer } from "../../lib/supabaseServer"
 
 export const createItems = async (itemsArray) => {
     const supabase = await getSupabaseServer();
