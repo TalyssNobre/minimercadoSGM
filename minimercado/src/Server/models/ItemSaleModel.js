@@ -1,11 +1,11 @@
 import { getSupabaseServer } from "../../lib/supabaseServer"
 
-export const createItems = async (itemsArray) => {
+export const createItems = async (itensComVinculo) => {
     const supabase = await getSupabaseServer();
 
     const { data, error } = await supabase
         .from("Item_sale") 
-        .insert(itemsArray);
+        .insert(itensComVinculo);
 
     if (error) {
         console.error("Erro no Supabase (Item_sale):", error.message);

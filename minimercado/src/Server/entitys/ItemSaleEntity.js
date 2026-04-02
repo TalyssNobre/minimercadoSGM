@@ -1,5 +1,5 @@
 export default class ItemSale {
-    constructor(id_item_sale, quantity, unit_price, product_id,sale_id) {
+    constructor({id_item_sale, quantity, unit_price, product_id,sale_id}) {
         this.id_item_sale = id_item_sale;
         this.quantity = Number(quantity);
         this.unit_price = Number(unit_price);

@@ -1,23 +1,24 @@
 export default class Sale {
-    constructor(id, date, total_value, payment_date,status,user_id,member_id, items) {
+    constructor({id, date, total_value, payment_date,status,user_id,member_id}) {
+        console.log("--- DEBUG ENTITY ---");
+        console.log("Dados recebidos no constructor:",id, date, total_value, payment_date,status,user_id,member_id,);
+        
         this.id = id;
         this.date = date;
-        this.total_value = this.calculateTotal();
         this.payment_date = payment_date;
         this.status = (status === 'Pago' || status === true)
         this.user_id = user_id;
         this.member_id = member_id;
 
-        this.items = items;
-
+        this.items = items || [];
+        this.total_value = this.calculateTotal();
     
         this.validate();
     }
-
      calculateTotal = () => {
-        if(!this.items || this.items == 0){
+        if(!this.items ||this.items == 0){
         throw new Error("É necessário pelo menos um item no carrinho");
-    }
+    }  
 
         return this.items.reduce((acc, produto) => {
             return acc + (produto.quantity * produto.unit_price);

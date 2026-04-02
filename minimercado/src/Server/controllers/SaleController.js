@@ -6,7 +6,7 @@ export const createSale = async(dataFront) =>{
     try{
 
         const data = Object.fromEntries(dataFront.entries());
-
+        console.log("Oq esta vindo do front: ", data)
         const itensCarrinho = JSON.parse(data.cart);
         console.log("chegando", data,itensCarrinho);
         const results = await SaleService.createSale({
