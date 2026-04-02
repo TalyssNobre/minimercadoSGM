@@ -75,7 +75,7 @@ export async function getTeamById(id) {
     }   
 }
 
-export async function deleteTeam({id}) {
+export async function deleteTeam(id) {
     try{
         await authAdmin();
         const results = await TeamService.deleteTeam(id)

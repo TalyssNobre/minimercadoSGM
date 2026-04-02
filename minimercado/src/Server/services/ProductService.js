@@ -7,7 +7,7 @@ export const createProduct = async({data, image}) => {
 
         const supabase = await getSupabaseServer();
         const product = new Product(data)
-        const {data : productexisting, error : searchError} = await supabase.from("Product").select("*").eq("name", data.name).single();
+        const productexisting = await ProductModel.findByName(data.name)
         if(productexisting){
             return{ error : "Produto já cadastrado"}
         }
@@ -56,10 +56,9 @@ export const createProduct = async({data, image}) => {
 export const updateProduct = async ({id, data, imagem }) => {
     const supabase = await getSupabaseServer();
 try{
-    const memberId = data.id;
-    const {data : productexisting} = await supabase.from("Product").select("*").eq("id", memberId).single();
+    const productexisting = await ProductModel.getProductById(data.id);
     if(!productexisting){
-        return{error :  "o Membro não existe"}
+        return{error :  "o Produto não existe"}
     }
     let imageUrl = productexisting.image;
     if (imagem && imagem.size > 0) {
@@ -99,11 +98,10 @@ export const getAllProducts = async()=> {
 }
 
 export const getProductById = async(id) => {
-    const supabase =  getSupabaseServer();
-    const {data : productexisting, error : searchError} = await supabase.from("Product").select("*").eq("name", id).maybeSingle();
-        if(!productexisting){
-            return{ error : "Produto não encontrado"}
-        }
+    const productexisting = await ProductModel.getProductById(data.id);
+    if(!productexisting){
+        return{error :  "o Produto não encontrado"}
+    }
         try{
             const results = await ProductModel.getProductById(id);
             return{success : true, product : results}
@@ -113,11 +111,10 @@ export const getProductById = async(id) => {
 }
 
 export const deleteProduct = async(id) =>{
-    const supabase = await getSupabaseServer();
-     const {data : productexisting, error : searchError} = await supabase.from("Product").select("*").eq("id", id).maybeSingle();
-        if(!productexisting){
-            return{ error : "Produto não encontrado"}
-        }
+    const productexisting = await ProductModel.getProductById(id);
+    if(!productexisting){
+        return{error :  "o Produto não encontrado"}
+    }
         try{
             const results = await ProductModel.deleteProduct(id);
             return{success : true, product : results}

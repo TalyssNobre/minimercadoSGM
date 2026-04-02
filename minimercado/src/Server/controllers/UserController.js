@@ -82,3 +82,17 @@ export async function deleteUserAction({id}) {
         return { success: false, message: error.message };
     }
 }
+
+/*export async function getLoggedUserController() {
+    try {
+        const result = await UserService.getLoggedUserData();
+
+        if (result.error) {
+            return { success: false, message: result.error };
+        }
+
+        return { success: true, user: result.user };
+    } catch (error) {
+        return { success: false, message: "Erro inesperado ao buscar usuário logado." };
+    }
+}*/

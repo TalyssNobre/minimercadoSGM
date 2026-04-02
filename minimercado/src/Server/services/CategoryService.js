@@ -4,12 +4,10 @@ import Category from "../entitys/CategoryEntity";
 import * as CategoryModel from "../models/CategoryModel"
 
 export const createCategory = async ({data}) => {
-    const supabase = await getSupabaseServer();
     
-    const Name = data.name;
-    const {data: categorynew} = await supabase.from("Category").select("*").eq("name", Name).maybeSingle();
-    if(categorynew){
-        return{erro : "Categoria já existente"}
+    const categoryexisting = await CategoryModel.findByName(data.name)
+    if(categoryexisting){
+        throw new Error("Categoria já existente")
     }
     try{
         const categoryEntity  = new Category(data);
@@ -21,7 +19,6 @@ export const createCategory = async ({data}) => {
 }
 
 export const getAllCategory = async() => {
-    const supabase = await getSupabaseServer();
      try{
         const results = await CategoryModel.getAllCategory();
         return{success : true, category : results}
@@ -34,7 +31,7 @@ export const getCategoryById = async ({id}) => {
     const supabase = await getSupabaseServer();
     const {data : categoryId} =  await supabase.from("Category"). select("*").eq("id", id).single();
     if(!categoryId){
-        return{ error : "Categoria Inexistente"}
+        throw new Error("Categoria Inexistente")
     }
     try{
         const results = await CategoryModel.getCategoryById(id);

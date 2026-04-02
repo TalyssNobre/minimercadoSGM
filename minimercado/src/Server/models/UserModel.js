@@ -1,6 +1,6 @@
 import { getSupabaseServer } from "@/src/lib/supabaseServer";
 
-export const createUser = async (userEntity) => {
+export const createUser = async (user) => {
     const supabase = await getSupabaseServer();
 
     const { data, error } = await supabase
@@ -53,3 +53,15 @@ export const deleteUser = async (id) => {
     if (error) throw new Error("Erro ao deletar usuário: " + error.message);
     return true;
 };
+
+/*export const getUserProfileByAuthId = async (authId) => {
+    const supabase = await getSupabaseServer();
+    const { data, error } = await supabase
+        .from("User")
+        .select("name, profile")
+        .eq("user_id", authId)
+        .maybeSingle();
+
+    if (error) throw new Error("Erro ao buscar perfil do usuário: " + error.message);
+    return data;
+};*/

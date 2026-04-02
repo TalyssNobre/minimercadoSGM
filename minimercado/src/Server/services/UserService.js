@@ -34,7 +34,7 @@ export const loginUser = async ({email , password}) => {
     const supabase = await getSupabaseServer();
     const {data : authData, error : authError } = await supabase.auth.signInWithPassword({email : email, password: password});
     if(authError){
-        return{erro : "Email ou senha invalido"}
+        throw new Error("Email ou senha invalido")
     }
     try {
         const userProfile = await UserModel.getUserById(authData.user.id);
@@ -49,7 +49,7 @@ export const logoutUser = async () => {
     const supabase =  await getSupabaseServer();
     const {error} = await supabase.auth.signOut()
     if(error){
-        return{erro: "Erro ao sair do sistema"}
+        throw new Error("Erro ao sair do sistema")
     }
         return{sucesso: true, mensagem: "Saindo do server"};
 }
@@ -67,7 +67,7 @@ export const getIdByUser = async({id}) => {
     const supabase = await getSupabaseServer();
     const {data: userId} = await supabase.from("User").select("*").eq("id", id).single()
     if(!userId){
-    return{erro: "Usuario não encontrado"};
+    throw new Error("Usuario não encontrado");
     }
     try{
         const results = await UserModel.getUserById(id);
@@ -87,3 +87,27 @@ export const deleteUser = async (id) => {
         return { error: error.message };
     }
 }
+/*export const getLoggedUserData = async () => {
+    try {
+        const supabase = await getSupabaseServer();
+        // 1. Pega a sessão atual do Supabase
+        const { data: { user }, error } = await supabase.auth.getUser();
+
+        if (error  !user) {
+            return { error: "Nenhum usuário logado." };
+        }
+
+        // 2. Chama a SUA função do Model que já estava pronta!
+        const userData = await UserModel.getUserById(user.id);
+
+        return { 
+            success: true,
+            user: {
+                name: userData?.name  user.email, 
+                profile: userData?.profile || 'Operador'
+            }
+        };
+    } catch (error) {
+        return { error: error.message };
+    }
+}*/

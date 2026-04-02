@@ -33,8 +33,16 @@ export const getTeamById = async(id) => {
     } return data;
 }
 
+export const findByName = async(name) => {
+    const supabase = await getSupabaseServer();
 
-export const deleteTeam = async({id}) =>{
+    const{data,error} = await supabase.from("Team").select("*").eq("name", name).maybeSingle();
+   if(error){ throw new Error(error.message);
+    } return data;
+}
+
+
+export const deleteTeam = async(id) =>{
     const supabase = await getSupabaseServer();
 
     const{data,error} = await supabase.from("Team").delete().eq("id", id).select().single()

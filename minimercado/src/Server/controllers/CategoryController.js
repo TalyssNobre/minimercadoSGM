@@ -38,22 +38,10 @@ import { formatText } from "@/src/Server/utils/formatter";
     }
  }*/
 
- /*export async function getAllCategory() {
-    try{
-        const results = await categoryService.getAllCategory();
-        if (!results || results.error) {
-            return { success: false, data: [], message: results.error };
-        }
-        return { success: true, data: results };
-    }catch (error) {
-        return { success: false, data: [], message: error.message };
-    }
- }*/
 
 export async function getAllCategory() {
     try{
         const results = await categoryService.getAllCategory();
-        console.log("oq ta vindo: ", results);
         if (!results || results.error) {
             return { success: false, data: [], message: "results.error" };
         }

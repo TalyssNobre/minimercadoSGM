@@ -33,6 +33,13 @@ export const getCategoryById = async(id) => {
     } return data;
 }
 
+export const findByName = async(name) => {
+    const supabase = await getSupabaseServer();
+    const{data,error} = await supabase.from("Category").select("*").eq("name", name).maybeSingle();
+   if(error){ throw new Error(error.message);
+    } return data;
+}
+
 
 /*export const deleteCategory = async(id) =>{
     const supabase = await getSupabaseServer();

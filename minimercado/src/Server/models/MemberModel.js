@@ -31,6 +31,13 @@ export const getMemberById = async(id) => {
     const supabase = await getSupabaseServer();
 
     const{data,error} = await supabase.from("member").select("*").eq("id", id).maybeSingle();
+   if(error){ throw new Error("Membro não encontrado");
+    } return data;
+}
+
+export const findByName = async(name) => {
+    const supabase = await getSupabaseServer();
+    const{data,error} = await supabase.from("member").select("*").eq("name", name).maybeSingle();
    if(error){ throw new Error(error.message);
     } return data;
 }
