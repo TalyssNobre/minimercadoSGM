@@ -127,7 +127,7 @@ export default function EquipesPage() {
       // 🟢 O SEGREDO ESTÁ AQUI: O seu backend pede um objeto com id no Controller, no Service e na Model.
       // E não sabemos em qual deles o ID está se perdendo (ficando undefined).
       // Então, vamos passar um objeto onde a chave 'id' é um objeto também. Um "inception" de IDs.
-      const payloadExclusao = { id: { id: { id: equipeParaExcluir.id } } };
+      const payloadExclusao = equipeParaExcluir.id ;
 
       const response = await deleteTeam(payloadExclusao) as any;
       

@@ -83,7 +83,7 @@ export async function deleteUserAction({id}) {
     }
 }
 
-/*export async function getLoggedUserController() {
+export async function getLoggedUserController() {
     try {
         const result = await UserService.getLoggedUserData();
 
@@ -95,4 +95,4 @@ export async function deleteUserAction({id}) {
     } catch (error) {
         return { success: false, message: "Erro inesperado ao buscar usuário logado." };
     }
-}*/
+}

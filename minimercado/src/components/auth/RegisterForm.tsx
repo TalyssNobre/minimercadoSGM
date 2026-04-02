@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "../ui/Button"; 
 import { registerUserAction } from "@/src/Server/controllers/UserController"; 
 
-
 export function RegisterForm() {
   const router = useRouter();
   const [nome, setNome] = useState("");
@@ -17,7 +16,7 @@ export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [mensagem, setMensagem] = useState({ tipo: "", texto: "" });
 
-  const handleRegister = async (e) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setMensagem({ tipo: "", texto: "" });
     
@@ -29,15 +28,22 @@ export function RegisterForm() {
     setIsLoading(true);
 
     try {
+      // Monta o payload do jeito que seu backend exige
       const dadosUsuario = { nome, email, senha, profile: perfil };
+      
+      const resposta = await registerUserAction({ data: dadosUsuario }) as any;
 
-      const resposta = await registerUserAction({ data: dadosUsuario });
-
-      if (resposta.success) {
-        setMensagem({ tipo: "erro", texto : resposta.success });
+      // 🟢 FRONTEND ADAPTADO: Se não tiver sucesso, mostra o erro que veio do back
+      if (!resposta || resposta.success === false) {
+        setMensagem({ tipo: "erro", texto : resposta?.message || "Erro desconhecido ao cadastrar." });
       } else {
+        // Só comemora se o backend der o aval positivo
         setMensagem({ tipo: "sucesso", texto: "Usuário cadastrado com sucesso!" });
-        setNome(""); setEmail(""); setSenha(""); setConfirmarSenha("");
+        setNome(""); 
+        setEmail(""); 
+        setSenha(""); 
+        setConfirmarSenha("");
+        setPerfil("Operador");
       }
 
     } catch (error) {
@@ -45,7 +51,7 @@ export function RegisterForm() {
     } finally {
       setIsLoading(false);
     }
-};
+  };
 
   return (
     <form onSubmit={handleRegister} className="w-full flex flex-col gap-4">
@@ -69,12 +75,12 @@ export function RegisterForm() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="senha" className="text-sm font-bold text-gray-700">Senha</label>
-          <input id="senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#0D9488] outline-none transition-all" required />
+          <input id="senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#0D9488] outline-none transition-all" required minLength={6} />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="confirmarSenha" className="text-sm font-bold text-gray-700">Confirmar Senha</label>
-          <input id="confirmarSenha" type="password" value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#0D9488] outline-none transition-all" required />
+          <input id="confirmarSenha" type="password" value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#0D9488] outline-none transition-all" required minLength={6} />
         </div>
       </div>
 

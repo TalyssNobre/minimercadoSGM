@@ -87,13 +87,13 @@ export const deleteUser = async (id) => {
         return { error: error.message };
     }
 }
-/*export const getLoggedUserData = async () => {
+export const getLoggedUserData = async () => {
     try {
         const supabase = await getSupabaseServer();
         // 1. Pega a sessão atual do Supabase
         const { data: { user }, error } = await supabase.auth.getUser();
 
-        if (error  !user) {
+        if (error || !user) {
             return { error: "Nenhum usuário logado." };
         }
 
@@ -103,11 +103,11 @@ export const deleteUser = async (id) => {
         return { 
             success: true,
             user: {
-                name: userData?.name  user.email, 
+                name: userData?.name || user.email, 
                 profile: userData?.profile || 'Operador'
             }
         };
     } catch (error) {
         return { error: error.message };
     }
-}*/
+}

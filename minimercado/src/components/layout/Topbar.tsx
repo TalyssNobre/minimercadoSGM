@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-// ✅ Importação corrigida para o Controller
-import { logoutController } from '@/src/Server/controllers/UserController';  
+import { logoutController, getLoggedUserController } from '@/src/Server/controllers/UserController';  
 
 interface TopbarProps {
   tipoUsuario: 'admin' | 'operador';
@@ -12,32 +11,73 @@ interface TopbarProps {
 export default function Topbar({ tipoUsuario }: TopbarProps) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
+  const [nomeUsuario, setNomeUsuario] = useState<string>('Carregando...');
+  const [cargoUsuario, setCargoUsuario] = useState<string>(tipoUsuario);
+
+  const [showTopbar, setShowTopbar] = useState(true);
+  
+  // 🟢 CORREÇÃO 1: Usando useRef para o React não se perder no scroll!
+  const lastScrollY = useRef(0);
+
+  // 🟢 EFEITO DO SCROLL BLINDADO
+  useEffect(() => {
+    const handleScroll = (e: any) => {
+      // Pega o scroll de onde quer que ele esteja vindo (div interna ou janela)
+      const currentScrollY = e.target.scrollTop || window.scrollY;
+
+      if (currentScrollY === undefined) return;
+
+      // Se desceu mais de 50px, esconde. Se subiu, mostra.
+      if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+        setShowTopbar(false); 
+      } else {
+        setShowTopbar(true);  
+      }
+      
+      // Atualiza a anotação silenciosamente
+      lastScrollY.current = currentScrollY;
+    };
+
+    // O "true" faz ele escutar tudo na tela
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, []); // <-- O segredo está aqui: array vazio! O espião é ligado apenas uma vez.
+
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const resposta = await getLoggedUserController();
+        if (resposta.success && resposta.user) {
+          const primeiroNome = resposta.user.name.split(' ')[0];
+          setNomeUsuario(primeiroNome);
+          
+          if (resposta.user.profile) {
+            setCargoUsuario(resposta.user.profile);
+          }
+        } else {
+          setNomeUsuario('Usuário');
+        }
+      } catch (error) {
+        setNomeUsuario('Usuário');
+      }
+    }
+    fetchUser();
+  }, []);
 
   const handleLogout = async () => {
-    // Evita cliques duplos enquanto processa
     if (isLoggingOut) return;
-    
     setIsLoggingOut(true);
 
     try {
-      // 1. Chama o Controller
       const resposta = await logoutController();
-      
-      // 2. Verifica 'success' (padrão que definimos no back)
       if (!resposta.success) {
-        // Se der erro (ex: problema na rede), mostra a mensagem que veio do back
         alert(resposta.message || "Erro ao sair do sistema."); 
       } else {
-        console.log("Logout realizado:", resposta.message); 
-        
-        // 3. Limpa o cache das rotas protegidas
         router.refresh(); 
-        
-        // 4. Redireciona para a home/login
         router.push('/');
       }
     } catch (error) {
-      console.error("Erro fatal ao fazer logout:", error);
       alert("Erro de conexão com o servidor.");
     } finally {
       setIsLoggingOut(false);
@@ -45,25 +85,32 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
   };
 
   return (
-    <nav className="w-full bg-verde-principal h-16 text-white shadow-lg px-6 flex justify-between items-center sticky top-0 z-[50]">
-      {/* LADO ESQUERDO: Espaço para o ícone de menu (vazio por enquanto) */}
+    <nav 
+      // 🟢 CORREÇÃO 2: Trocamos o Translate por Margem Negativa (-mt-20). 
+      // Isso faz a barra sumir E puxa o sistema inteiro pra cima, dando mais espaço!
+      className={`w-full bg-verde-principal h-20 text-white shadow-lg px-6 flex justify-between items-center sticky top-0 z-[50] transition-all duration-300 ease-in-out 
+      ${showTopbar ? 'mt-0' : '-mt-20'}`}
+    >
       <div className="flex items-center">
         <div className="w-10"></div>
       </div>
 
-      {/* CENTRO: Logo e Texto "Segue-me" */}
       <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-3">
-        <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-sm flex items-center justify-center overflow-hidden">
+        <div className="w-12 h-12 md:w-14 md:h-14 bg-white rounded-full shadow-sm flex items-center justify-center overflow-hidden">
           <img src="/logo.svg" alt="Logo" className="w-full h-full object-cover scale-125" />
         </div>
         <span className="text-xl md:text-2xl font-medium tracking-wide">Segue-me</span>
       </div>
 
-      {/* LADO DIREITO: Usuário e Botão de Sair */}
       <div className="flex items-center space-x-3">
-        <span className="text-xs md:text-sm font-semibold capitalize tracking-wide hidden sm:block">
-          {tipoUsuario}
-        </span>
+        <div className="hidden sm:flex flex-col text-right leading-none mr-2">
+          <span className="text-sm font-bold tracking-wide">
+            {nomeUsuario}
+          </span>
+          <span className="text-[10px] uppercase font-medium opacity-80 mt-1">
+            {cargoUsuario}
+          </span>
+        </div>
         
         <button 
           onClick={handleLogout}
@@ -74,10 +121,9 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
           title="Sair do sistema"
         >
           {isLoggingOut ? (
-            // Spinner simples ou texto de carregando
             <span className="animate-pulse text-[10px] font-bold">...</span>
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 text-white">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
             </svg>
           )}

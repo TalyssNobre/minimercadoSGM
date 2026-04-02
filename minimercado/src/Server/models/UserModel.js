@@ -2,7 +2,7 @@ import { getSupabaseServer } from "@/src/lib/supabaseServer";
 
 export const createUser = async (user) => {
     const supabase = await getSupabaseServer();
-
+//mudei aqui o Entity
     const { data, error } = await supabase
         .from("User")
         .insert([
@@ -54,7 +54,7 @@ export const deleteUser = async (id) => {
     return true;
 };
 
-/*export const getUserProfileByAuthId = async (authId) => {
+export const getUserProfileByAuthId = async (authId) => {
     const supabase = await getSupabaseServer();
     const { data, error } = await supabase
         .from("User")
@@ -64,4 +64,4 @@ export const deleteUser = async (id) => {
 
     if (error) throw new Error("Erro ao buscar perfil do usuário: " + error.message);
     return data;
-};*/
+};

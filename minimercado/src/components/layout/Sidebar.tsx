@@ -2,19 +2,63 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { getLoggedUserController } from '@/src/Server/controllers/UserController';
 
 export default function Sidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false); // Para o PC (minimizar a barra)
-  const [isMobileOpen, setIsMobileOpen] = useState(false); // Para o Celular (abrir/fechar o menu)
+  const [isCollapsed, setIsCollapsed] = useState(false); 
+  const [isMobileOpen, setIsMobileOpen] = useState(false); 
   const pathname = usePathname();
 
-  // Fecha o menu mobile automaticamente ao clicar em um link
+  const [cargoUsuario, setCargoUsuario] = useState<string | null>(null);
+
+  // 🟢 ESTADOS NOVOS: Controle do scroll para o Header Mobile
+  const [showMobileHeader, setShowMobileHeader] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // 🟢 EFEITO MÁGICO DO SCROLL
+  useEffect(() => {
+    const handleScroll = (e: any) => {
+      // Pega a rolagem de qualquer div que estiver rolando ou da janela principal
+      const currentScrollY = e.target.scrollTop || window.scrollY;
+
+      if (currentScrollY === undefined) return;
+
+      // Se rolou pra baixo mais de 50px, esconde. Se rolou pra cima, mostra.
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setShowMobileHeader(false);
+      } else {
+        setShowMobileHeader(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    // O "true" no final é o segredo! Ele intercepta o scroll de qualquer elemento da tela.
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [lastScrollY]);
+
+  // Busca o cargo
+  useEffect(() => {
+    async function fetchUserRole() {
+      try {
+        const resposta = await getLoggedUserController();
+        if (resposta.success && resposta.user?.profile) {
+          setCargoUsuario(resposta.user.profile);
+        } else {
+          setCargoUsuario('Operador');
+        }
+      } catch (error) {
+        setCargoUsuario('Operador');
+      }
+    }
+    fetchUserRole();
+  }, []);
+
   useEffect(() => {
     setIsMobileOpen(false);
   }, [pathname]);
 
   const menuItems = [
-    // 🔴 ROTAS DE ADMIN (Agora começam com /admin)
     { 
       name: 'Dashboard Financeiro', 
       href: '/admin/dashboard', 
@@ -45,8 +89,6 @@ export default function Sidebar() {
       href: '/admin/cadastro', 
       icon: (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 018.625 21c-2.331 0-4.512-.645-6.374-1.766z" /></svg>)
     },
-
-    // 🟢 ROTAS COMUNS (Acessíveis por Operador e Admin)
     { 
       name: 'Frente de Caixa (PDV)', 
       href: '/caixa', 
@@ -64,10 +106,16 @@ export default function Sidebar() {
     },
   ];
 
+  const menusPermitidos = menuItems.filter(item => {
+    if (!cargoUsuario) return false; 
+    if (cargoUsuario === 'Admin') return true; 
+    return !item.href.startsWith('/admin'); 
+  });
+
   return (
     <>
-      {/* 🟢 HEADER MOBILE (Aparece só no celular) */}
-      <div className="md:hidden bg-[#0D9488] text-white p-4 flex justify-between items-center shadow-md fixed top-0 left-0 w-full z-50">
+      {/* 🟢 HEADER MOBILE ATUALIZADO: Agora ele sobe (esconde) junto com o scroll */}
+      <div className={`md:hidden bg-[#0D9488] text-white p-4 flex justify-between items-center shadow-md fixed left-0 w-full z-50 transition-all duration-300 ease-in-out ${showMobileHeader ? 'top-0' : '-top-24'}`}>
         <h1 className="font-bold text-lg tracking-wide">MiniMercado SGM</h1>
         <button onClick={() => setIsMobileOpen(true)} className="p-2 bg-white/10 rounded-md">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
@@ -76,37 +124,20 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* 🟢 OVERLAY ESCURO (Fundo embaçado ao abrir menu no celular) */}
       {isMobileOpen && (
-        <div 
-          className="md:hidden fixed inset-0 bg-black/50 z-[60] backdrop-blur-sm"
-          onClick={() => setIsMobileOpen(false)}
-        />
+        <div className="md:hidden fixed inset-0 bg-black/50 z-[60] backdrop-blur-sm" onClick={() => setIsMobileOpen(false)} />
       )}
 
-      {/* 🟢 BARRA LATERAL (Sidebar) */}
-      <aside 
-        className={`bg-[#0F766E] text-white min-h-screen transition-all duration-300 flex flex-col fixed top-0 z-[70] shadow-2xl h-full
-          /* Comportamento no Celular: Fica escondida pra esquerda (-translate-x-full) e entra quando abre */
-          ${isMobileOpen ? 'left-0 w-64' : '-left-full md:left-0'} 
-          /* Comportamento no PC: Fica relativa, não sobrepõe e obedece o isCollapsed */
-          md:relative md:flex ${isCollapsed ? 'md:w-20' : 'md:w-64'}
-        `}
-      >
-        {/* Topo da Sidebar (Diferente no Mobile e PC) */}
+      <aside className={`bg-[#0F766E] text-white min-h-screen transition-all duration-300 flex flex-col fixed top-0 z-[70] shadow-2xl h-full ${isMobileOpen ? 'left-0 w-64' : '-left-full md:left-0'} md:relative md:flex ${isCollapsed ? 'md:w-20' : 'md:w-64'}`}>
         <div className="p-4 flex justify-between items-center border-b border-white/10">
           <span className={`font-bold text-lg tracking-wide whitespace-nowrap overflow-hidden transition-opacity ${isCollapsed ? 'md:opacity-0 md:w-0' : 'opacity-100'}`}>
             Menu
           </span>
-          
-          {/* Botão de Fechar no Mobile (X) */}
           <button onClick={() => setIsMobileOpen(false)} className="md:hidden p-2 hover:bg-white/10 rounded-md">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-
-          {/* Botão de Recolher no PC (Hamburguer) */}
           <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden md:block p-2 hover:bg-white/10 rounded-md transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -115,21 +146,12 @@ export default function Sidebar() {
         </div>
 
         <nav className="flex-grow mt-4 overflow-y-auto">
-          {menuItems.map((item) => {
+          {menusPermitidos.map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (
-              <Link 
-                key={item.href} 
-                href={item.href}
-                className={`flex items-center px-6 py-4 transition-all hover:bg-white/10 group
-                  ${isActive ? 'bg-white/20 border-r-4 border-white' : ''}
-                `}
-              >
+              <Link key={item.href} href={item.href} className={`flex items-center px-6 py-4 transition-all hover:bg-white/10 group ${isActive ? 'bg-white/20 border-r-4 border-white' : ''}`}>
                 <div className="flex-shrink-0">{item.icon}</div>
-                {/* O texto do menu só some se estiver no PC (md) E colapsado */}
-                <span className={`ml-4 font-medium text-sm whitespace-nowrap overflow-hidden transition-all duration-300
-                  ${isCollapsed ? 'md:opacity-0 md:w-0 md:ml-0' : 'opacity-100'}
-                `}>
+                <span className={`ml-4 font-medium text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? 'md:opacity-0 md:w-0 md:ml-0' : 'opacity-100'}`}>
                   {item.name}
                 </span>
               </Link>
