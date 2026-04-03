@@ -140,7 +140,7 @@ export default function FrenteCaixa() {
   const removeFromCart = (productId: number) => setCart(prev => prev.filter(item => item.product.id !== productId));
 
   // =========================================================================
-  // 🟢 FUNÇÃO DE FINALIZAÇÃO (ESTRITAMENTE IGUAL AO SEU BACKEND)
+  // 🟢 FUNÇÃO DE FINALIZAÇÃO (MOLDADA PARA SEU NOVO BACKEND ENCAPSULADO)
   // =========================================================================
   const handleFinalizarVenda = async (statusVenda: 'PAGO' | 'PENDENTE') => {
     if (cart.length === 0) return alert("O carrinho está vazio!");
@@ -150,40 +150,50 @@ export default function FrenteCaixa() {
     setIsFinalizando(true);
 
     try {
+      // 1. Validando o Vendedor com trava de segurança real
       const userResp = await getLoggedUserController();
-      if (!userResp.success || !userResp.user) throw new Error("Vendedor não identificado.");
+     const vendedorId = (userResp as any)?.user?.id || (userResp as any)?.data?.user?.id;
+      
+      if (!vendedorId) {
+        alert("Sessão expirada ou Vendedor não encontrado. Recarregue a página e tente de novo.");
+        setIsFinalizando(false);
+        return;
+      }
 
-      // O seu Back (SaleController) usa Object.fromEntries(dataFront.entries())
-      // Portanto, precisamos enviar um FormData.
+      // 2. Criando o FormData que o Controller vai transformar em Objeto
       const formData = new FormData();
       formData.append('member_id', selectedMember.id.toString());
-     formData.append('user_id', (userResp.user as any)?.id?.toString() || '');
-      
-      // O seu Back (SaleEntity) valida: status === 'Pago'
+      formData.append('user_id', vendedorId.toString());
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
+      
+      // 🟢 NOVO: O Service não cria mais as datas, então o Front DEVE enviar!
+      formData.append('date', new Date().toISOString());
+      if (statusVenda === 'PAGO') {
+        formData.append('payment_date', new Date().toISOString());
+      }
 
-      // O seu Back (SaleEntity) calcula o total usando a chave 'unit_price'
+      // 3. Encapsulando o carrinho com a chave unit_price
       const itensCarrinho = cart.map(item => ({
         product_id: item.product.id,
         quantity: item.quantity,
         unit_price: item.product.price
       }));
 
-      // O seu Back (SaleController) faz JSON.parse(data.cart)
       formData.append('cart', JSON.stringify(itensCarrinho));
 
+      // 4. Chamada da API
       const resposta = await createSale(formData) as any;
 
       if (resposta.success) {
-        alert("Venda realizada com sucesso!");
+        alert("✅ Venda realizada com sucesso!");
         setCart([]);
         setSelectedMember(null);
         setSelectedTeam(null);
       } else {
-        alert("Erro: " + (resposta.message || resposta.error));
+        alert("❌ Erro ao salvar: " + (resposta.message || resposta.error));
       }
     } catch (error: any) {
-      alert(error.message);
+      alert("Erro Crítico: " + error.message);
     } finally {
       setIsFinalizando(false);
     }

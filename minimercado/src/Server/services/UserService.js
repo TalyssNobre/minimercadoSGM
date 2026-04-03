@@ -103,6 +103,7 @@ export const getLoggedUserData = async () => {
         return { 
             success: true,
             user: {
+                id: userData?.id,
                 name: userData?.name || user.email, 
                 profile: userData?.profile || 'Operador'
             }
