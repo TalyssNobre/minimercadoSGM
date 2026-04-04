@@ -10,6 +10,7 @@ import { getAllUsersController } from '@/src/Server/controllers/UserController';
 // INTERFACES 
 // =========================================================================
 interface ItemVenda {
+  id_item_sale: number; 
   name: string; 
   quantity: number; 
 }
@@ -21,8 +22,7 @@ interface Venda {
   operator_name: string; 
   client_name: string; 
   total_value: number;
-  status: 'ATIVA' | 'CANCELADA';
-  payment_status: 'PAGO' | 'FIADO'; 
+  status: boolean; // 🟢 CORREÇÃO: Usando o tipo bool exato do seu banco de dados
   items: ItemVenda[];
 }
 
@@ -65,25 +65,23 @@ export default function HistoricoGeralVendas() {
       const response = await getAllSales() as any;
       
       if (response?.success && response?.data) {
-        // Garantindo que pegamos o array de vendas
         const dadosBrutos = Array.isArray(response.data) ? response.data : (response.data.sale || []);
         
-        console.log("Dados que chegaram do Supabase:", dadosBrutos); // 🟢 Para você ver o que o banco mandou!
+        console.log("Dados que chegaram do Supabase:", dadosBrutos); 
 
         const vendasFormatadas: Venda[] = dadosBrutos.map((row: any) => {
-          // Extraindo as listas de itens à prova de falhas (letra maiuscula ou minuscula)
-          const itensBrutos = row.Item_sale || row.item_sale || [];
+          const itensBrutos = row.Item_sale || row.item_sale || row.itemSale || [];
 
           return {
-            sale_id: row.id,
-            date: formatDate(row.date),
+            sale_id: row.id, 
+            date: formatDate(row.date), 
             operator_id: row.user_id || 0,
             operator_name: row.User?.name || row.user?.name || 'Desconhecido',
             client_name: row.Member?.name || row.member?.name || 'Cliente Avulso',
-            total_value: row.total_value,
-            status: 'ATIVA', 
-            payment_status: row.status ? 'PAGO' : 'FIADO',
+            total_value: row.total_value, 
+            status: Boolean(row.status), // 🟢 Puxando apenas o status booleano real do BD
             items: itensBrutos.map((item: any) => ({
+              id_item_sale: item.id_item_sale, 
               name: item.Product?.name || item.product?.name || 'Produto',
               quantity: item.quantity
             }))
@@ -123,7 +121,7 @@ export default function HistoricoGeralVendas() {
 
   const totalFiltrado = useMemo(() => {
     return vendasFiltradas
-      .filter(v => v.status === 'ATIVA')
+      .filter(v => v.status === true) // 🟢 Soma apenas se o status for true (ativo)
       .reduce((acc, curr) => acc + curr.total_value, 0);
   }, [vendasFiltradas]);
 
@@ -148,7 +146,7 @@ export default function HistoricoGeralVendas() {
 
       setIsCancelModalOpen(false);
       setVendaParaCancelar(null);
-      fetchDados();
+      fetchDados(); // Atualiza a lista após deletar/cancelar
 
     } catch (error) {
       alert("Erro técnico ao cancelar a venda.");
@@ -187,7 +185,7 @@ export default function HistoricoGeralVendas() {
               <th className="py-3 px-4 text-sm font-bold text-gray-700 w-48">Operador</th>
               <th className="py-3 px-4 text-sm font-bold text-gray-700 w-48">Cliente</th>
               <th className="py-3 px-4 text-sm font-bold text-gray-700">Itens da Compra</th>
-              <th className="py-3 px-4 text-sm font-bold text-gray-700 w-32 text-center">Pagamento</th>
+              <th className="py-3 px-4 text-sm font-bold text-gray-700 w-32 text-center">Status</th>
               <th className="py-3 px-4 text-sm font-bold text-gray-700 w-32 text-right">Valor Total</th>
               <th className="py-3 px-4 text-sm font-bold text-gray-700 w-32 text-center">Ação</th>
             </tr>
@@ -208,50 +206,44 @@ export default function HistoricoGeralVendas() {
               </tr>
             ) : (
               vendasFiltradas.map((venda) => (
-                <tr key={venda.sale_id} className={`transition-colors ${venda.status === 'CANCELADA' ? 'bg-red-50/50 opacity-75' : 'hover:bg-gray-50'}`}>
+                <tr key={venda.sale_id} className={`transition-colors ${!venda.status ? 'bg-red-50/50 opacity-75' : 'hover:bg-gray-50'}`}>
                   <td className="py-3 px-4 text-sm text-gray-800">{venda.date}</td>
                   <td className="py-3 px-4 text-sm text-gray-800 font-medium">{venda.operator_name}</td>
                   <td className="py-3 px-4 text-sm text-gray-600">{venda.client_name}</td>
                   
                   <td className="py-3 px-4 text-sm text-gray-600">
                     <div className="flex flex-wrap gap-1">
-                      {venda.items.map((item, idx) => (
-                        <span key={idx} className={`px-2 py-0.5 rounded text-xs border ${venda.status === 'CANCELADA' ? 'border-red-200 bg-white' : 'border-gray-200 bg-gray-50'}`}>
+                      {venda.items.map((item) => (
+                        <span key={item.id_item_sale || Math.random()} className={`px-2 py-0.5 rounded text-xs border`}>
                           {item.quantity}x {item.name}
                         </span>
                       ))}
                     </div>
                   </td>
 
+                  {/* 🟢 Trazendo o Status real do BD para a UI */}
                   <td className="py-3 px-4 text-center">
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                      venda.status === 'CANCELADA' 
-                        ? 'bg-transparent text-gray-400 border border-gray-300' 
-                        : venda.payment_status === 'PAGO' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-yellow-100 text-yellow-700'
+                      venda.status 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-yellow-100 text-yellow-700'
                     }`}>
-                      {venda.payment_status}
+                      {venda.status ? 'Pago' : 'Fiado'}
                     </span>
                   </td>
                   
-                  <td className={`py-3 px-4 text-sm font-medium text-right ${venda.status === 'CANCELADA' ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                  <td className={`py-3 px-4 text-sm font-medium text-right ${!venda.status ? 'text-gray-400' : 'text-gray-800'}`}>
                     {formatCurrency(venda.total_value)}
                   </td>
                   
                   <td className="py-3 px-4 text-center">
-                    {venda.status === 'ATIVA' ? (
                       <button 
                         onClick={() => handleAbrirCancelamento(venda)}
                         className="bg-[#c82333] hover:bg-[#a71d2a] text-white text-xs font-bold px-3 py-1.5 rounded transition-colors shadow-sm"
                       >
                         Cancelar Venda
                       </button>
-                    ) : (
-                      <span className="text-red-500 text-xs font-bold uppercase bg-red-100 px-2 py-1 rounded">
-                        Cancelada
-                      </span>
-                    )}
+                    
                   </td>
                 </tr>
               ))
@@ -283,11 +275,10 @@ export default function HistoricoGeralVendas() {
             
             <div className="bg-gray-50 border border-gray-200 rounded p-3 mb-4 text-left text-sm text-gray-700">
               <p><strong>Cliente:</strong> {vendaParaCancelar.client_name}</p>
-              <p><strong>Status:</strong> {vendaParaCancelar.payment_status}</p>
               <p className="mt-1"><strong>Itens:</strong></p>
               <ul className="list-disc list-inside text-gray-500 text-xs ml-1">
-                {vendaParaCancelar.items.map((item, idx) => (
-                  <li key={idx}>{item.quantity}x {item.name}</li>
+                {vendaParaCancelar.items.map((item) => (
+                  <li key={item.id_item_sale || Math.random()}>{item.quantity}x {item.name}</li>
                 ))}
               </ul>
             </div>

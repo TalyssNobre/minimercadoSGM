@@ -14,3 +14,11 @@ export const createItems = async (itensComVinculo) => {
 
     return data;
 };
+
+export const deleteItemSaleById = async(id) =>{
+    const supabase = await getSupabaseServer();
+const { data, error } = await supabase.from("Item_sale").delete().eq("sale_id", id);
+    if(error){
+        throw new Error(error.message);
+    } return data;
+}

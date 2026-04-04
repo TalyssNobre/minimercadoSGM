@@ -58,7 +58,7 @@ export const getAllSales = async() =>{
 }
 
 export const getSaleById = async(id) => {
-    const saleExisting = await SaleModel.getSaleById(data.id);
+    const saleExisting = await SaleModel.getSaleById(id);
     if(!saleExisting){
         throw new Error("Venda não encontrada")
     }
@@ -71,11 +71,12 @@ export const getSaleById = async(id) => {
 }
 
 export const deleteSale = async(id) => {
-   const saleExisting = await SaleModel.getSaleById(data.id);
+   const saleExisting = await SaleModel.getSaleById(id);
     if(!saleExisting){
         throw new Error("Venda não encontrada")
     }
     try{
+    await ItemSaleModel.deleteItemSaleById(id);
     const results = await SaleModel.deleteSale(id);
     return{sucess : true, sale: results}
    }catch(error){
