@@ -22,7 +22,7 @@ interface Venda {
   operator_name: string; 
   client_name: string; 
   total_value: number;
-  status: boolean; // 🟢 CORREÇÃO: Usando o tipo bool exato do seu banco de dados
+  status: boolean; 
   items: ItemVenda[];
 }
 
@@ -79,7 +79,7 @@ export default function HistoricoGeralVendas() {
             operator_name: row.User?.name || row.user?.name || 'Desconhecido',
             client_name: row.Member?.name || row.member?.name || 'Cliente Avulso',
             total_value: row.total_value, 
-            status: Boolean(row.status), // 🟢 Puxando apenas o status booleano real do BD
+            status: Boolean(row.status), 
             items: itensBrutos.map((item: any) => ({
               id_item_sale: item.id_item_sale, 
               name: item.Product?.name || item.product?.name || 'Produto',
@@ -121,7 +121,7 @@ export default function HistoricoGeralVendas() {
 
   const totalFiltrado = useMemo(() => {
     return vendasFiltradas
-      .filter(v => v.status === true) // 🟢 Soma apenas se o status for true (ativo)
+      .filter(v => v.status === true) 
       .reduce((acc, curr) => acc + curr.total_value, 0);
   }, [vendasFiltradas]);
 
@@ -146,7 +146,7 @@ export default function HistoricoGeralVendas() {
 
       setIsCancelModalOpen(false);
       setVendaParaCancelar(null);
-      fetchDados(); // Atualiza a lista após deletar/cancelar
+      fetchDados(); 
 
     } catch (error) {
       alert("Erro técnico ao cancelar a venda.");
@@ -177,9 +177,12 @@ export default function HistoricoGeralVendas() {
       </div>
 
       {/* TABELA DE VENDAS */}
-      <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+      {/* 🟢 ADICIONADO: max-h-[380px] e overflow-y-auto */}
+      <div className="overflow-x-auto overflow-y-auto max-h-[380px] border border-gray-200 rounded-lg shadow-sm">
         <table className="w-full text-left border-collapse min-w-[1000px]">
-          <thead className="bg-gray-100 border-b border-gray-200">
+          
+          {/* 🟢 ADICIONADO: sticky top-0 z-10 shadow-sm */}
+          <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
             <tr>
               <th className="py-3 px-4 text-sm font-bold text-gray-700 w-24">Data</th>
               <th className="py-3 px-4 text-sm font-bold text-gray-700 w-48">Operador</th>
@@ -221,7 +224,6 @@ export default function HistoricoGeralVendas() {
                     </div>
                   </td>
 
-                  {/* 🟢 Trazendo o Status real do BD para a UI */}
                   <td className="py-3 px-4 text-center">
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
                       venda.status 

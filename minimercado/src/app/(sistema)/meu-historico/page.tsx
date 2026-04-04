@@ -1,13 +1,14 @@
 'use client';
 import React, { useMemo, useState, useEffect } from 'react';
 
-// 🟢 IMPORTANDO A FUNÇÃO QUE JÁ ESTÁ PRONTA NO SEU BACKEND
+// 🟢 IMPORTANDO AS FUNÇÕES DO BACKEND
 import { getLoggedUserController } from '@/src/Server/controllers/UserController';
+import { getAllSales } from '@/src/Server/controllers/SaleController'; 
 
 interface User {
-  id: number; // No seu DER o id do User é int8
+  id: number; 
   name: string;
-  user_id: string; // O UUID que liga com auth.users
+  user_id: string; 
 }
 
 interface Team {
@@ -24,19 +25,18 @@ interface Product {
 }
 
 interface ItemSale {
-  quantity: number; // No DER é numeric
+  quantity: number; 
   Product?: Product; 
 }
 
-// Tabela Principal: Sale
 interface Sale {
   id: number;
-  date: string; // No DER é date
-  total_value: number; // No DER é float8
-  status: boolean; // No DER é bool (True para Pago, False para Fiado)
-  payment_date?: string | null; // No DER é timestamptz
-  member?: Member; // Relacionamento com a tabela member
-  Item_sale?: ItemSale[]; // Relacionamento com a tabela Item_sale
+  date: string; 
+  total_value: number; 
+  status: boolean; 
+  payment_date?: string | null; 
+  member?: Member; 
+  Item_sale?: ItemSale[]; 
 }
 
 export default function MeuHistoricoPage() {
@@ -48,33 +48,50 @@ export default function MeuHistoricoPage() {
     async function carregarDadosDoSupabase() {
       setIsLoading(true);
       try {
-        // 🟢 1. BUSCANDO QUEM ESTÁ LOGADO AGORA MESMO
         const userResp = await getLoggedUserController();
         const userLogado = (userResp as any)?.user || (userResp as any)?.data?.user;
 
         if (userLogado && userLogado.id) {
-          // Preenche o cabeçalho com os dados reais do banco
           setOperadorAtual({ 
             id: userLogado.id, 
             name: userLogado.name || 'Operador', 
             user_id: userLogado.id.toString() 
           });
 
-          // TODO: Quando o Supabase estiver pronto, o select será exatamente assim:
-          // const { data } = await supabase.from('Sale').select(`
-          //   id, date, total_value, status, payment_date,
-          //   member (name, Team(name)),
-          //   Item_sale (quantity, Product(name))
-          // `).eq('user_id', userLogado.id); // 🟢 Aqui você vai usar o ID real!
+          const salesResp = await getAllSales() as any;
+          
+          if (salesResp?.success && salesResp?.data) {
+            const todasVendas = Array.isArray(salesResp.data) ? salesResp.data : (salesResp.data.sale || []);
+            
+            // 🟢 Filtra apenas as vendas deste operador
+            const minhasVendas = todasVendas.filter((v: any) => v.user_id === userLogado.id);
 
+            const vendasFormatadas: Sale[] = minhasVendas.map((row: any) => {
+              const itensBrutos = row.Item_sale || row.item_sale || [];
+              const membroBruto = row.Member || row.member || null;
+
+              return {
+                id: row.id,
+                date: row.date,
+                total_value: row.total_value,
+                status: row.status, 
+                payment_date: row.payment_date,
+                member: {
+                  name: membroBruto?.name || 'Cliente Avulso',
+                  Team: { name: membroBruto?.Team?.name || membroBruto?.team?.name || '' }
+                },
+                Item_sale: itensBrutos.map((item: any) => ({
+                  quantity: item.quantity,
+                  Product: { name: item.Product?.name || item.product?.name || 'Produto' }
+                }))
+              };
+            });
+
+            setVendas(vendasFormatadas);
+          }
         } else {
-          // Se a sessão expirou ou deu erro
           setOperadorAtual({ id: 0, name: 'Sessão Expirada', user_id: '' });
         }
-
-        // Mantendo as vendas vazias enquanto o back não fica pronto
-        setVendas([]); 
-
       } catch (error) {
         console.error("Erro ao buscar histórico:", error);
       } finally {
@@ -86,7 +103,9 @@ export default function MeuHistoricoPage() {
   }, []);
 
   const totalGeralVendas = useMemo(() => {
-    return vendas.reduce((acc, curr) => acc + (curr.total_value || 0), 0);
+    return vendas
+      .filter(v => v.status === true) // Soma apenas as vendas pagas/ativas
+      .reduce((acc, curr) => acc + (curr.total_value || 0), 0);
   }, [vendas]);
 
   const formatCurrency = (value: number) => 
@@ -94,14 +113,16 @@ export default function MeuHistoricoPage() {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    const datePart = dateString.split('T')[0];
+    const [year, month, day] = datePart.split('-');
+    return `${day}/${month}/${year}`;
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 max-w-5xl mx-auto">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 max-w-[1400px] mx-auto relative">
       
       {/* CABEÇALHO */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800 tracking-tight">Meu Histórico de Vendas</h2>
           <div className="flex items-center gap-2 mt-1">
@@ -109,111 +130,96 @@ export default function MeuHistoricoPage() {
             <span className="text-sm font-bold text-[#0D9488] uppercase">
               {operadorAtual ? operadorAtual.name : 'Carregando...'}
             </span>
-            {operadorAtual && operadorAtual.id !== 0 && (
-              <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded font-mono">
-                ID: {operadorAtual.id}
-              </span>
-            )}
           </div>
-        </div>
-        
-        {/* CARD DE TOTAL GERAL */}
-        <div className="bg-[#0D9488]/10 px-6 py-3 rounded-xl border border-[#0D9488]/20 flex flex-col items-end">
-          <span className="text-[10px] text-[#0D9488] font-bold uppercase tracking-widest">Total Geral de Vendas</span>
-          <span className="text-2xl font-black text-[#0D9488]">{formatCurrency(totalGeralVendas)}</span>
         </div>
       </div>
 
       {/* TABELA DE VENDAS */}
-      <div className="overflow-x-auto border border-gray-100 rounded-xl shadow-inner">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-gray-50 border-b border-gray-100">
+      {/* 🟢 MODIFICAÇÃO AQUI: max-h-[380px] e overflow-y-auto */}
+      <div className="overflow-x-auto overflow-y-auto max-h-[380px] border border-gray-200 rounded-lg shadow-sm">
+        <table className="w-full text-left border-collapse min-w-[1000px]">
+          
+          {/* 🟢 MODIFICAÇÃO AQUI: sticky top-0 z-10 shadow-sm */}
+          <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
             <tr>
-              <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Data</th>
-              <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Cliente / Equipe</th>
-              <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Itens Vendidos</th>
-              <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Pagamento</th>
-              <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Valor</th>
+              <th className="py-3 px-4 text-sm font-bold text-gray-700 w-24">Data</th>
+              <th className="py-3 px-4 text-sm font-bold text-gray-700 w-48">Cliente / Equipe</th>
+              <th className="py-3 px-4 text-sm font-bold text-gray-700">Itens da Compra</th>
+              <th className="py-3 px-4 text-sm font-bold text-gray-700 w-32 text-center">Status</th>
+              <th className="py-3 px-4 text-sm font-bold text-gray-700 w-32 text-right">Valor Total</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          
+          <tbody className="divide-y divide-gray-100 bg-white">
             {isLoading ? (
               <tr>
                 <td colSpan={5} className="py-12 text-center text-gray-500">
-                  <div className="animate-pulse flex flex-col items-center">
-                    <div className="h-6 w-6 border-2 border-[#0D9488] border-t-transparent rounded-full animate-spin mb-2"></div>
-                    <span className="text-sm">Identificando usuário...</span>
-                  </div>
+                  <div className="animate-pulse font-medium">Carregando seu histórico...</div>
                 </td>
               </tr>
-            ) : vendas.length > 0 ? (
+            ) : vendas.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-12 text-center text-gray-500">
+                  <p className="text-lg font-medium text-gray-700">Nenhuma venda encontrada</p>
+                </td>
+              </tr>
+            ) : (
               vendas.map((venda) => (
-                <tr key={venda.id} className="hover:bg-gray-50/50 transition-colors">
+                <tr key={venda.id} className="hover:bg-gray-50 transition-colors">
                   
-                  {/* Usa a coluna exata "date" */}
-                  <td className="py-5 px-6 text-sm text-gray-500 font-medium">
-                    {formatDate(venda.date)}
-                  </td>
+                  {/* Design mais "clean" igual ao Admin */}
+                  <td className="py-3 px-4 text-sm text-gray-800">{formatDate(venda.date)}</td>
                   
-                  <td className="py-5 px-6">
+                  <td className="py-3 px-4 text-sm text-gray-600">
                     <div className="flex flex-col">
-                      <span className="text-sm font-bold text-gray-800">
-                        {venda.member?.name || 'Cliente Avulso'}
-                      </span>
-                      <span className="text-[10px] text-[#0D9488] font-semibold flex items-center gap-1">
-                        <div className="w-1 h-1 rounded-full bg-[#0D9488]"></div>
-                        {venda.member?.Team?.name || 'Sem Equipe'}
-                      </span>
+                      <span>{venda.member?.name || 'Cliente Avulso'}</span>
+                      {venda.member?.Team?.name && (
+                        <span className="text-xs text-gray-400">
+                          Equipe: {venda.member.Team.name}
+                        </span>
+                      )}
                     </div>
                   </td>
-
-                  <td className="py-5 px-6">
-                    <div className="flex flex-wrap gap-1.5">
+                  
+                  <td className="py-3 px-4 text-sm text-gray-600">
+                    <div className="flex flex-wrap gap-1">
                       {venda.Item_sale?.map((item, idx) => (
-                        <span key={idx} className="bg-gray-50 text-gray-500 text-[10px] px-2 py-1 rounded border border-gray-100 font-medium">
+                        <span key={idx} className="px-2 py-0.5 rounded text-xs border border-gray-200 bg-gray-50">
                           {item.quantity}x {item.Product?.name || 'Produto'}
                         </span>
                       ))}
                     </div>
                   </td>
 
-                  {/* Verifica o "status" booleano do DER para decidir se exibe PAGO ou FIADO */}
-                  <td className="py-5 px-6 text-center">
-                    <span className={`text-[10px] font-black px-3 py-1 rounded-full tracking-tighter ${
-                      venda.status === true 
-                        ? 'bg-emerald-100 text-emerald-700' 
-                        : 'bg-amber-100 text-amber-700'
+                  <td className="py-3 px-4 text-center">
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                      venda.status 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-yellow-100 text-yellow-700'
                     }`}>
-                      {venda.status === true ? 'PAGO' : 'FIADO'}
+                      {venda.status ? 'Pago' : 'Fiado'}
                     </span>
                   </td>
-
-                  {/* Usa a coluna exata "total_value" */}
-                  <td className="py-5 px-6 text-sm font-black text-gray-800 text-right">
+                  
+                  <td className="py-3 px-4 text-sm font-medium text-right text-gray-800">
                     {formatCurrency(venda.total_value)}
                   </td>
+                  
                 </tr>
               ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="p-16 text-center">
-                  <div className="bg-gray-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-gray-300"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  </div>
-                  <p className="text-gray-400 text-sm italic">O backend de histórico ainda será implementado.</p>
-                </td>
-              </tr>
             )}
           </tbody>
         </table>
       </div>
-      
-      <div className="mt-6 flex items-center gap-2 text-[10px] text-gray-400 italic">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 text-amber-500">
-          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-        </svg>
-        Cancelamento de vendas disponível apenas para Administradores.
+
+      {/* TOTALIZADOR */}
+      <div className="mt-4 flex justify-end">
+        <div className="bg-gray-50 border border-gray-200 px-6 py-3 rounded-lg shadow-sm">
+          <span className="text-sm font-semibold text-gray-600 mr-3">Meu Total Válido:</span>
+          <span className="text-xl font-bold text-[#0D9488]">{formatCurrency(totalGeralVendas)}</span>
+        </div>
       </div>
+      
     </div>
   );
 }
