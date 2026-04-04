@@ -55,7 +55,7 @@ export const getMemberById = async(id) => {
 }
 
 export const deleteMember = async(id) => {
-    const  memberexisting = await MemberModel.getMemberById(data.id)
+    const  memberexisting = await MemberModel.getMemberById(id)
     if(!memberexisting){
         throw new Error("O Membro não existe")
     }

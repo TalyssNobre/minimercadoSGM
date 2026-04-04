@@ -1,24 +1,28 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
 
+// 🟢 IMPORTANDO AS FUNÇÕES DO BACKEND 
+import { getAllSales, deleteSale } from '@/src/Server/controllers/SaleController';
+import { getAllUsersController } from '@/src/Server/controllers/UserController';
+
 // =========================================================================
-// INTERFACES (Tipagens baseadas no DER)
+// INTERFACES 
 // =========================================================================
 interface ItemVenda {
-  name: string; // Virá do JOIN com Product
-  quantity: number; // Virá de Item_Sale
+  name: string; 
+  quantity: number; 
 }
 
 interface Venda {
   sale_id: number;
   date: string;
   operator_id: number;
-  operator_name: string; // Virá do JOIN com a tabela de Usuários (operadores)
-  client_name: string; // Virá do JOIN com a tabela Member
+  operator_name: string; 
+  client_name: string; 
   total_value: number;
   status: 'ATIVA' | 'CANCELADA';
-  payment_status: 'PAGO' | 'FIADO'; // Baseado no status original da venda (1 ou 2)
+  payment_status: 'PAGO' | 'FIADO'; 
   items: ItemVenda[];
 }
 
@@ -29,16 +33,85 @@ interface Operador {
 
 export default function HistoricoGeralVendas() {
   // =========================================================================
-  // ESTADOS PRINCIPAIS (Prontos para o Supabase)
+  // ESTADOS PRINCIPAIS
   // =========================================================================
   const [vendas, setVendas] = useState<Venda[]>([]);
   const [operadores, setOperadores] = useState<Operador[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const [filtroVendedor, setFiltroVendedor] = useState<string>('Todos');
 
   // Estados do Modal de Cancelamento
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [vendaParaCancelar, setVendaParaCancelar] = useState<Venda | null>(null);
+
+  // =========================================================================
+  // BUSCA E FORMATAÇÃO DE DADOS
+  // =========================================================================
+  const fetchDados = async () => {
+    setIsLoading(true);
+    try {
+      // 1. BUSCA OS OPERADORES
+      const usersResponse = await getAllUsersController() as any;
+      if (usersResponse?.success && usersResponse?.users) {
+        const opsFormatados = usersResponse.users.map((u: any) => ({
+          user_id: u.id, 
+          name: u.name
+        }));
+        setOperadores(opsFormatados);
+      }
+
+      // 2. BUSCA AS VENDAS
+      const response = await getAllSales() as any;
+      
+      if (response?.success && response?.data) {
+        // Garantindo que pegamos o array de vendas
+        const dadosBrutos = Array.isArray(response.data) ? response.data : (response.data.sale || []);
+        
+        console.log("Dados que chegaram do Supabase:", dadosBrutos); // 🟢 Para você ver o que o banco mandou!
+
+        const vendasFormatadas: Venda[] = dadosBrutos.map((row: any) => {
+          // Extraindo as listas de itens à prova de falhas (letra maiuscula ou minuscula)
+          const itensBrutos = row.Item_sale || row.item_sale || [];
+
+          return {
+            sale_id: row.id,
+            date: formatDate(row.date),
+            operator_id: row.user_id || 0,
+            operator_name: row.User?.name || row.user?.name || 'Desconhecido',
+            client_name: row.Member?.name || row.member?.name || 'Cliente Avulso',
+            total_value: row.total_value,
+            status: 'ATIVA', 
+            payment_status: row.status ? 'PAGO' : 'FIADO',
+            items: itensBrutos.map((item: any) => ({
+              name: item.Product?.name || item.product?.name || 'Produto',
+              quantity: item.quantity
+            }))
+          };
+        });
+
+        setVendas(vendasFormatadas);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar histórico:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDados();
+  }, []);
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const datePart = dateString.split('T')[0];
+    const [year, month, day] = datePart.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatCurrency = (value: number) => 
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   // =========================================================================
   // LÓGICA DE FILTRAGEM
@@ -49,38 +122,39 @@ export default function HistoricoGeralVendas() {
   }, [vendas, filtroVendedor]);
 
   const totalFiltrado = useMemo(() => {
-    // Soma apenas as vendas ativas
     return vendasFiltradas
       .filter(v => v.status === 'ATIVA')
       .reduce((acc, curr) => acc + curr.total_value, 0);
   }, [vendasFiltradas]);
 
   // =========================================================================
-  // FUNÇÕES DE AÇÃO
+  // FUNÇÕES DE AÇÃO (CANCELAMENTO)
   // =========================================================================
   const handleAbrirCancelamento = (venda: Venda) => {
     setVendaParaCancelar(venda);
     setIsCancelModalOpen(true);
   };
 
-  const confirmarCancelamento = () => {
-    if (vendaParaCancelar) {
-      // 🟢 TODO SUPABASE: Transaction necessária aqui
-      // 1. UPDATE Sale SET status = 'CANCELADA' WHERE sale_id = vendaParaCancelar.sale_id
-      // 2. Fazer um loop nos itens e devolver a 'quantity' pro 'stock' na tabela Product
+  const confirmarCancelamento = async () => {
+    if (!vendaParaCancelar) return;
+
+    try {
+      const response = await deleteSale(vendaParaCancelar.sale_id) as any;
       
-      const listaAtualizada = vendas.map(v => 
-        v.sale_id === vendaParaCancelar.sale_id ? { ...v, status: 'CANCELADA' as const } : v
-      );
-      setVendas(listaAtualizada);
-      
+      if (response?.success === false || (response as any)?.sucess === false) {
+        alert("Erro ao cancelar: " + response.message);
+        return;
+      }
+
       setIsCancelModalOpen(false);
       setVendaParaCancelar(null);
+      fetchDados();
+
+    } catch (error) {
+      alert("Erro técnico ao cancelar a venda.");
+      console.error(error);
     }
   };
-
-  const formatCurrency = (value: number) => 
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 max-w-[1400px] mx-auto relative">
@@ -96,7 +170,7 @@ export default function HistoricoGeralVendas() {
             onChange={(e) => setFiltroVendedor(e.target.value)}
             className="w-full md:w-64 px-4 py-2 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] outline-none text-gray-700 text-sm shadow-sm"
           >
-            <option value="Todos">{operadores.length === 0 ? 'Carregando...' : 'Todos'}</option>
+            <option value="Todos">{isLoading ? 'Carregando...' : 'Todos'}</option>
             {operadores.map(op => (
               <option key={op.user_id} value={op.user_id}>{op.name}</option>
             ))}
@@ -120,67 +194,70 @@ export default function HistoricoGeralVendas() {
           </thead>
           
           <tbody className="divide-y divide-gray-100 bg-white">
-            {vendasFiltradas.map((venda) => (
-              <tr key={venda.sale_id} className={`transition-colors ${venda.status === 'CANCELADA' ? 'bg-red-50/50 opacity-75' : 'hover:bg-gray-50'}`}>
-                <td className="py-3 px-4 text-sm text-gray-800">{venda.date}</td>
-                <td className="py-3 px-4 text-sm text-gray-800 font-medium">{venda.operator_name}</td>
-                <td className="py-3 px-4 text-sm text-gray-600">{venda.client_name}</td>
-                
-                <td className="py-3 px-4 text-sm text-gray-600">
-                  <div className="flex flex-wrap gap-1">
-                    {venda.items.map((item, idx) => (
-                      <span key={idx} className={`px-2 py-0.5 rounded text-xs border ${venda.status === 'CANCELADA' ? 'border-red-200 bg-white' : 'border-gray-200 bg-gray-50'}`}>
-                        {item.quantity}x {item.name}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-
-                <td className="py-3 px-4 text-center">
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                    venda.status === 'CANCELADA' 
-                      ? 'bg-transparent text-gray-400 border border-gray-300' 
-                      : venda.payment_status === 'PAGO' 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {venda.payment_status}
-                  </span>
-                </td>
-                
-                <td className={`py-3 px-4 text-sm font-medium text-right ${venda.status === 'CANCELADA' ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
-                  {formatCurrency(venda.total_value)}
-                </td>
-                
-                <td className="py-3 px-4 text-center">
-                  {venda.status === 'ATIVA' ? (
-                    <button 
-                      onClick={() => handleAbrirCancelamento(venda)}
-                      className="bg-[#c82333] hover:bg-[#a71d2a] text-white text-xs font-bold px-3 py-1.5 rounded transition-colors shadow-sm"
-                    >
-                      Cancelar Venda
-                    </button>
-                  ) : (
-                    <span className="text-red-500 text-xs font-bold uppercase bg-red-100 px-2 py-1 rounded">
-                      Cancelada
-                    </span>
-                  )}
+            {isLoading ? (
+              <tr>
+                <td colSpan={7} className="py-12 text-center text-gray-500">
+                  <div className="animate-pulse font-medium">Carregando histórico...</div>
                 </td>
               </tr>
-            ))}
+            ) : vendasFiltradas.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="p-12 text-center text-gray-500">
+                  <p className="text-lg font-medium text-gray-700">Nenhuma venda encontrada</p>
+                </td>
+              </tr>
+            ) : (
+              vendasFiltradas.map((venda) => (
+                <tr key={venda.sale_id} className={`transition-colors ${venda.status === 'CANCELADA' ? 'bg-red-50/50 opacity-75' : 'hover:bg-gray-50'}`}>
+                  <td className="py-3 px-4 text-sm text-gray-800">{venda.date}</td>
+                  <td className="py-3 px-4 text-sm text-gray-800 font-medium">{venda.operator_name}</td>
+                  <td className="py-3 px-4 text-sm text-gray-600">{venda.client_name}</td>
+                  
+                  <td className="py-3 px-4 text-sm text-gray-600">
+                    <div className="flex flex-wrap gap-1">
+                      {venda.items.map((item, idx) => (
+                        <span key={idx} className={`px-2 py-0.5 rounded text-xs border ${venda.status === 'CANCELADA' ? 'border-red-200 bg-white' : 'border-gray-200 bg-gray-50'}`}>
+                          {item.quantity}x {item.name}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+
+                  <td className="py-3 px-4 text-center">
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                      venda.status === 'CANCELADA' 
+                        ? 'bg-transparent text-gray-400 border border-gray-300' 
+                        : venda.payment_status === 'PAGO' 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {venda.payment_status}
+                    </span>
+                  </td>
+                  
+                  <td className={`py-3 px-4 text-sm font-medium text-right ${venda.status === 'CANCELADA' ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                    {formatCurrency(venda.total_value)}
+                  </td>
+                  
+                  <td className="py-3 px-4 text-center">
+                    {venda.status === 'ATIVA' ? (
+                      <button 
+                        onClick={() => handleAbrirCancelamento(venda)}
+                        className="bg-[#c82333] hover:bg-[#a71d2a] text-white text-xs font-bold px-3 py-1.5 rounded transition-colors shadow-sm"
+                      >
+                        Cancelar Venda
+                      </button>
+                    ) : (
+                      <span className="text-red-500 text-xs font-bold uppercase bg-red-100 px-2 py-1 rounded">
+                        Cancelada
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
-
-        {/* MENSAGEM DE ESTADO VAZIO */}
-        {vendasFiltradas.length === 0 && (
-          <div className="p-12 flex flex-col items-center justify-center text-gray-500 bg-white border-t border-gray-100">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 text-gray-300 mb-3">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-            </svg>
-            <p className="text-lg font-medium text-gray-700">Nenhuma venda encontrada</p>
-            <p className="text-sm">Os registros aparecerão aqui assim que as vendas começarem.</p>
-          </div>
-        )}
       </div>
 
       {/* TOTALIZADOR */}
@@ -191,9 +268,7 @@ export default function HistoricoGeralVendas() {
         </div>
       </div>
 
-      {/* ========================================================================= */}
       {/* MODAL DE CONFIRMAÇÃO DE CANCELAMENTO */}
-      {/* ========================================================================= */}
       {isCancelModalOpen && vendaParaCancelar && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-md overflow-hidden flex flex-col p-6 text-center">
@@ -209,7 +284,7 @@ export default function HistoricoGeralVendas() {
             <div className="bg-gray-50 border border-gray-200 rounded p-3 mb-4 text-left text-sm text-gray-700">
               <p><strong>Cliente:</strong> {vendaParaCancelar.client_name}</p>
               <p><strong>Status:</strong> {vendaParaCancelar.payment_status}</p>
-              <p className="mt-1"><strong>Itens que retornarão ao estoque:</strong></p>
+              <p className="mt-1"><strong>Itens:</strong></p>
               <ul className="list-disc list-inside text-gray-500 text-xs ml-1">
                 {vendaParaCancelar.items.map((item, idx) => (
                   <li key={idx}>{item.quantity}x {item.name}</li>
@@ -218,7 +293,7 @@ export default function HistoricoGeralVendas() {
             </div>
 
             <p className="text-gray-600 text-sm mb-6">
-              Esta ação anulará a cobrança de <strong>{formatCurrency(vendaParaCancelar.total_value)}</strong>. Deseja confirmar?
+              Esta ação excluirá a cobrança de <strong>{formatCurrency(vendaParaCancelar.total_value)}</strong>. Deseja confirmar?
             </p>
             
             <div className="flex justify-center gap-3">

@@ -12,7 +12,7 @@ export const createSale = async(SaleEntity) =>{
 
 export const getSaleById = async(id) => {
     const supabase= await getSupabaseServer();
-    const {data, error} = await supabase.from("Sale").select("*").select("id", id).maybeSingle();
+    const {data, error} = await supabase.from("Sale").select("*").eq("id", id).maybeSingle();
     if(error){
         throw new Error(error.message);
     } return data;

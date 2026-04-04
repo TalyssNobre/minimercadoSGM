@@ -96,3 +96,17 @@ export async function getLoggedUserController() {
         return { success: false, message: "Erro inesperado ao buscar usuário logado." };
     }
 }
+
+export async function getAllUsersController() {
+    try {
+        const result = await UserService.getAllUsers();
+        
+        if (result.erro) {
+            return { success: false, message: result.erro };
+        }
+        
+        return { success: true, users: result.usuarios };
+    } catch (error) {
+        return { success: false, message: "Erro inesperado ao buscar usuários." };
+    }
+}

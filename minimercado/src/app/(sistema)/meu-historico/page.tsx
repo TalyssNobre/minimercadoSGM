@@ -1,10 +1,8 @@
 'use client';
 import React, { useMemo, useState, useEffect } from 'react';
 
-
-
-
-
+// 🟢 IMPORTANDO A FUNÇÃO QUE JÁ ESTÁ PRONTA NO SEU BACKEND
+import { getLoggedUserController } from '@/src/Server/controllers/UserController';
 
 interface User {
   id: number; // No seu DER o id do User é int8
@@ -12,24 +10,18 @@ interface User {
   user_id: string; // O UUID que liga com auth.users
 }
 
-
 interface Team {
   name: string;
 }
-
 
 interface Member {
   name: string;
   Team?: Team; 
 }
 
-
-
 interface Product {
   name: string;
 }
-
-
 
 interface ItemSale {
   quantity: number; // No DER é numeric
@@ -56,16 +48,33 @@ export default function MeuHistoricoPage() {
     async function carregarDadosDoSupabase() {
       setIsLoading(true);
       try {
-        // TODO: Quando o Supabase estiver pronto, o select será exatamente assim:
-        // const { data } = await supabase.from('Sale').select(`
-        //   id, date, total_value, status, payment_date,
-        //   member (name, Team(name)),
-        //   Item_sale (quantity, Product(name))
-        // `).eq('user_id', operadorAtual.id);
+        // 🟢 1. BUSCANDO QUEM ESTÁ LOGADO AGORA MESMO
+        const userResp = await getLoggedUserController();
+        const userLogado = (userResp as any)?.user || (userResp as any)?.data?.user;
 
-        // Simulando estado inicial vazio:
-        setOperadorAtual({ id: 1, name: 'Carregando...', user_id: '' });
+        if (userLogado && userLogado.id) {
+          // Preenche o cabeçalho com os dados reais do banco
+          setOperadorAtual({ 
+            id: userLogado.id, 
+            name: userLogado.name || 'Operador', 
+            user_id: userLogado.id.toString() 
+          });
+
+          // TODO: Quando o Supabase estiver pronto, o select será exatamente assim:
+          // const { data } = await supabase.from('Sale').select(`
+          //   id, date, total_value, status, payment_date,
+          //   member (name, Team(name)),
+          //   Item_sale (quantity, Product(name))
+          // `).eq('user_id', userLogado.id); // 🟢 Aqui você vai usar o ID real!
+
+        } else {
+          // Se a sessão expirou ou deu erro
+          setOperadorAtual({ id: 0, name: 'Sessão Expirada', user_id: '' });
+        }
+
+        // Mantendo as vendas vazias enquanto o back não fica pronto
         setVendas([]); 
+
       } catch (error) {
         console.error("Erro ao buscar histórico:", error);
       } finally {
@@ -76,14 +85,12 @@ export default function MeuHistoricoPage() {
     carregarDadosDoSupabase();
   }, []);
 
-
   const totalGeralVendas = useMemo(() => {
     return vendas.reduce((acc, curr) => acc + (curr.total_value || 0), 0);
   }, [vendas]);
 
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
@@ -102,7 +109,7 @@ export default function MeuHistoricoPage() {
             <span className="text-sm font-bold text-[#0D9488] uppercase">
               {operadorAtual ? operadorAtual.name : 'Carregando...'}
             </span>
-            {operadorAtual && (
+            {operadorAtual && operadorAtual.id !== 0 && (
               <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded font-mono">
                 ID: {operadorAtual.id}
               </span>
@@ -135,7 +142,7 @@ export default function MeuHistoricoPage() {
                 <td colSpan={5} className="py-12 text-center text-gray-500">
                   <div className="animate-pulse flex flex-col items-center">
                     <div className="h-6 w-6 border-2 border-[#0D9488] border-t-transparent rounded-full animate-spin mb-2"></div>
-                    <span className="text-sm">Buscando seu histórico...</span>
+                    <span className="text-sm">Identificando usuário...</span>
                   </div>
                 </td>
               </tr>
@@ -193,7 +200,7 @@ export default function MeuHistoricoPage() {
                   <div className="bg-gray-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-gray-300"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   </div>
-                  <p className="text-gray-400 text-sm italic">Nenhuma venda registrada no seu histórico ainda.</p>
+                  <p className="text-gray-400 text-sm italic">O backend de histórico ainda será implementado.</p>
                 </td>
               </tr>
             )}
