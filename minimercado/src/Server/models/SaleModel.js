@@ -9,3 +9,27 @@ export const createSale = async(SaleEntity) =>{
         throw new Error(error.message);
     } return data;
 }
+
+export const getSaleById = async(id) => {
+    const supabase= await getSupabaseServer();
+    const {data, error} = await supabase.from("Sale").select("*").select("id", id).maybeSingle();
+    if(error){
+        throw new Error(error.message);
+    } return data;
+}
+
+export const getAllSales = async() =>{
+    const supabase = await getSupabaseServer();
+    const {data, error} = await supabase.from("Sale").select("*").maybeSingle();
+    if(error){
+        throw new Error(error.message);
+    } return data;
+}
+
+export const deleteSale = async(id) =>{
+    const supabase = await getSupabaseServer();
+    const {data, error} = await supabase.from("Sale").select("*").eq("id", id).maybeSingle();
+    if(error){
+        throw new Error(error.message);
+    } return data;
+}

@@ -4,13 +4,11 @@ import Sale from "../entitys/SaleEntity";
 import ItemSale from "../entitys/ItemSaleEntity";
 
 export const createSale = async ({ data, itensCarrinho }) => {
-    try {
-        console.log("Dados chegando do front:", data, itensCarrinho);
-
-        if (!itensCarrinho || itensCarrinho.length === 0) {
+    console.log("Dados chegando do front:", data, itensCarrinho);
+    if (!itensCarrinho || itensCarrinho.length === 0) {
             throw new Error("Não é possível finalizar uma venda sem itens no carrinho.");
         }
-
+    try {
         const saleEntity = new Sale({ 
             ...data, 
             items: itensCarrinho 
@@ -25,7 +23,6 @@ export const createSale = async ({ data, itensCarrinho }) => {
             member_id: saleEntity.member_id
         };
         
-        // 3. Salvamos a Venda Limpa
         const results = await SaleModel.createSale(dataSale);
 
         const itensComVinculo = saleEntity.items.map(item => {
@@ -50,3 +47,38 @@ export const createSale = async ({ data, itensCarrinho }) => {
         return { success: false, error: error.message }; 
     }
 };
+
+export const getAllSales = async() =>{
+    try{
+        const results = await SaleModel.getAllSales();
+        return{success: true, sale: results}
+    }catch(error){
+        return{error: error.message}
+    }
+}
+
+export const getSaleById = async(id) => {
+    const saleExisting = await SaleModel.getSaleById(data.id);
+    if(!saleExisting){
+        throw new Error("Venda não encontrada")
+    }
+    try{
+    const results = await SaleModel.getSaleById(id);
+    return{sucess : true, sale: results}
+    }catch(error){
+        return{sucess: false , error :error.message}
+    }
+}
+
+export const deleteSale = async(id) => {
+   const saleExisting = await SaleModel.getSaleById(data.id);
+    if(!saleExisting){
+        throw new Error("Venda não encontrada")
+    }
+    try{
+    const results = await SaleModel.deleteSale(id);
+    return{sucess : true, sale: results}
+   }catch(error){
+         return { success: false, error: error.message }; 
+   }
+}

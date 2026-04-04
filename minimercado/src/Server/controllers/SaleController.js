@@ -18,3 +18,24 @@ export const createSale = async(dataFront) =>{
         return{ success: true, message: "Venda Criada!"}
     }catch(error){return{error: error.message}}
 }
+
+export const getAllSales = async() =>{
+    try{
+        const results =await SaleService.getAllSales();
+         if (!results || results.error) {
+            return { success: false, data: [], message: results.error };
+        }
+        return { success: true, data: results.sale };
+    }catch(error){
+        return { success: false, message: "Erro de conexão" };
+}
+}
+export const deleteSale = async(id) =>{
+    try{
+        const results = await SaleService.deleteSale(id);
+        if (results.error) return { success: false,sale: results,  message: results.error };
+        revalidatePath("/sale");
+        return{success: true , message: "Venda Excluída"}
+    }catch(error){return{error: error.message}}
+
+}
