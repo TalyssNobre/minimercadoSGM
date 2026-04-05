@@ -1,7 +1,10 @@
 'use client';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 
-// 1. IMPORTANDO SEUS CONTROLLERS
+// 🟢 1. IMPORTANDO O MODAL DE ALERTA AQUI
+import { ModalAlerta } from '@/src/components/ui/ModalAlerta';
+
+// 2. IMPORTANDO SEUS CONTROLLERS
 import { getAllTeams } from '@/src/Server/controllers/TeamController';
 import { getAllMember } from '@/src/Server/controllers/MemberController';
 import { getAllCategory } from '@/src/Server/controllers/CategoryController';
@@ -48,8 +51,20 @@ export default function FrenteCaixa() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFinalizando, setIsFinalizando] = useState(false);
 
+  // 🟢 STATE DO MODAL DE ALERTA
+  const [modalAlerta, setModalAlerta] = useState({ 
+    isOpen: false, 
+    mensagem: '', 
+    tipo: 'success' as 'success' | 'error' 
+  });
+
   const teamRef = useRef<HTMLDivElement>(null);
   const memberRef = useRef<HTMLDivElement>(null);
+
+  // 🟢 FUNÇÃO PARA CHAMAR O MODAL FÁCIL
+  const exibirAlerta = (mensagem: string, tipo: 'success' | 'error' = 'success') => {
+    setModalAlerta({ isOpen: true, mensagem, tipo });
+  };
 
   useEffect(() => {
     async function fetchDados() {
@@ -140,39 +155,43 @@ export default function FrenteCaixa() {
   const removeFromCart = (productId: number) => setCart(prev => prev.filter(item => item.product.id !== productId));
 
   // =========================================================================
-  // 🟢 FUNÇÃO DE FINALIZAÇÃO (MOLDADA PARA SEU NOVO BACKEND ENCAPSULADO)
+  // 🟢 FUNÇÃO DE FINALIZAÇÃO ATUALIZADA COM O MODAL
   // =========================================================================
   const handleFinalizarVenda = async (statusVenda: 'PAGO' | 'PENDENTE') => {
-    if (cart.length === 0) return alert("O carrinho está vazio!");
-    if (!selectedMember) return alert("Selecione um cliente para finalizar!");
+    if (cart.length === 0) {
+      exibirAlerta("O carrinho está vazio! Adicione produtos para continuar.", 'error');
+      return;
+    }
+    
+    if (!selectedMember) {
+      exibirAlerta("Selecione uma equipe e um cliente para finalizar a venda!", 'error');
+      return;
+    }
+    
     if (isFinalizando) return;
 
     setIsFinalizando(true);
 
     try {
-      // 1. Validando o Vendedor com trava de segurança real
       const userResp = await getLoggedUserController();
-     const vendedorId = (userResp as any)?.user?.id || (userResp as any)?.data?.user?.id;
+      const vendedorId = (userResp as any)?.user?.id || (userResp as any)?.data?.user?.id;
       
       if (!vendedorId) {
-        alert("Sessão expirada ou Vendedor não encontrado. Recarregue a página e tente de novo.");
+        exibirAlerta("Sessão expirada ou Vendedor não encontrado. Recarregue a página.", 'error');
         setIsFinalizando(false);
         return;
       }
 
-      // 2. Criando o FormData que o Controller vai transformar em Objeto
       const formData = new FormData();
       formData.append('member_id', selectedMember.id.toString());
       formData.append('user_id', vendedorId.toString());
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
       
-      // 🟢 NOVO: O Service não cria mais as datas, então o Front DEVE enviar!
       formData.append('date', new Date().toISOString());
       if (statusVenda === 'PAGO') {
         formData.append('payment_date', new Date().toISOString());
       }
 
-      // 3. Encapsulando o carrinho com a chave unit_price
       const itensCarrinho = cart.map(item => ({
         product_id: item.product.id,
         quantity: item.quantity,
@@ -181,19 +200,18 @@ export default function FrenteCaixa() {
 
       formData.append('cart', JSON.stringify(itensCarrinho));
 
-      // 4. Chamada da API
       const resposta = await createSale(formData) as any;
 
       if (resposta.success) {
-        alert("✅ Venda realizada com sucesso!");
+        exibirAlerta("Venda realizada com sucesso!", 'success');
         setCart([]);
         setSelectedMember(null);
         setSelectedTeam(null);
       } else {
-        alert("❌ Erro ao salvar: " + (resposta.message || resposta.error));
+        exibirAlerta(resposta.message || resposta.error || "Erro ao salvar a venda.", 'error');
       }
     } catch (error: any) {
-      alert("Erro Crítico: " + error.message);
+      exibirAlerta("Erro Crítico de conexão: " + error.message, 'error');
     } finally {
       setIsFinalizando(false);
     }
@@ -202,7 +220,7 @@ export default function FrenteCaixa() {
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6">
+    <div className="flex flex-col lg:flex-row gap-6 relative">
       
       {/* LADO ESQUERDO: SELEÇÃO E PRODUTOS */}
       <div className="flex-1 space-y-6">
@@ -380,6 +398,15 @@ export default function FrenteCaixa() {
           </div>
         </div>
       </div>
+
+      {/* 🟢 MODAL DE ALERTA RENDERIZADO AQUI NO FINAL */}
+      <ModalAlerta 
+        isOpen={modalAlerta.isOpen}
+        mensagem={modalAlerta.mensagem}
+        tipo={modalAlerta.tipo}
+        onClose={() => setModalAlerta({ ...modalAlerta, isOpen: false })}
+      />
+
     </div>
   );
 }

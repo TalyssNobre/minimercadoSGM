@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getLoggedUserController } from '@/src/Server/controllers/UserController';
@@ -11,33 +11,27 @@ export default function Sidebar() {
 
   const [cargoUsuario, setCargoUsuario] = useState<string | null>(null);
 
-  // 🟢 ESTADOS NOVOS: Controle do scroll para o Header Mobile
+  // 🟢 CONTROLE DE SCROLL SUAVE PARA O MOBILE
   const [showMobileHeader, setShowMobileHeader] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const lastScrollY = useRef(0);
 
-  // 🟢 EFEITO MÁGICO DO SCROLL
   useEffect(() => {
     const handleScroll = (e: any) => {
-      // Pega a rolagem de qualquer div que estiver rolando ou da janela principal
       const currentScrollY = e.target.scrollTop || window.scrollY;
-
       if (currentScrollY === undefined) return;
 
-      // Se rolou pra baixo mais de 50px, esconde. Se rolou pra cima, mostra.
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
-        setShowMobileHeader(false);
+      if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+        setShowMobileHeader(false); // Rolou pra baixo, esconde
       } else {
-        setShowMobileHeader(true);
+        setShowMobileHeader(true); // Rolou pra cima, mostra
       }
-      setLastScrollY(currentScrollY);
+      lastScrollY.current = currentScrollY;
     };
 
-    // O "true" no final é o segredo! Ele intercepta o scroll de qualquer elemento da tela.
     window.addEventListener('scroll', handleScroll, true);
     return () => window.removeEventListener('scroll', handleScroll, true);
-  }, [lastScrollY]);
+  }, []);
 
-  // Busca o cargo
   useEffect(() => {
     async function fetchUserRole() {
       try {
@@ -114,8 +108,10 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* 🟢 HEADER MOBILE ATUALIZADO: Agora ele sobe (esconde) junto com o scroll */}
-      <div className={`md:hidden bg-[#0D9488] text-white p-4 flex justify-between items-center shadow-md fixed left-0 w-full z-50 transition-all duration-300 ease-in-out ${showMobileHeader ? 'top-0' : '-top-24'}`}>
+      {/* 🟢 HEADER MOBILE: Agora desliza elegantemente com translate-y */}
+      <div 
+        className={`md:hidden bg-[#0D9488] text-white px-4 flex justify-between items-center shadow-md fixed left-0 w-full z-[60] top-0 h-16 transition-transform duration-300 ease-in-out ${showMobileHeader ? 'translate-y-0' : '-translate-y-full'}`}
+      >
         <h1 className="font-bold text-lg tracking-wide">MiniMercado SGM</h1>
         <button onClick={() => setIsMobileOpen(true)} className="p-2 bg-white/10 rounded-md">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
@@ -125,10 +121,10 @@ export default function Sidebar() {
       </div>
 
       {isMobileOpen && (
-        <div className="md:hidden fixed inset-0 bg-black/50 z-[60] backdrop-blur-sm" onClick={() => setIsMobileOpen(false)} />
+        <div className="md:hidden fixed inset-0 bg-black/50 z-[70] backdrop-blur-sm" onClick={() => setIsMobileOpen(false)} />
       )}
 
-      <aside className={`bg-[#0F766E] text-white min-h-screen transition-all duration-300 flex flex-col fixed top-0 z-[70] shadow-2xl h-full ${isMobileOpen ? 'left-0 w-64' : '-left-full md:left-0'} md:relative md:flex ${isCollapsed ? 'md:w-20' : 'md:w-64'}`}>
+      <aside className={`bg-[#0F766E] text-white min-h-screen transition-all duration-300 flex flex-col fixed top-0 z-[80] shadow-2xl h-full ${isMobileOpen ? 'left-0 w-64' : '-left-full md:left-0'} md:relative md:flex ${isCollapsed ? 'md:w-20' : 'md:w-64'}`}>
         <div className="p-4 flex justify-between items-center border-b border-white/10">
           <span className={`font-bold text-lg tracking-wide whitespace-nowrap overflow-hidden transition-opacity ${isCollapsed ? 'md:opacity-0 md:w-0' : 'opacity-100'}`}>
             Menu

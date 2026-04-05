@@ -158,7 +158,7 @@ export default function GerenciarEstoquePage() {
   };
 
   // =========================================================================
-  // LAYOUT INTACTO ABAIXO
+  // LAYOUT INTACTO ABAIXO (Apenas com o Scroll Adicionado)
   // =========================================================================
   return (
     <div className="max-w-6xl mx-auto py-6 relative">
@@ -176,11 +176,14 @@ export default function GerenciarEstoquePage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
+        
+        {/* 🟢 ADICIONADO: max-h-[600px] e overflow-y-auto */}
+        <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
           <table className="w-full text-left border-collapse">
             
-            <thead>
-              <tr className="bg-gray-100 border-b border-gray-200">
+            {/* 🟢 ADICIONADO: sticky top-0 z-10 e puxado o bg-gray-100 para o thead */}
+            <thead className="bg-gray-100 sticky top-0 z-10 shadow-sm">
+              <tr className="border-b border-gray-200">
                 <th className="py-4 px-6 text-sm font-bold text-gray-700 w-1/4">Nome do Produto</th>
                 <th className="py-4 px-6 text-sm font-bold text-gray-700 w-1/5">Categoria</th>
                 <th className="py-4 px-6 text-sm font-bold text-gray-700 w-1/6">Preço Unit.</th>

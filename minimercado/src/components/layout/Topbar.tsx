@@ -15,6 +15,7 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
   const [nomeUsuario, setNomeUsuario] = useState<string>('Carregando...');
   const [cargoUsuario, setCargoUsuario] = useState<string>(tipoUsuario);
 
+  // 🟢 CONTROLE DE SCROLL SUAVE PARA O MOBILE (Em sincronia com a Sidebar)
   const [showTopbar, setShowTopbar] = useState(true);
   const lastScrollY = useRef(0);
 
@@ -40,9 +41,6 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
       try {
         const resposta = await getLoggedUserController();
         if (resposta.success && resposta.user) {
-          
-          // 🟢 PROTEÇÃO AQUI: 
-          // Se o nome vier nulo do banco, usamos 'Usuário' como padrão para não dar erro no split.
           const nomeParaSplit = resposta.user.name || 'Usuário';
           const primeiroNome = nomeParaSplit.split(' ')[0];
           
@@ -81,9 +79,12 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
   };
 
   return (
+    // 🟢 MAGIA AQUI: No mobile ela é fixed abaixo da outra barra. No PC é sticky normal.
+    // O translate puxa ela totalmente pra fora da tela no mobile sem dar pulos.
     <nav 
-      className={`w-full bg-verde-principal h-20 text-white shadow-lg px-6 flex justify-between items-center sticky top-0 z-[50] transition-all duration-300 ease-in-out 
-      ${showTopbar ? 'mt-0' : '-mt-20'}`}
+      className={`w-full bg-verde-principal h-20 text-white shadow-lg px-6 flex justify-between items-center transition-transform duration-300 ease-in-out z-[50]
+      fixed top-16 left-0 md:static md:sticky md:top-0 md:left-auto
+      ${showTopbar ? 'translate-y-0' : '-translate-y-36 md:translate-y-0'}`}
     >
       <div className="flex items-center">
         <div className="w-10"></div>

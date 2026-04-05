@@ -5,24 +5,29 @@ import Sidebar from "@/src/components/layout/Sidebar";
 
 export default function SistemaLayout({ children }: { children: React.ReactNode }) {
   return (
-    // overflow-hidden evita que qualquer erro de largura crie barras de rolagem
     <div className="flex h-screen overflow-hidden bg-gray-50">
       
       {/* Menu Lateral */}
       <Sidebar />
 
-      {/* Área Direita: Ocupa o resto do espaço (flex-1) */}
-      {/* 🟢 AQUI: Adicionado pt-16 no mobile, e md:pt-0 no PC */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden pt-16 md:pt-0">
+      {/* 🟢 Área Direita: Tiramos o pt-36 daqui, pois ele travava o buraco na tela */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
-        {/* Barra Superior agora é sticky e fica dentro desse fluxo */}
         <Topbar tipoUsuario="admin" />
         
-        {/* Conteúdo que rola verticalmente (overflow-y-auto) */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto">
+        {/* O main é a caixa que realmente tem o scroll (overflow-y-auto) */}
+        <main className="flex-1 overflow-y-auto">
+          
+          {/* 🟢 O SEGREDO ESTÁ AQUI: 
+              Colocamos "pt-40" (espaço exato das duas barras + um respiro) DENTRO do conteúdo.
+              Como ele está aqui dentro, ao rolar a página para baixo, esse espaço rola junto e some,
+              fazendo o seu sistema usar a tela inteira do celular!
+              No PC (md:p-8), ele volta a ter a margem padrão.
+          */}
+          <div className="p-4 pt-40 md:p-8 max-w-7xl mx-auto">
             {children}
           </div>
+
         </main>
       </div>
     </div>

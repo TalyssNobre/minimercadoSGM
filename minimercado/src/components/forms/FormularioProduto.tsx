@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
+import { ModalAlerta } from '@/src/components/ui/ModalAlerta'; // 🟢 Importação do nosso novo modal
 
 // Imports dos Controllers
 import { createProduct } from '@/src/Server/controllers/ProductController'; 
@@ -39,21 +40,28 @@ export default function FormularioProduto() {
   const [isModalCategoriaOpen, setIsModalCategoriaOpen] = useState(false);
   const [novaCategoriaNome, setNovaCategoriaNome] = useState('');
 
+  // 🟢 State para o Modal de Alerta Customizado
+  const [modalAlerta, setModalAlerta] = useState({ 
+    isOpen: false, 
+    mensagem: '', 
+    tipo: 'success' as 'success' | 'error' 
+  });
+
   const inputClasses = "w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] focus:border-[#0D9488] outline-none transition-all placeholder-gray-400 text-gray-800";
+
+  // Função auxiliar para exibir os alertas mais fácil
+  const exibirAlerta = (mensagem: string, tipo: 'success' | 'error' = 'success') => {
+    setModalAlerta({ isOpen: true, mensagem, tipo });
+  };
 
   // =========================================================================
   // 1. CARREGAR CATEGORIAS
   // =========================================================================
  useEffect(() => {
     async function carregarDados() {
-      const response = await getAllCategory() as any;
-      
-      console.log("Chegou no useEffect:", response); // Sempre bom manter esse log pra debug
-
-      if (response?.success) {
-        // 💡 PEGADINHA: Se vier 'categoria', usamos ela. Se vier 'data', usamos ela.
-        const listaBruta = response.category || response.data;
-
+    const response = await getAllCategory() as any;
+    if (response?.success) {
+    const listaBruta = response.category || response.data;
         if (Array.isArray(listaBruta)) {
           setCategorias(listaBruta);
         }
@@ -93,11 +101,11 @@ export default function FormularioProduto() {
   if (!novaCategoriaNome.trim()) return;
 
   try {
-    // 1. Criamos o FormData em vez de um objeto { name: ... }
+
     const formData = new FormData();
     formData.append('name', novaCategoriaNome);
 
-    // 2. Enviamos o formData para o controller
+
     const response = await createCategory(formData) as ControllerResponse;
 
     if (response.success && response.data) {
@@ -105,26 +113,29 @@ export default function FormularioProduto() {
       setCategoriaId(response.data.id.toString());
       setNovaCategoriaNome('');
       setIsModalCategoriaOpen(false);
+      
+      // 🟢 Substituído o alert padrão
+      exibirAlerta("Categoria criada com sucesso!", 'success');
     } else {
-      alert(response.message || "Erro ao criar categoria");
+      exibirAlerta(response.message || "Erro ao criar categoria", 'error');
     }
   } catch (error) {
     console.error("Erro ao criar categoria:", error);
-    alert("Erro de conexão ao criar categoria.");
+    exibirAlerta("Erro de conexão ao criar categoria.", 'error');
   }
 };
 
   // =========================================================================
-  // 4. SALVAR PRODUTO (USANDO FORMDATA PARA O CONTROLLER)
+  // 4. SALVAR PRODUTO
   // =========================================================================
   const handleSalvarProduto = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!categoriaId) return alert("Por favor, selecione uma categoria.");
+    if (!categoriaId) return exibirAlerta("Por favor, selecione uma categoria.", 'error');
     
     setIsLoading(true);
 
     try {
-      // ✅ Criando FormData para enviar ao Server Action / Controller
+      
       const formData = new FormData();
       formData.append('name', nome);
       formData.append('category_id', categoriaId);
@@ -138,20 +149,22 @@ export default function FormularioProduto() {
       const response = await createProduct(formData) as ControllerResponse;
 
       if (response.success) {
-        alert("Produto registrado com sucesso! 🚀");
-        // Reset do formulário
+        // 🟢 Reset do formulário PRIMEIRO
         setNome('');
         setCategoriaId('');
         setPreco('');
         setEstoque('');
         handleRemoveImage();
-        router.refresh(); // Atualiza os dados da listagem ao fundo
+        router.refresh(); 
+
+        // 🟢 Depois exibe o Alerta Bonito
+        exibirAlerta("Produto registrado com sucesso! 🚀", 'success');
       } else {
-        alert(response.message || "Erro ao salvar produto");
+        exibirAlerta(response.message || "Erro ao salvar produto", 'error');
       }
     } catch (error) {
       console.error("Erro no envio:", error);
-      alert("Erro de conexão com o servidor.");
+      exibirAlerta("Erro de conexão com o servidor.", 'error');
     } finally {
       setIsLoading(false);
     }
@@ -242,6 +255,14 @@ export default function FormularioProduto() {
           </div>
         </div>
       )}
+
+      {/* 🟢 O NOSSO NOVO MODAL DE FEEDBACK RENDERIZADO AQUI */}
+      <ModalAlerta 
+        isOpen={modalAlerta.isOpen}
+        mensagem={modalAlerta.mensagem}
+        tipo={modalAlerta.tipo}
+        onClose={() => setModalAlerta({ ...modalAlerta, isOpen: false })}
+      />
     </>
   );
 }
