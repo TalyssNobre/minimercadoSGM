@@ -1,64 +1,96 @@
 'use client';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 
+// 🟢 IMPORTANDO AS FUNÇÕES QUE JÁ EXISTEM NO SEU BACKEND
+import { getAllTeams } from '@/src/Server/controllers/TeamController';
+import { getAllMember } from '@/src/Server/controllers/MemberController';
+
 // =========================================================================
-// INTERFACES (Tipagens baseadas no DER)
+// INTERFACES (Atualizadas para o padrão real do Banco)
 // =========================================================================
-interface Membro {
-  member_id: number;
+interface Equipe {
+  id: number;
   name: string;
-  team_name: string; // Virá de um JOIN com a tabela Team
+}
+
+interface Membro {
+  id: number;
+  team_id: number;
+  name: string;
 }
 
 interface LinhaHistorico {
-  id_linha: number; // Será o id da tabela Item_Sale
+  id_linha: number; 
   member_id: number;
-  date: string; // Vem da tabela Sale
-  product_name: string; // Virá de um JOIN com a tabela Product
-  category_name: string; // Virá de um JOIN com Product -> Category
-  quantity: number; // Vem de Item_Sale
-  price: number; // Preço total deste item (quantity * unit_price)
-  status: 'PENDENTE' | 'PAGO'; // Calculado a partir do Sale.status (1 ou 2)
+  date: string; 
+  product_name: string; 
+  category_name: string; 
+  quantity: number; 
+  price: number; 
+  status: 'PENDENTE' | 'PAGO'; 
 }
 
 export default function ExtratoFiado() {
   // =========================================================================
-  // ESTADOS PRINCIPAIS (Prontos para o Supabase)
+  // ESTADOS PRINCIPAIS
   // =========================================================================
+  const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [membros, setMembros] = useState<Membro[]>([]);
   const [historicoBruto, setHistoricoBruto] = useState<LinhaHistorico[]>([]);
 
-  const [selectedMemberId, setSelectedMemberId] = useState<string>('');
+  // 🟢 ESTADOS DO NOVO SELETOR (Idêntico ao PDV)
+  const [selectedTeam, setSelectedTeam] = useState<Equipe | null>(null);
+  const [selectedMember, setSelectedMember] = useState<Membro | null>(null);
+  const [isTeamDropdownOpen, setIsTeamDropdownOpen] = useState(false);
+  const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
+
+  const teamRef = useRef<HTMLDivElement>(null);
+  const memberRef = useRef<HTMLDivElement>(null);
+
   const [activeTab, setActiveTab] = useState<'PENDENTE' | 'PAGO'>('PENDENTE');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  // 🟢 BUSCA DE EQUIPES E MEMBROS AO CARREGAR A PÁGINA
+  useEffect(() => {
+    async function fetchDados() {
+      try {
+        const [teamsResp, membersResp] = await Promise.all([
+          getAllTeams() as any,
+          getAllMember() as any
+        ]);
 
+        if (teamsResp?.success) setEquipes(teamsResp.data || teamsResp.team || []);
+        if (membersResp?.success) setMembros(membersResp.data || membersResp.member || []);
+      } catch (error) {
+        console.error("Erro ao carregar equipes e membros:", error);
+      }
+    }
+    fetchDados();
+  }, []);
+
+  // Fechar dropdowns ao clicar fora
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
+      if (teamRef.current && !teamRef.current.contains(event.target as Node)) setIsTeamDropdownOpen(false);
+      if (memberRef.current && !memberRef.current.contains(event.target as Node)) setIsMemberDropdownOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // =========================================================================
-  // LÓGICA DE DADOS (AGRUPAMENTO)
+  // LÓGICA DE DADOS E AGRUPAMENTO
   // =========================================================================
-  const membroAtual = membros.find(m => m.member_id.toString() === selectedMemberId);
+  
+  // 🟢 Filtra os membros baseado na equipe selecionada
+  const membrosFiltrados = useMemo(() => {
+    if (!selectedTeam) return [];
+    return membros.filter(m => m.team_id === selectedTeam.id);
+  }, [selectedTeam, membros]);
 
-  const membrosFiltradosBusca = useMemo(() => {
-    return membros.filter(m => 
-      m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.team_name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm, membros]);
+  // Mantém a compatibilidade com a sua lógica original
+  const selectedMemberId = selectedMember ? selectedMember.id.toString() : '';
 
-  // 🟢 LÓGICA DE AGRUPAMENTO (Mantida intacta, mas agora lê de historicoBruto)
   const comprasVisiveisAgrupadas = useMemo(() => {
     if (!selectedMemberId) return [];
 
@@ -67,10 +99,7 @@ export default function ExtratoFiado() {
     );
 
     const agrupado = comprasBrutas.reduce((acc: any, curr) => {
-      // Formata a data para agrupar apenas pelo "dia" (ignora a hora se houver)
-      // Ajuste isso caso a data venha em formato ISO do banco (ex: split('T')[0])
       const dataDia = curr.date.split(' ')[0]; 
-      
       const key = `${dataDia}-${curr.product_name}-${curr.status}`;
       
       if (!acc[key]) {
@@ -110,15 +139,8 @@ export default function ExtratoFiado() {
   }, [selectedMemberId, comprasVisiveisAgrupadas, selectedItems, historicoBruto]);
 
   // =========================================================================
-  // FUNÇÕES DA TABELA E BUSCA
+  // FUNÇÕES DE AÇÃO DA TABELA
   // =========================================================================
-  const handleSelecionarMembro = (membro: Membro) => {
-    setSelectedMemberId(membro.member_id.toString());
-    setSearchTerm(`${membro.name} - ${membro.team_name}`);
-    setIsDropdownOpen(false);
-    setSelectedItems([]);
-  };
-
   const handleToggleItem = (id_agrupado: string) => {
     setSelectedItems(prev => prev.includes(id_agrupado) ? prev.filter(id => id !== id_agrupado) : [...prev, id_agrupado]);
   };
@@ -133,12 +155,6 @@ export default function ExtratoFiado() {
 
   const handleQuitarPendencia = () => {
     if (selectedItems.length === 0) return;
-
-    // TODO: Supabase UPDATE. Pegar os ids_originais dos itens selecionados e dar baixa no banco.
-    // const idsParaBaixa = comprasVisiveisAgrupadas
-    //   .filter(item => selectedItems.includes(item.id_agrupado))
-    //   .flatMap(item => item.ids_originais);
-    
     alert(`Simulação: Baixa de R$ ${totais.selecionado.toFixed(2).replace('.', ',')} realizada com sucesso!`);
     setSelectedItems([]); 
   };
@@ -153,57 +169,94 @@ export default function ExtratoFiado() {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 max-w-5xl mx-auto">
       
-      {/* BARRA DE PESQUISA */}
-      <div className="mb-8 relative" ref={dropdownRef}>
-        <h2 className="text-2xl font-bold text-gray-800 tracking-tight mb-4">Extratos e Baixa de Fiado</h2>
+      <h2 className="text-2xl font-bold text-gray-800 tracking-tight mb-6">Extratos e Baixa de Fiado</h2>
+      
+      {/* 🟢 SELEÇÃO DE EQUIPE E CLIENTE (Idêntica ao PDV) */}
+      <div className="mb-8 bg-gray-50 p-5 rounded-xl border border-gray-100 shadow-inner">
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Selecione o Cliente para buscar o extrato</h3>
         
-        <div className="relative">
-          <input 
-            type="text"
-            placeholder="Buscar Integrante (ex: Tio João)..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setIsDropdownOpen(true);
-              if (e.target.value === '') setSelectedMemberId('');
-            }}
-            onFocus={() => setIsDropdownOpen(true)}
-            className="w-full pl-11 pr-4 py-3 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#15665a] focus:border-[#15665a] outline-none text-gray-700 shadow-sm transition-all"
-          />
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-          </svg>
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative" ref={teamRef}>
+            <button 
+              type="button"
+              onClick={() => setIsTeamDropdownOpen(!isTeamDropdownOpen)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md text-left bg-white flex justify-between items-center focus:ring-2 focus:ring-[#15665a] transition-all shadow-sm"
+            >
+              <span className="truncate text-gray-700 font-medium">
+                {selectedTeam ? selectedTeam.name : '1º - Selecione a Equipe'}
+              </span>
+              <svg className={`w-4 h-4 text-gray-500 transition-transform ${isTeamDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+            </button>
 
-        {isDropdownOpen && (
-          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-            {searchTerm.length > 0 && membrosFiltradosBusca.length === 0 ? (
-               <div className="px-4 py-3 text-sm text-gray-500 text-center">Nenhum integrante encontrado.</div>
-            ) : membrosFiltradosBusca.length > 0 ? (
-              membrosFiltradosBusca.map(m => (
-                <div 
-                  key={m.member_id} 
-                  onClick={() => handleSelecionarMembro(m)}
-                  className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0 flex justify-between items-center"
-                >
-                  <span className="font-medium text-gray-800">{m.name}</span>
-                  <span className="text-xs text-gray-500 font-semibold bg-gray-100 px-2 py-1 rounded-full">{m.team_name}</span>
-                </div>
-              ))
-            ) : (
-              <div className="px-4 py-3 text-sm text-gray-400 text-center italic">Digite para buscar...</div>
+            {isTeamDropdownOpen && (
+              <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                {equipes.length === 0 ? (
+                  <div className="px-4 py-3 text-sm text-gray-500">Carregando equipes...</div>
+                ) : (
+                  equipes.map(t => (
+                    <div 
+                      key={t.id} 
+                      onClick={() => { 
+                        setSelectedTeam(t); 
+                        setSelectedMember(null); 
+                        setIsTeamDropdownOpen(false); 
+                        setSelectedItems([]); 
+                      }}
+                      className="px-4 py-3 hover:bg-[#15665a] hover:text-white cursor-pointer text-sm transition-colors border-b border-gray-50 last:border-0"
+                    >
+                      {t.name}
+                    </div>
+                  ))
+                )}
+              </div>
             )}
           </div>
-        )}
+
+          <div className="relative" ref={memberRef}>
+            <button 
+              type="button"
+              disabled={!selectedTeam}
+              onClick={() => setIsMemberDropdownOpen(!isMemberDropdownOpen)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md text-left bg-white flex justify-between items-center focus:ring-2 focus:ring-[#15665a] transition-all shadow-sm disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+            >
+              <span className="truncate text-gray-700 font-medium">
+                {selectedMember ? selectedMember.name : '2º - Selecione o Integrante'}
+              </span>
+              <svg className={`w-4 h-4 text-gray-500 transition-transform ${isMemberDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+
+            {isMemberDropdownOpen && selectedTeam && (
+              <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                {membrosFiltrados.length === 0 ? (
+                  <div className="px-4 py-3 text-sm text-gray-500">Nenhum integrante cadastrado nesta equipe.</div>
+                ) : (
+                  membrosFiltrados.map(m => (
+                    <div 
+                      key={m.id} 
+                      onClick={() => { 
+                        setSelectedMember(m); 
+                        setIsMemberDropdownOpen(false); 
+                        setSelectedItems([]); 
+                      }}
+                      className="px-4 py-3 hover:bg-[#15665a] hover:text-white cursor-pointer text-sm transition-colors border-b border-gray-50 last:border-0"
+                    >
+                      {m.name}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* ÁREA DO MEMBRO SELECIONADO */}
-      {membroAtual && (
-        <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
+      {/* ÁREA DO MEMBRO SELECIONADO (Só aparece se a pessoa selecionar alguém) */}
+      {selectedMember && selectedTeam && (
+        <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
           
           <div className="bg-white px-6 py-4 border-b border-gray-200">
             <h3 className="text-xl font-bold text-gray-800">
-              {membroAtual.name} <span className="font-normal text-gray-500">- {membroAtual.team_name}</span>
+              {selectedMember.name} <span className="font-normal text-gray-500">- {selectedTeam.name}</span>
             </h3>
           </div>
 
@@ -256,7 +309,7 @@ export default function ExtratoFiado() {
             
             {comprasVisiveisAgrupadas.length === 0 && (
               <div className="p-8 text-center text-gray-500 bg-white border-t border-gray-200">
-                Nenhum registro de compra encontrado para esta aba.
+                {historicoBruto.length === 0 ? "Aguardando backend carregar o histórico..." : "Nenhum registro de compra encontrado para esta aba."}
               </div>
             )}
           </div>
