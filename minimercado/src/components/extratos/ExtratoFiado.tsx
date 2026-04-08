@@ -1,10 +1,12 @@
 'use client';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 
+// 🟢 IMPORTANDO O MODAL DE ALERTA
+import { ModalAlerta } from '@/src/components/ui/ModalAlerta';
+
 // 🟢 IMPORTANDO AS FUNÇÕES DO BACKEND
 import { getAllTeams } from '@/src/Server/controllers/TeamController';
 import { getAllMember } from '@/src/Server/controllers/MemberController';
-// ATENÇÃO: Ajuste o caminho abaixo para onde você criou as functions de Venda
 import { fetchMemberStatement, settleMultipleSales } from '@/src/Server/controllers/SaleController'; 
 
 // =========================================================================
@@ -22,7 +24,7 @@ interface Membro {
 }
 
 interface LinhaHistorico {
-  id_linha: number; // Vai guardar o sale.id (ID da Venda no banco)
+  id_linha: number; 
   member_id: number;
   date: string; 
   product_name: string; 
@@ -45,15 +47,26 @@ export default function ExtratoFiado() {
   const [isTeamDropdownOpen, setIsTeamDropdownOpen] = useState(false);
   const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
 
-  // 🟢 Novo estado para controlar o loading da requisição
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingHistorico, setIsLoadingHistorico] = useState(false);
+
+  // 🟢 STATE DO MODAL DE ALERTA
+  const [modalAlerta, setModalAlerta] = useState({ 
+    isOpen: false, 
+    mensagem: '', 
+    tipo: 'success' as 'success' | 'error' 
+  });
 
   const teamRef = useRef<HTMLDivElement>(null);
   const memberRef = useRef<HTMLDivElement>(null);
 
   const [activeTab, setActiveTab] = useState<'PENDENTE' | 'PAGO'>('PENDENTE');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+
+  // 🟢 FUNÇÃO PARA CHAMAR O MODAL FÁCIL
+  const exibirAlerta = (mensagem: string, tipo: 'success' | 'error' = 'success') => {
+    setModalAlerta({ isOpen: true, mensagem, tipo });
+  };
 
   // 🟢 BUSCA DE EQUIPES E MEMBROS AO CARREGAR A PÁGINA
   useEffect(() => {
@@ -68,6 +81,7 @@ export default function ExtratoFiado() {
         if (membersResp?.success) setMembros(membersResp.data || membersResp.member || []);
       } catch (error) {
         console.error("Erro ao carregar equipes e membros:", error);
+        exibirAlerta("Erro de conexão ao carregar as equipes e membros.", "error");
       }
     }
     fetchDados();
@@ -82,21 +96,19 @@ export default function ExtratoFiado() {
       setHistoricoBruto([]); // Limpa o histórico anterior
       
       try {
-        const res = await fetchMemberStatement(selectedMember.id);
+        const res = await fetchMemberStatement(selectedMember.id) as any;
         
         if (res.success) {
-          // Junta as pendentes e pagas
-          const todasVendas = [...res.pending, ...res.paid];
+          const todasVendas = [...(res.pending || []), ...(res.paid || [])];
           const formatado: LinhaHistorico[] = [];
           
-          // Mapeia os dados do BD para o formato que sua tabela usa
           todasVendas.forEach((venda: any) => {
             const status = venda.status ? 'PAGO' : 'PENDENTE';
             const dataFormatada = new Date(venda.date).toLocaleDateString('pt-BR');
             
             venda.Item_sale.forEach((item: any) => {
               formatado.push({
-                id_linha: venda.id, // ID da venda, crucial para dar baixa!
+                id_linha: venda.id, 
                 member_id: venda.member_id,
                 date: dataFormatada,
                 product_name: item.Product.name,
@@ -112,13 +124,14 @@ export default function ExtratoFiado() {
         }
       } catch (error) {
         console.error("Erro ao carregar extrato:", error);
+        exibirAlerta("Erro de conexão ao carregar o histórico do cliente.", "error");
       } finally {
         setIsLoadingHistorico(false);
       }
     }
     
     loadExtrato();
-  }, [selectedMember]); // Executa sempre que trocar de cliente
+  }, [selectedMember]); 
 
   // Fechar dropdowns ao clicar fora
   useEffect(() => {
@@ -131,7 +144,7 @@ export default function ExtratoFiado() {
   }, []);
 
   // =========================================================================
-  // LÓGICA DE DADOS E AGRUPAMENTO (Mantida intacta)
+  // LÓGICA DE DADOS E AGRUPAMENTO 
   // =========================================================================
   const membrosFiltrados = useMemo(() => {
     if (!selectedTeam) return [];
@@ -160,7 +173,7 @@ export default function ExtratoFiado() {
           quantity: curr.quantity,
           price: curr.price,
           status: curr.status,
-          ids_originais: [curr.id_linha] // IDs das Vendas atreladas a este agrupamento
+          ids_originais: [curr.id_linha] 
         };
       } else {
         acc[key].quantity += curr.quantity;
@@ -202,14 +215,12 @@ export default function ExtratoFiado() {
     }
   };
 
-  // 🟢 FUNÇÃO DE QUITAR ATUALIZADA PARA CHAMAR O BD
   const handleQuitarPendencia = async () => {
     if (selectedItems.length === 0) return;
     
     setIsSubmitting(true);
     
     try {
-      // 1. Pega os IDs (id_linha) de todas as vendas que compõem os grupos selecionados
       const vendasParaQuitar = new Set<number>();
       comprasVisiveisAgrupadas.forEach(grupo => {
         if (selectedItems.includes(grupo.id_agrupado)) {
@@ -218,24 +229,21 @@ export default function ExtratoFiado() {
       });
 
       const saleIds = Array.from(vendasParaQuitar);
-
-      // 2. Manda para a Action do BD
       const res = await settleMultipleSales(saleIds);
       
       if (res.success) {
-        alert(`Baixa de ${formatCurrency(totais.selecionado)} realizada com sucesso!`);
+        exibirAlerta(`Baixa de ${formatCurrency(totais.selecionado)} realizada com sucesso!`, 'success');
         setSelectedItems([]); 
         
-        // 3. Atualiza o estado local para mover as vendas quitadas para a aba "PAGO"
         setHistoricoBruto(prev => prev.map(item => 
           saleIds.includes(item.id_linha) ? { ...item, status: 'PAGO' } : item
         ));
       } else {
-        alert("Erro ao realizar baixa: " + res.message);
+        exibirAlerta("Erro ao realizar baixa: " + res.message, 'error');
       }
     } catch (error) {
       console.error(error);
-      alert("Erro inesperado ao conectar com o servidor.");
+      exibirAlerta("Erro inesperado ao conectar com o servidor.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -249,8 +257,7 @@ export default function ExtratoFiado() {
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 max-w-5xl mx-auto">
-      {/* ... [Todo o seu JSX da tela de dropdowns de equipes e membros permanece o mesmo] ... */}
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 max-w-5xl mx-auto relative">
       <h2 className="text-2xl font-bold text-gray-800 tracking-tight mb-6">Extratos e Baixa de Fiado</h2>
       
       {/* SELEÇÃO DE EQUIPE E CLIENTE */}
@@ -351,8 +358,10 @@ export default function ExtratoFiado() {
             </button>
           </div>
 
-          <div className="overflow-x-auto overflow-y-auto max-h-[400px] bg-[#e5e9e5]/30">
+          {/* 🟢 SEGREDO DO SCROLL AQUI: max-h-[450px] e overflow-y-auto */}
+          <div className="overflow-x-auto overflow-y-auto max-h-[450px] bg-[#e5e9e5]/30">
             <table className="w-full text-left border-collapse relative">
+              {/* 🟢 O CABEÇALHO FICA FIXO AQUI */}
               <thead className="sticky top-0 bg-gray-200 shadow-sm z-10">
                 <tr className="text-gray-700">
                   {activeTab === 'PENDENTE' && (
@@ -427,6 +436,14 @@ export default function ExtratoFiado() {
           </div>
         </div>
       )}
+
+      {/* 🟢 RENDERIZANDO O MODAL DE ALERTA NO FINAL DA TELA */}
+      <ModalAlerta 
+        isOpen={modalAlerta.isOpen}
+        mensagem={modalAlerta.mensagem}
+        tipo={modalAlerta.tipo}
+        onClose={() => setModalAlerta({ ...modalAlerta, isOpen: false })}
+      />
     </div>
   );
 }
