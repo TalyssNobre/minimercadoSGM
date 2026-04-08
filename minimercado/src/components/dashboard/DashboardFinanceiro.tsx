@@ -1,46 +1,122 @@
 'use client';
 import React, { useMemo, useState, useEffect } from 'react';
 
+// 🟢 IMPORTANDO AS FUNÇÕES DO BACKEND
+import { getAllCategory } from '@/src/Server/controllers/CategoryController';
+import { getAllProducts } from '@/src/Server/controllers/ProductController';
+import { getAllSales } from '@/src/Server/controllers/SaleController';
+
 // =========================================================================
 // INTERFACES (Tipagens baseadas no MER / Supabase)
 // =========================================================================
 interface Category {
-  id: number; // PK
+  id: number; 
   name: string;
 }
 
 interface Product {
-  id: number; // PK
+  id: number; 
   name: string;
-  category_id: number; // FK
+  category_id: number; 
 }
 
 interface ItemSale {
-  product_id: number; // FK
+  product_id: number; 
   qty: number;
-  price: number; // Preço na hora da venda
+  price: number; 
 }
 
 interface Sale {
-  sale_id: number; // PK
+  sale_id: number; 
   date: string;
-  operator_name: string; // Vem do JOIN com a tabela User
-  client_name: string; // Vem do JOIN com a tabela Member
-  status: 'ATIVA' | 'CANCELADA'; // Status de validade da venda
-  payment_status: 'PAGO' | 'FIADO'; // Status financeiro
-  items: ItemSale[]; // Vem do JOIN com a tabela Item_Sale
+  operator_name: string; 
+  client_name: string; 
+  status: 'ATIVA' | 'CANCELADA'; 
+  payment_status: 'PAGO' | 'FIADO'; 
+  items: ItemSale[]; 
 }
 
 export default function DashboardFinanceiro() {
   // =========================================================================
-  // ESTADOS PRINCIPAIS (Iniciam vazios, prontos para o Supabase)
+  // ESTADOS PRINCIPAIS
   // =========================================================================
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Estado para controlar a aba selecionada ('Todos' ou o ID da Categoria)
   const [activeTab, setActiveTab] = useState<string | number>('Todos');
+
+  // =========================================================================
+  // BUSCA DE DADOS (CONEXÃO FRONT <-> BACK)
+  // =========================================================================
+  useEffect(() => {
+    async function carregarDashboard() {
+      setIsLoading(true);
+      try {
+        // 1. Busca tudo ao mesmo tempo para ser mais rápido
+        const [catRes, prodRes, salesRes] = await Promise.all([
+          getAllCategory() as any,
+          getAllProducts() as any,
+          getAllSales() as any
+        ]);
+
+        // 2. Alimenta Categorias
+        if (catRes?.success) {
+          const listaCat = Array.isArray(catRes.data) ? catRes.data : [];
+          setCategories(listaCat);
+        }
+
+        // 3. Alimenta Produtos
+        if (prodRes?.success) {
+          const listaProd = Array.isArray(prodRes.data) ? prodRes.data : [];
+          setProducts(listaProd);
+        }
+
+        // 4. Alimenta e Mapeia Vendas
+        if (salesRes?.success) {
+          const rawSales = Array.isArray(salesRes.data) ? salesRes.data : [];
+          
+          // Traduzindo o que vem do BD para a interface do Dashboard
+          const vendasMapeadas: Sale[] = rawSales.map((venda: any) => {
+            
+            // Formatando a data apenas com Dia, Mês e Ano
+            const dataVenda = new Date(venda.date).toLocaleDateString('pt-BR', { 
+              day: '2-digit', month: '2-digit', year: 'numeric' 
+            });
+
+            return {
+              sale_id: venda.id || venda.sale_id,
+              date: dataVenda,
+              
+              // 🟢 CORREÇÃO: Cobrindo todas as variações que o backend pode mandar!
+              operator_name: venda.user?.name || venda.User?.name || venda.operator_name || 'Sistema', 
+              client_name: venda.member?.name || venda.Member?.name || venda.client_name || 'Avulso', 
+              
+              status: 'ATIVA', 
+              payment_status: venda.status ? 'PAGO' : 'FIADO', 
+              items: (venda.Item_sale || venda.item_sale || venda.items || []).map((item: any) => ({
+                product_id: item.product_id,
+                qty: item.quantity || item.qty,
+                price: item.unit_price || item.price
+              }))
+            };
+          });
+
+          setSales(vendasMapeadas);
+        }
+
+      } catch (error) {
+        console.error("Erro ao carregar dados do Dashboard:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    carregarDashboard();
+  }, []);
+
 
   // =========================================================================
   // LÓGICA DE CÁLCULO (Cérebro do Dashboard)
@@ -110,8 +186,20 @@ export default function DashboardFinanceiro() {
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
+  // =========================================================================
+  // RENDERIZAÇÃO
+  // =========================================================================
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <svg className="animate-spin h-10 w-10 text-[#0D9488]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        <p className="text-gray-500 font-medium">Calculando caixa e setores...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-8 max-w-7xl mx-auto animate-in fade-in duration-500">
       
       {/* CABEÇALHO */}
       <div>
@@ -181,7 +269,7 @@ export default function DashboardFinanceiro() {
 
           {categories.length === 0 && (
             <div className="col-span-full p-6 text-center text-gray-400 bg-white border border-dashed border-gray-200 rounded-xl">
-              Nenhuma categoria ou venda registrada ainda.
+              Nenhuma categoria registrada.
             </div>
           )}
         </div>
