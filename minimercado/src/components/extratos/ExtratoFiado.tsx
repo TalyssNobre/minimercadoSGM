@@ -1,12 +1,14 @@
 'use client';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 
-// 🟢 IMPORTANDO AS FUNÇÕES QUE JÁ EXISTEM NO SEU BACKEND
+// 🟢 IMPORTANDO AS FUNÇÕES DO BACKEND
 import { getAllTeams } from '@/src/Server/controllers/TeamController';
 import { getAllMember } from '@/src/Server/controllers/MemberController';
+// ATENÇÃO: Ajuste o caminho abaixo para onde você criou as functions de Venda
+import { fetchMemberStatement, settleMultipleSales } from '@/src/Server/controllers/SaleController'; 
 
 // =========================================================================
-// INTERFACES (Atualizadas para o padrão real do Banco)
+// INTERFACES 
 // =========================================================================
 interface Equipe {
   id: number;
@@ -20,7 +22,7 @@ interface Membro {
 }
 
 interface LinhaHistorico {
-  id_linha: number; 
+  id_linha: number; // Vai guardar o sale.id (ID da Venda no banco)
   member_id: number;
   date: string; 
   product_name: string; 
@@ -38,11 +40,14 @@ export default function ExtratoFiado() {
   const [membros, setMembros] = useState<Membro[]>([]);
   const [historicoBruto, setHistoricoBruto] = useState<LinhaHistorico[]>([]);
 
-  // 🟢 ESTADOS DO NOVO SELETOR (Idêntico ao PDV)
   const [selectedTeam, setSelectedTeam] = useState<Equipe | null>(null);
   const [selectedMember, setSelectedMember] = useState<Membro | null>(null);
   const [isTeamDropdownOpen, setIsTeamDropdownOpen] = useState(false);
   const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
+
+  // 🟢 Novo estado para controlar o loading da requisição
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingHistorico, setIsLoadingHistorico] = useState(false);
 
   const teamRef = useRef<HTMLDivElement>(null);
   const memberRef = useRef<HTMLDivElement>(null);
@@ -68,6 +73,53 @@ export default function ExtratoFiado() {
     fetchDados();
   }, []);
 
+  // 🟢 BUSCA O HISTÓRICO QUANDO O MEMBRO É SELECIONADO
+  useEffect(() => {
+    async function loadExtrato() {
+      if (!selectedMember) return;
+      
+      setIsLoadingHistorico(true);
+      setHistoricoBruto([]); // Limpa o histórico anterior
+      
+      try {
+        const res = await fetchMemberStatement(selectedMember.id);
+        
+        if (res.success) {
+          // Junta as pendentes e pagas
+          const todasVendas = [...res.pending, ...res.paid];
+          const formatado: LinhaHistorico[] = [];
+          
+          // Mapeia os dados do BD para o formato que sua tabela usa
+          todasVendas.forEach((venda: any) => {
+            const status = venda.status ? 'PAGO' : 'PENDENTE';
+            const dataFormatada = new Date(venda.date).toLocaleDateString('pt-BR');
+            
+            venda.Item_sale.forEach((item: any) => {
+              formatado.push({
+                id_linha: venda.id, // ID da venda, crucial para dar baixa!
+                member_id: venda.member_id,
+                date: dataFormatada,
+                product_name: item.Product.name,
+                category_name: item.Product.Category.name,
+                quantity: item.quantity,
+                price: item.quantity * item.unit_price, 
+                status: status as 'PENDENTE' | 'PAGO'
+              });
+            });
+          });
+          
+          setHistoricoBruto(formatado);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar extrato:", error);
+      } finally {
+        setIsLoadingHistorico(false);
+      }
+    }
+    
+    loadExtrato();
+  }, [selectedMember]); // Executa sempre que trocar de cliente
+
   // Fechar dropdowns ao clicar fora
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -79,16 +131,13 @@ export default function ExtratoFiado() {
   }, []);
 
   // =========================================================================
-  // LÓGICA DE DADOS E AGRUPAMENTO
+  // LÓGICA DE DADOS E AGRUPAMENTO (Mantida intacta)
   // =========================================================================
-  
-  // 🟢 Filtra os membros baseado na equipe selecionada
   const membrosFiltrados = useMemo(() => {
     if (!selectedTeam) return [];
     return membros.filter(m => m.team_id === selectedTeam.id);
   }, [selectedTeam, membros]);
 
-  // Mantém a compatibilidade com a sua lógica original
   const selectedMemberId = selectedMember ? selectedMember.id.toString() : '';
 
   const comprasVisiveisAgrupadas = useMemo(() => {
@@ -111,7 +160,7 @@ export default function ExtratoFiado() {
           quantity: curr.quantity,
           price: curr.price,
           status: curr.status,
-          ids_originais: [curr.id_linha] 
+          ids_originais: [curr.id_linha] // IDs das Vendas atreladas a este agrupamento
         };
       } else {
         acc[key].quantity += curr.quantity;
@@ -153,10 +202,43 @@ export default function ExtratoFiado() {
     }
   };
 
-  const handleQuitarPendencia = () => {
+  // 🟢 FUNÇÃO DE QUITAR ATUALIZADA PARA CHAMAR O BD
+  const handleQuitarPendencia = async () => {
     if (selectedItems.length === 0) return;
-    alert(`Simulação: Baixa de R$ ${totais.selecionado.toFixed(2).replace('.', ',')} realizada com sucesso!`);
-    setSelectedItems([]); 
+    
+    setIsSubmitting(true);
+    
+    try {
+      // 1. Pega os IDs (id_linha) de todas as vendas que compõem os grupos selecionados
+      const vendasParaQuitar = new Set<number>();
+      comprasVisiveisAgrupadas.forEach(grupo => {
+        if (selectedItems.includes(grupo.id_agrupado)) {
+          grupo.ids_originais.forEach((id: number) => vendasParaQuitar.add(id));
+        }
+      });
+
+      const saleIds = Array.from(vendasParaQuitar);
+
+      // 2. Manda para a Action do BD
+      const res = await settleMultipleSales(saleIds);
+      
+      if (res.success) {
+        alert(`Baixa de ${formatCurrency(totais.selecionado)} realizada com sucesso!`);
+        setSelectedItems([]); 
+        
+        // 3. Atualiza o estado local para mover as vendas quitadas para a aba "PAGO"
+        setHistoricoBruto(prev => prev.map(item => 
+          saleIds.includes(item.id_linha) ? { ...item, status: 'PAGO' } : item
+        ));
+      } else {
+        alert("Erro ao realizar baixa: " + res.message);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erro inesperado ao conectar com o servidor.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleTabChange = (tab: 'PENDENTE' | 'PAGO') => {
@@ -168,10 +250,10 @@ export default function ExtratoFiado() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 max-w-5xl mx-auto">
-      
+      {/* ... [Todo o seu JSX da tela de dropdowns de equipes e membros permanece o mesmo] ... */}
       <h2 className="text-2xl font-bold text-gray-800 tracking-tight mb-6">Extratos e Baixa de Fiado</h2>
       
-      {/* 🟢 SELEÇÃO DE EQUIPE E CLIENTE (Idêntica ao PDV) */}
+      {/* SELEÇÃO DE EQUIPE E CLIENTE */}
       <div className="mb-8 bg-gray-50 p-5 rounded-xl border border-gray-100 shadow-inner">
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Selecione o Cliente para buscar o extrato</h3>
         
@@ -250,7 +332,7 @@ export default function ExtratoFiado() {
         </div>
       </div>
 
-      {/* ÁREA DO MEMBRO SELECIONADO (Só aparece se a pessoa selecionar alguém) */}
+      {/* ÁREA DO MEMBRO SELECIONADO */}
       {selectedMember && selectedTeam && (
         <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
           
@@ -307,9 +389,17 @@ export default function ExtratoFiado() {
               </tbody>
             </table>
             
+            {/* MENSAGENS DE TABELA VAZIA OU CARREGANDO */}
             {comprasVisiveisAgrupadas.length === 0 && (
               <div className="p-8 text-center text-gray-500 bg-white border-t border-gray-200">
-                {historicoBruto.length === 0 ? "Aguardando backend carregar o histórico..." : "Nenhum registro de compra encontrado para esta aba."}
+                {isLoadingHistorico ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5 text-[#15665a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Carregando histórico...
+                  </span>
+                ) : (
+                  "Nenhum registro de compra encontrado para esta aba."
+                )}
               </div>
             )}
           </div>
@@ -326,15 +416,17 @@ export default function ExtratoFiado() {
             </div>
 
             {activeTab === 'PENDENTE' && (
-              <button onClick={handleQuitarPendencia} disabled={selectedItems.length === 0} className="w-full md:w-auto bg-[#1a7f71] hover:bg-[#15665a] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-md transition-all shadow-md text-sm md:text-base uppercase tracking-wide">
-                Quitar Pendência Selecionada ({formatCurrency(totais.selecionado)})
+              <button 
+                onClick={handleQuitarPendencia} 
+                disabled={selectedItems.length === 0 || isSubmitting} 
+                className="w-full md:w-auto bg-[#1a7f71] hover:bg-[#15665a] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-md transition-all shadow-md text-sm md:text-base uppercase tracking-wide flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? 'Processando baixa...' : `Quitar Pendência Selecionada (${formatCurrency(totais.selecionado)})`}
               </button>
             )}
           </div>
-
         </div>
       )}
-
     </div>
   );
 }

@@ -70,6 +70,15 @@ export const getSaleById = async(id) => {
     }
 }
 
+export const updateSaleStatus = async (sale_id) => {
+    try {
+        const results = await SaleModel.updateSaleStatus(sale_id, true);
+        return { success: true, data: results };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+};
+
 export const deleteSale = async(id) => {
    const saleExisting = await SaleModel.getSaleById(id);
     if(!saleExisting){
@@ -83,3 +92,15 @@ export const deleteSale = async(id) => {
          return { success: false, error: error.message }; 
    }
 }
+
+export const getMemberStatement = async(member_id) => {
+    try {
+        const sales = await SaleModel.getSalesByMember(member_id);
+        const pending = sales.filter(s => s.status === false || s.status === null);
+        const paid = sales.filter(s => s.status === true);
+
+        return { success: true, pending, paid };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+};
