@@ -51,6 +51,10 @@ export default function FrenteCaixa() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFinalizando, setIsFinalizando] = useState(false);
 
+  // 🟢 ESTADOS DO DESCONTO NO CARRINHO
+  const [tipoDesconto, setTipoDesconto] = useState<'R$' | '%'>('R$');
+  const [valorDescontoInput, setValorDescontoInput] = useState<string>('');
+
   // 🟢 STATE DO MODAL DE ALERTA
   const [modalAlerta, setModalAlerta] = useState({ 
     isOpen: false, 
@@ -61,7 +65,6 @@ export default function FrenteCaixa() {
   const teamRef = useRef<HTMLDivElement>(null);
   const memberRef = useRef<HTMLDivElement>(null);
 
-  // 🟢 FUNÇÃO PARA CHAMAR O MODAL FÁCIL
   const exibirAlerta = (mensagem: string, tipo: 'success' | 'error' = 'success') => {
     setModalAlerta({ isOpen: true, mensagem, tipo });
   };
@@ -128,10 +131,37 @@ export default function FrenteCaixa() {
     });
   }, [searchQuery, selectedCategory, produtos]);
 
-  const cartTotal = useMemo(() => {
+  // =========================================================================
+  // 🟢 CÁLCULOS DO CARRINHO E DESCONTO
+  // =========================================================================
+  
+  // 1. O Subtotal cru dos produtos
+  const cartSubtotal = useMemo(() => {
     return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   }, [cart]);
 
+  // 2. Lógica para calcular o valor do desconto em Reais (R$)
+  const valorDescontoCalculado = useMemo(() => {
+    if (!valorDescontoInput || cartSubtotal === 0) return 0;
+    
+    // Troca vírgula por ponto para evitar erros de digitação no Brasil
+    const valorDigitado = parseFloat(valorDescontoInput.replace(',', '.'));
+    if (isNaN(valorDigitado) || valorDigitado < 0) return 0;
+
+    if (tipoDesconto === '%') {
+      return (cartSubtotal * valorDigitado) / 100;
+    }
+    return valorDigitado;
+  }, [cartSubtotal, tipoDesconto, valorDescontoInput]);
+
+  // 3. O Total Final com o desconto aplicado (nunca menor que zero)
+  const cartTotalFinal = useMemo(() => {
+    return Math.max(0, cartSubtotal - valorDescontoCalculado);
+  }, [cartSubtotal, valorDescontoCalculado]);
+
+  // =========================================================================
+  // FUNÇÕES DO CARRINHO
+  // =========================================================================
   const addToCart = (produto: Produto) => {
     setCart(prev => {
       const existing = prev.find(item => item.product.id === produto.id);
@@ -155,7 +185,7 @@ export default function FrenteCaixa() {
   const removeFromCart = (productId: number) => setCart(prev => prev.filter(item => item.product.id !== productId));
 
   // =========================================================================
-  // 🟢 FUNÇÃO DE FINALIZAÇÃO ATUALIZADA COM O MODAL
+  // FINALIZAR VENDA
   // =========================================================================
   const handleFinalizarVenda = async (statusVenda: 'PAGO' | 'PENDENTE') => {
     if (cart.length === 0) {
@@ -187,6 +217,9 @@ export default function FrenteCaixa() {
       formData.append('user_id', vendedorId.toString());
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
       
+      // 🟢 ENVIANDO O DESCONTO MASTIGADO PARA SUA COLEGA DO BACKEND
+      formData.append('discount_value', valorDescontoCalculado.toString());
+      
       formData.append('date', new Date().toISOString());
       if (statusVenda === 'PAGO') {
         formData.append('payment_date', new Date().toISOString());
@@ -205,6 +238,7 @@ export default function FrenteCaixa() {
       if (resposta.success) {
         exibirAlerta("Venda realizada com sucesso!", 'success');
         setCart([]);
+        setValorDescontoInput(''); // Limpa o desconto após a venda
         setSelectedMember(null);
         setSelectedTeam(null);
       } else {
@@ -340,11 +374,11 @@ export default function FrenteCaixa() {
         </div>
       </div>
 
-      {/* LADO DIREITO: CARRINHO */}
+      {/* LADO DIREITO: CARRINHO E DESCONTOS */}
       <div className="w-full lg:w-96 flex-shrink-0">
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-5 sticky top-24">
           <h2 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Carrinho</h2>
-          <div className="space-y-4 max-h-[45vh] overflow-y-auto pr-2 mb-6 scrollbar-thin">
+          <div className="space-y-4 max-h-[35vh] overflow-y-auto pr-2 mb-6 scrollbar-thin">
             {cart.length === 0 ? (
               <p className="text-gray-400 text-sm text-center py-10 font-medium">O carrinho está vazio.</p>
             ) : (
@@ -374,21 +408,65 @@ export default function FrenteCaixa() {
             )}
           </div>
 
-          <div className="border-t pt-4">
-            <div className="flex justify-between items-center mb-6">
-              <span className="text-base font-bold text-gray-800">Total</span>
-              <span className="text-xl font-black text-[#0D9488]">{formatCurrency(cartTotal)}</span>
+          {/* 🟢 PAINEL DE DESCONTO */}
+          {cart.length > 0 && (
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-6">
+              <h3 className="text-sm font-bold text-gray-700 mb-2">Aplicar Desconto</h3>
+              <div className="flex gap-2">
+                <div className="flex bg-white border border-gray-300 rounded-md overflow-hidden">
+                  <button 
+                    onClick={() => { setTipoDesconto('R$'); setValorDescontoInput(''); }}
+                    className={`px-3 py-1.5 text-xs font-bold transition-colors ${tipoDesconto === 'R$' ? 'bg-[#0D9488] text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    R$
+                  </button>
+                  <button 
+                    onClick={() => { setTipoDesconto('%'); setValorDescontoInput(''); }}
+                    className={`px-3 py-1.5 text-xs font-bold transition-colors ${tipoDesconto === '%' ? 'bg-[#0D9488] text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    %
+                  </button>
+                </div>
+                <input 
+                  type="text" 
+                  placeholder="Valor..."
+                  value={valorDescontoInput}
+                  onChange={(e) => setValorDescontoInput(e.target.value.replace(/[^0-9.,]/g, ''))} // Aceita só números, ponto e vírgula
+                  className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-[#0D9488]"
+                />
+              </div>
             </div>
+          )}
+
+          {/* 🟢 RESUMO DE CÁLCULOS */}
+          <div className="border-t pt-4">
+            <div className="flex justify-between items-center mb-2 text-sm">
+              <span className="text-gray-500 font-medium">Subtotal</span>
+              <span className="text-gray-800 font-semibold">{formatCurrency(cartSubtotal)}</span>
+            </div>
+            
+            {valorDescontoCalculado > 0 && (
+              <div className="flex justify-between items-center mb-3 text-sm text-[#059669]">
+                <span className="font-bold">Desconto ({tipoDesconto === '%' ? `${valorDescontoInput}%` : 'R$'})</span>
+                <span className="font-bold">- {formatCurrency(valorDescontoCalculado)}</span>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center mb-6 pt-3 border-t border-dashed border-gray-200">
+              <span className="text-base font-bold text-gray-800">Total Final</span>
+              <span className="text-2xl font-black text-[#0D9488]">{formatCurrency(cartTotalFinal)}</span>
+            </div>
+
             <div className="space-y-3">
               <button 
-                disabled={isFinalizando}
+                disabled={isFinalizando || cart.length === 0}
                 onClick={() => handleFinalizarVenda('PAGO')} 
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl text-sm shadow-md active:scale-95 transition-all disabled:opacity-50"
               >
                 {isFinalizando ? 'PROCESSANDO...' : 'PAGO NO ATO'}
               </button>
               <button 
-                disabled={isFinalizando}
+                disabled={isFinalizando || cart.length === 0}
                 onClick={() => handleFinalizarVenda('PENDENTE')} 
                 className="w-full bg-[#B89822] hover:bg-[#9B7F1B] text-white font-bold py-3.5 rounded-xl text-sm shadow-md active:scale-95 transition-all disabled:opacity-50"
               >
@@ -399,7 +477,7 @@ export default function FrenteCaixa() {
         </div>
       </div>
 
-      {/* 🟢 MODAL DE ALERTA RENDERIZADO AQUI NO FINAL */}
+      {/* MODAL DE ALERTA RENDERIZADO AQUI NO FINAL */}
       <ModalAlerta 
         isOpen={modalAlerta.isOpen}
         mensagem={modalAlerta.mensagem}
