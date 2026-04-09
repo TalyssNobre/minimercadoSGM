@@ -45,8 +45,15 @@ export default function DashboardFinanceiro() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Estado para controlar a aba selecionada ('Todos' ou o ID da Categoria)
   const [activeTab, setActiveTab] = useState<string | number>('Todos');
+
+  // 🟢 A NOSSA FUNÇÃO SALVADORA DE DATAS (Corta o UTC)
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const datePart = dateString.split('T')[0];
+    const [year, month, day] = datePart.split('-');
+    return `${day}/${month}/${year}`;
+  };
 
   // =========================================================================
   // BUSCA DE DADOS (CONEXÃO FRONT <-> BACK)
@@ -55,45 +62,35 @@ export default function DashboardFinanceiro() {
     async function carregarDashboard() {
       setIsLoading(true);
       try {
-        // 1. Busca tudo ao mesmo tempo para ser mais rápido
         const [catRes, prodRes, salesRes] = await Promise.all([
           getAllCategory() as any,
           getAllProducts() as any,
           getAllSales() as any
         ]);
 
-        // 2. Alimenta Categorias
         if (catRes?.success) {
           const listaCat = Array.isArray(catRes.data) ? catRes.data : [];
           setCategories(listaCat);
         }
 
-        // 3. Alimenta Produtos
         if (prodRes?.success) {
           const listaProd = Array.isArray(prodRes.data) ? prodRes.data : [];
           setProducts(listaProd);
         }
 
-        // 4. Alimenta e Mapeia Vendas
         if (salesRes?.success) {
           const rawSales = Array.isArray(salesRes.data) ? salesRes.data : [];
           
-          // Traduzindo o que vem do BD para a interface do Dashboard
           const vendasMapeadas: Sale[] = rawSales.map((venda: any) => {
             
-            // Formatando a data apenas com Dia, Mês e Ano
-            const dataVenda = new Date(venda.date).toLocaleDateString('pt-BR', { 
-              day: '2-digit', month: '2-digit', year: 'numeric' 
-            });
+            // 🟢 Usando a função formatDate para não cair no bug do fuso horário
+            const dataVenda = formatDate(venda.date);
 
             return {
               sale_id: venda.id || venda.sale_id,
               date: dataVenda,
-              
-              // 🟢 CORREÇÃO: Cobrindo todas as variações que o backend pode mandar!
               operator_name: venda.user?.name || venda.User?.name || venda.operator_name || 'Sistema', 
               client_name: venda.member?.name || venda.Member?.name || venda.client_name || 'Avulso', 
-              
               status: 'ATIVA', 
               payment_status: venda.status ? 'PAGO' : 'FIADO', 
               items: (venda.Item_sale || venda.item_sale || venda.items || []).map((item: any) => ({
@@ -117,7 +114,6 @@ export default function DashboardFinanceiro() {
     carregarDashboard();
   }, []);
 
-
   // =========================================================================
   // LÓGICA DE CÁLCULO (Cérebro do Dashboard)
   // =========================================================================
@@ -126,13 +122,11 @@ export default function DashboardFinanceiro() {
     let totalRecebido = 0;
     let totalAReceber = 0;
     
-    // Objeto para acumular os valores por ID da categoria
     const catTotals: Record<number, number> = {};
     categories.forEach(c => { catTotals[c.id] = 0; });
 
     const historico: any[] = []; 
 
-    // Ignora vendas canceladas na matemática
     const vendasValidas = sales.filter(s => s.status !== 'CANCELADA');
 
     vendasValidas.forEach(venda => {
@@ -141,17 +135,14 @@ export default function DashboardFinanceiro() {
         const produto = products.find(p => p.id === item.product_id);
         
         if (produto) {
-          // 1. Soma nos Totais Gerais
           totalVendido += valorItemTotal;
           if (venda.payment_status === 'PAGO') totalRecebido += valorItemTotal;
           if (venda.payment_status === 'FIADO') totalAReceber += valorItemTotal;
 
-          // 2. Soma nos Totais por Categoria
           if (catTotals[produto.category_id] !== undefined) {
             catTotals[produto.category_id] += valorItemTotal;
           }
 
-          // 3. Monta a linha para a Tabela de Histórico
           historico.push({
             id_unico: `${venda.sale_id}-${produto.id}`,
             data: venda.date,
@@ -167,7 +158,6 @@ export default function DashboardFinanceiro() {
       });
     });
 
-    // Deixa as vendas mais recentes no topo
     historico.reverse();
 
     return {
@@ -177,7 +167,6 @@ export default function DashboardFinanceiro() {
     };
   }, [categories, products, sales]);
 
-  // Filtra a tabela baseada na Aba selecionada
   const historicoFiltrado = useMemo(() => {
     if (activeTab === 'Todos') return historicoDesmembrado;
     return historicoDesmembrado.filter(h => h.categoria_id === activeTab);
@@ -207,9 +196,7 @@ export default function DashboardFinanceiro() {
         <p className="text-gray-500 text-sm mt-1">Visão geral do caixa e rateio de setores do evento.</p>
       </div>
 
-      {/* ========================================== */}
       {/* CARDS DE TOTAIS GERAIS */}
-      {/* ========================================== */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
@@ -242,9 +229,7 @@ export default function DashboardFinanceiro() {
         </div>
       </div>
 
-      {/* ========================================== */}
-      {/* SUBTOTAIS POR CATEGORIA (Cards Menores) */}
-      {/* ========================================== */}
+      {/* SUBTOTAIS POR CATEGORIA */}
       <div>
         <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
           Subtotais por Categoria (Rateio)
@@ -275,9 +260,7 @@ export default function DashboardFinanceiro() {
         </div>
       </div>
 
-      {/* ========================================== */}
-      {/* HISTÓRICO DE VENDAS - SETORES */}
-      {/* ========================================== */}
+      {/* HISTÓRICO DE VENDAS */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-8">
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-800 mb-4">Histórico de Vendas - Setores</h2>

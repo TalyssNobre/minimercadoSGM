@@ -50,7 +50,6 @@ export default function ExtratoFiado() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingHistorico, setIsLoadingHistorico] = useState(false);
 
-  // 🟢 STATE DO MODAL DE ALERTA
   const [modalAlerta, setModalAlerta] = useState({ 
     isOpen: false, 
     mensagem: '', 
@@ -63,9 +62,16 @@ export default function ExtratoFiado() {
   const [activeTab, setActiveTab] = useState<'PENDENTE' | 'PAGO'>('PENDENTE');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
-  // 🟢 FUNÇÃO PARA CHAMAR O MODAL FÁCIL
   const exibirAlerta = (mensagem: string, tipo: 'success' | 'error' = 'success') => {
     setModalAlerta({ isOpen: true, mensagem, tipo });
+  };
+
+  // 🟢 A NOSSA FUNÇÃO SALVADORA DE DATAS
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const datePart = dateString.split('T')[0];
+    const [year, month, day] = datePart.split('-');
+    return `${day}/${month}/${year}`;
   };
 
   // 🟢 BUSCA DE EQUIPES E MEMBROS AO CARREGAR A PÁGINA
@@ -93,7 +99,7 @@ export default function ExtratoFiado() {
       if (!selectedMember) return;
       
       setIsLoadingHistorico(true);
-      setHistoricoBruto([]); // Limpa o histórico anterior
+      setHistoricoBruto([]); 
       
       try {
         const res = await fetchMemberStatement(selectedMember.id) as any;
@@ -104,7 +110,9 @@ export default function ExtratoFiado() {
           
           todasVendas.forEach((venda: any) => {
             const status = venda.status ? 'PAGO' : 'PENDENTE';
-            const dataFormatada = new Date(venda.date).toLocaleDateString('pt-BR');
+            
+            // 🟢 Usando a função formatDate para cravar o dia certo!
+            const dataFormatada = formatDate(venda.date);
             
             venda.Item_sale.forEach((item: any) => {
               formatado.push({
@@ -133,7 +141,6 @@ export default function ExtratoFiado() {
     loadExtrato();
   }, [selectedMember]); 
 
-  // Fechar dropdowns ao clicar fora
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (teamRef.current && !teamRef.current.contains(event.target as Node)) setIsTeamDropdownOpen(false);
@@ -200,9 +207,6 @@ export default function ExtratoFiado() {
     return { pago: totalPago, pendente: totalPendente, selecionado: totalSelecionado };
   }, [selectedMemberId, comprasVisiveisAgrupadas, selectedItems, historicoBruto]);
 
-  // =========================================================================
-  // FUNÇÕES DE AÇÃO DA TABELA
-  // =========================================================================
   const handleToggleItem = (id_agrupado: string) => {
     setSelectedItems(prev => prev.includes(id_agrupado) ? prev.filter(id => id !== id_agrupado) : [...prev, id_agrupado]);
   };
@@ -358,10 +362,8 @@ export default function ExtratoFiado() {
             </button>
           </div>
 
-          {/* 🟢 SEGREDO DO SCROLL AQUI: max-h-[450px] e overflow-y-auto */}
           <div className="overflow-x-auto overflow-y-auto max-h-[450px] bg-[#e5e9e5]/30">
             <table className="w-full text-left border-collapse relative">
-              {/* 🟢 O CABEÇALHO FICA FIXO AQUI */}
               <thead className="sticky top-0 bg-gray-200 shadow-sm z-10">
                 <tr className="text-gray-700">
                   {activeTab === 'PENDENTE' && (
@@ -398,7 +400,6 @@ export default function ExtratoFiado() {
               </tbody>
             </table>
             
-            {/* MENSAGENS DE TABELA VAZIA OU CARREGANDO */}
             {comprasVisiveisAgrupadas.length === 0 && (
               <div className="p-8 text-center text-gray-500 bg-white border-t border-gray-200">
                 {isLoadingHistorico ? (
@@ -437,7 +438,6 @@ export default function ExtratoFiado() {
         </div>
       )}
 
-      {/* 🟢 RENDERIZANDO O MODAL DE ALERTA NO FINAL DA TELA */}
       <ModalAlerta 
         isOpen={modalAlerta.isOpen}
         mensagem={modalAlerta.mensagem}
