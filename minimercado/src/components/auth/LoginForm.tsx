@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/Button"; 
 
@@ -22,25 +21,30 @@ export function LoginForm() {
     setIsLoading(true);
 
     try {
-      // 2. Chamada da Action - Passando os nomes de campos que o Service espera
-      // Usamos 'password' pois é o que o Supabase e sua Entity esperam
       const resposta = await loginController({ 
         email: email, 
         password: senha 
       });
 
-      // 3. Ajuste das chaves: 'success' e 'message' (padrão que definimos no Controller)
       if (!resposta.success) {
-        // Se o retorno for success: false, mostramos a mensagem que veio do back
         setErroMsg(resposta.message || "E-mail ou senha inválidos.");
       } else {
-        // 🎉 SUCESSO!
         console.log("Login realizado!");
         
-        // 4. Redirecionamento
-        // Aqui você pode decidir: se for admin vai pra /admin, se for operador vai pra /dashboard
-        router.push("/admin/dashboard"); 
-        router.refresh(); // Força o Next.js a revalidar a sessão no Middleware
+        // 🟢 4. O GUARDA DE TRÂNSITO INTELIGENTE
+        // Tentamos achar o perfil dentro do objeto que o backend devolveu
+        // 🟢 O GUARDA DE TRÂNSITO INTELIGENTE (Sem erro de TypeScript)
+        const res = resposta as any;
+        const perfil = res.user?.profile || res.user?.user_metadata?.profile || res.data?.user?.user_metadata?.profile;
+
+        // Se for Admin, caminho livre pro Dashboard. Se não, vai direto pro Caixa limpinho!
+        if (perfil === 'Admin') {
+          router.push("/admin/dashboard"); 
+        } else {
+          router.push("/caixa"); 
+        }
+
+        router.refresh(); 
       }
 
     } catch (error) {
@@ -91,10 +95,6 @@ export function LoginForm() {
         <Button type="submit" isLoading={isLoading}>
           ENTRAR
         </Button>
-
-        <Link href="/esqueci-senha"  className="text-sm text-gray-500 hover:text-[#0D9488] font-medium transition-colors">
-          Esqueci minha senha
-        </Link>
       </div>
     </form>
   );
