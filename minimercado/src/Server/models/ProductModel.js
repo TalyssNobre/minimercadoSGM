@@ -1,4 +1,3 @@
-
 import { getSupabaseServer } from '@/src/lib/supabaseServer';
 
 export const createProduct = async(productEntity) => {
@@ -31,6 +30,22 @@ export const getProductById = async(id) => {
     const{data,error} = await supabase.from("Product").select("*").eq("id", id).single();
    if(error){ throw new Error(error.message);
     } return data;
+}
+
+export const updateProductStock = async (productId, quantityChange) => {
+    const supabase = await getSupabaseServer();
+
+    const { data: product, error } = await supabase.from("Product").select("stock").eq("id", productId).single();
+        
+    if (error){
+     throw new Error(error.message);}
+    
+    const newStock = Number(product.stock) + Number(quantityChange);
+    
+    const { data, error: updateError } = await supabase.from("Product").update({ stock: newStock }).eq("id", productId);
+    
+    if (updateError){ throw new Error(updateError.message);
+    }return data;
 }
 
 export const findByName = async(name) => {

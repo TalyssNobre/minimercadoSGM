@@ -2,6 +2,7 @@ import * as SaleModel from "../models/SaleModel";
 import * as ItemSaleModel from "../models/ItemSaleModel";
 import Sale from "../entitys/SaleEntity";
 import ItemSale from "../entitys/ItemSaleEntity";
+import * as ProductModel from "../models/ProductModel"
 
 export const createSale = async ({ data, itensCarrinho }) => {
     console.log("Dados chegando do front:", data, itensCarrinho);
@@ -40,6 +41,10 @@ export const createSale = async ({ data, itensCarrinho }) => {
         });
 
         await ItemSaleModel.createItems(itensComVinculo);
+
+        for (const item of itensCarrinho) {
+            await ProductModel.updateProductStock(item.product_id, -item.quantity);
+        }
 
         return { success: true, sale: results };
 
@@ -85,6 +90,11 @@ export const deleteSale = async(id) => {
         throw new Error("Venda não encontrada")
     }
     try{
+    const itemsToRestore = await ItemSaleModel.getItemsBySaleId(id);
+        for (const item of itemsToRestore) {
+            await ProductModel.updateProductStock(item.product_id, item.quantity);
+     }
+
     await ItemSaleModel.deleteItemSaleById(id);
     const results = await SaleModel.deleteSale(id);
     return{sucess : true, sale: results}
