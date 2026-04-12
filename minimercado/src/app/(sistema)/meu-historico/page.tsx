@@ -102,9 +102,18 @@ export default function MeuHistoricoPage() {
     carregarDadosDoSupabase();
   }, []);
 
-  const totalGeralVendas = useMemo(() => {
+  // =========================================================================
+  // 🟢 CÁLCULOS SEPARADOS DE TOTAIS
+  // =========================================================================
+  const totalVendidoPago = useMemo(() => {
     return vendas
-      .filter(v => v.status === true) // Soma apenas as vendas pagas/ativas
+      .filter(v => v.status === true) // Soma apenas as vendas PAGAS
+      .reduce((acc, curr) => acc + (curr.total_value || 0), 0);
+  }, [vendas]);
+
+  const totalVendidoFiado = useMemo(() => {
+    return vendas
+      .filter(v => v.status === false) // Soma apenas as vendas PENDENTES (Fiado)
       .reduce((acc, curr) => acc + (curr.total_value || 0), 0);
   }, [vendas]);
 
@@ -135,11 +144,9 @@ export default function MeuHistoricoPage() {
       </div>
 
       {/* TABELA DE VENDAS */}
-      {/* 🟢 MODIFICAÇÃO AQUI: max-h-[380px] e overflow-y-auto */}
       <div className="overflow-x-auto overflow-y-auto max-h-[380px] border border-gray-200 rounded-lg shadow-sm">
         <table className="w-full text-left border-collapse min-w-[1000px]">
           
-          {/* 🟢 MODIFICAÇÃO AQUI: sticky top-0 z-10 shadow-sm */}
           <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
             <tr>
               <th className="py-3 px-4 text-sm font-bold text-gray-700 w-24">Data</th>
@@ -167,7 +174,6 @@ export default function MeuHistoricoPage() {
               vendas.map((venda) => (
                 <tr key={venda.id} className="hover:bg-gray-50 transition-colors">
                   
-                  {/* Design mais "clean" igual ao Admin */}
                   <td className="py-3 px-4 text-sm text-gray-800">{formatDate(venda.date)}</td>
                   
                   <td className="py-3 px-4 text-sm text-gray-600">
@@ -212,12 +218,21 @@ export default function MeuHistoricoPage() {
         </table>
       </div>
 
-      {/* TOTALIZADOR */}
-      <div className="mt-4 flex justify-end">
-        <div className="bg-gray-50 border border-gray-200 px-6 py-3 rounded-lg shadow-sm">
-          <span className="text-sm font-semibold text-gray-600 mr-3">Meu Total Válido:</span>
-          <span className="text-xl font-bold text-[#0D9488]">{formatCurrency(totalGeralVendas)}</span>
+      {/* 🟢 TOTALIZADORES SEPARADOS */}
+      <div className="mt-4 flex flex-col sm:flex-row justify-end gap-3">
+        
+        {/* Card do Fiado (Amarelo) */}
+        <div className="bg-yellow-50 border border-yellow-200 px-6 py-3 rounded-lg shadow-sm flex justify-between items-center min-w-[250px]">
+          <span className="text-sm font-semibold text-yellow-700 mr-3">A Receber (Fiado):</span>
+          <span className="text-xl font-bold text-yellow-600">{formatCurrency(totalVendidoFiado)}</span>
         </div>
+
+        {/* Card do Pago (Verde) */}
+        <div className="bg-green-50 border border-green-200 px-6 py-3 rounded-lg shadow-sm flex justify-between items-center min-w-[250px]">
+          <span className="text-sm font-semibold text-green-700 mr-3">Meu Total Válido:</span>
+          <span className="text-xl font-bold text-[#0D9488]">{formatCurrency(totalVendidoPago)}</span>
+        </div>
+
       </div>
       
     </div>

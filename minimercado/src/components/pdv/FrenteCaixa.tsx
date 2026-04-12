@@ -19,6 +19,7 @@ interface Produto {
   category: string;
   price: number;
   image: string | null; 
+  stock: number; // 🟢 ADICIONADO O ESTOQUE AQUI
 }
 
 interface Equipe {
@@ -51,11 +52,11 @@ export default function FrenteCaixa() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFinalizando, setIsFinalizando] = useState(false);
 
-  // 🟢 ESTADOS DO DESCONTO NO CARRINHO
+  // ESTADOS DO DESCONTO NO CARRINHO
   const [tipoDesconto, setTipoDesconto] = useState<'R$' | '%'>('R$');
   const [valorDescontoInput, setValorDescontoInput] = useState<string>('');
 
-  // 🟢 STATE DO MODAL DE ALERTA
+  // STATE DO MODAL DE ALERTA
   const [modalAlerta, setModalAlerta] = useState({ 
     isOpen: false, 
     mensagem: '', 
@@ -97,7 +98,8 @@ export default function FrenteCaixa() {
             name: p.name,
             category: catMap.get(p.category_id) || p.category_name || 'Sem Categoria',
             price: Number(p.price) || 0,
-            image: p.image_url || p.image || null
+            image: p.image_url || p.image || null,
+            stock: Number(p.stock) || 0 // 🟢 PUXANDO O ESTOQUE DO BANCO AQUI
           })));
         }
       } catch (error) {
@@ -131,41 +133,43 @@ export default function FrenteCaixa() {
     });
   }, [searchQuery, selectedCategory, produtos]);
 
-  // =========================================================================
-  // 🟢 CÁLCULOS DO CARRINHO E DESCONTO
-  // =========================================================================
-  
-  // 1. O Subtotal cru dos produtos
+  // CÁLCULOS DO CARRINHO E DESCONTO
   const cartSubtotal = useMemo(() => {
     return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   }, [cart]);
 
-  // 2. Lógica para calcular o valor do desconto em Reais (R$)
   const valorDescontoCalculado = useMemo(() => {
     if (!valorDescontoInput || cartSubtotal === 0) return 0;
-    
-    // Troca vírgula por ponto para evitar erros de digitação no Brasil
     const valorDigitado = parseFloat(valorDescontoInput.replace(',', '.'));
     if (isNaN(valorDigitado) || valorDigitado < 0) return 0;
-
-    if (tipoDesconto === '%') {
-      return (cartSubtotal * valorDigitado) / 100;
-    }
+    if (tipoDesconto === '%') return (cartSubtotal * valorDigitado) / 100;
     return valorDigitado;
   }, [cartSubtotal, tipoDesconto, valorDescontoInput]);
 
-  // 3. O Total Final com o desconto aplicado (nunca menor que zero)
   const cartTotalFinal = useMemo(() => {
     return Math.max(0, cartSubtotal - valorDescontoCalculado);
   }, [cartSubtotal, valorDescontoCalculado]);
 
   // =========================================================================
-  // FUNÇÕES DO CARRINHO
+  // 🟢 FUNÇÕES DO CARRINHO (AGORA COM TRAVA DE ESTOQUE)
   // =========================================================================
   const addToCart = (produto: Produto) => {
+    // 1ª Trava: Se clicar por algum bug
+    if (produto.stock <= 0) {
+      exibirAlerta(`O produto "${produto.name}" está esgotado!`, 'error');
+      return;
+    }
+
+    const existingItem = cart.find(item => item.product.id === produto.id);
+    
+    // 2ª Trava: Se já tiver no carrinho e tentar adicionar além do estoque
+    if (existingItem && existingItem.quantity + 1 > produto.stock) {
+      exibirAlerta(`Estoque insuficiente! Restam apenas ${produto.stock} unidades de "${produto.name}".`, 'error');
+      return;
+    }
+
     setCart(prev => {
-      const existing = prev.find(item => item.product.id === produto.id);
-      if (existing) {
+      if (existingItem) {
         return prev.map(item => item.product.id === produto.id ? { ...item, quantity: item.quantity + 1 } : item);
       }
       return [...prev, { product: produto, quantity: 1 }];
@@ -173,9 +177,19 @@ export default function FrenteCaixa() {
   };
 
   const updateQuantity = (productId: number, delta: number) => {
+    const existingItem = cart.find(item => item.product.id === productId);
+    if (!existingItem) return;
+
+    const newQuantity = existingItem.quantity + delta;
+
+    // Trava do botão de "+" dentro do carrinho
+    if (delta > 0 && newQuantity > existingItem.product.stock) {
+      exibirAlerta(`Estoque atingido! Você não pode adicionar mais de ${existingItem.product.stock} unidades.`, 'error');
+      return;
+    }
+
     setCart(prev => prev.map(item => {
       if (item.product.id === productId) {
-        const newQuantity = item.quantity + delta;
         return newQuantity > 0 ? { ...item, quantity: newQuantity } : item;
       }
       return item;
@@ -217,7 +231,6 @@ export default function FrenteCaixa() {
       formData.append('user_id', vendedorId.toString());
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
       
-      // 🟢 ENVIANDO O DESCONTO MASTIGADO PARA SUA COLEGA DO BACKEND
       formData.append('discount_value', valorDescontoCalculado.toString());
       
       formData.append('date', new Date().toISOString());
@@ -238,7 +251,7 @@ export default function FrenteCaixa() {
       if (resposta.success) {
         exibirAlerta("Venda realizada com sucesso!", 'success');
         setCart([]);
-        setValorDescontoInput(''); // Limpa o desconto após a venda
+        setValorDescontoInput(''); 
         setSelectedMember(null);
         setSelectedTeam(null);
       } else {
@@ -351,21 +364,37 @@ export default function FrenteCaixa() {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {produtosFiltrados.map(produto => (
-                <div key={produto.id} className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center transition-all hover:shadow-md hover:border-[#0D9488]/30">
-                  <div className="w-full aspect-square bg-gray-50 rounded-lg mb-3 overflow-hidden">
+                <div key={produto.id} className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center transition-all hover:shadow-md">
+                  
+                  {/* 🟢 BÔNUS DE UX: ETIQUETA COM A QUANTIDADE NO CANTO DA FOTO */}
+                  <div className="w-full aspect-square bg-gray-50 rounded-lg mb-3 overflow-hidden relative">
+                    <span className={`absolute top-1.5 right-1.5 text-[10px] px-1.5 py-0.5 rounded font-bold z-10 shadow-sm ${
+                      produto.stock <= 0 ? 'bg-red-500 text-white' : 'bg-black/60 text-white'
+                    }`}>
+                      {produto.stock} un
+                    </span>
+
                     {produto.image ? (
-                      <img src={produto.image} alt={produto.name} className="w-full h-full object-cover" />
+                      <img src={produto.image} alt={produto.name} className={`w-full h-full object-cover ${produto.stock <= 0 ? 'grayscale opacity-50' : ''}`} />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-300 text-[10px] uppercase font-bold">Sem imagem</div>
                     )}
                   </div>
+
                   <h3 className="text-xs font-bold text-gray-700 mb-1 line-clamp-2 min-h-[2.5rem] leading-tight">{produto.name}</h3>
                   <span className="text-sm font-black text-[#0D9488] mb-3">{formatCurrency(produto.price)}</span>
+                  
+                  {/* 🟢 BOTÃO TRAVADO E CINZA SE O ESTOQUE FOR ZERO */}
                   <button 
+                    disabled={produto.stock <= 0}
                     onClick={() => addToCart(produto)}
-                    className="w-full bg-[#0D9488] hover:bg-[#0f766e] text-white font-bold py-2 rounded-lg text-xs transition-colors mt-auto active:scale-95"
+                    className={`w-full font-bold py-2 rounded-lg text-xs transition-colors mt-auto active:scale-95 ${
+                      produto.stock > 0 
+                        ? 'bg-[#0D9488] hover:bg-[#0f766e] text-white' 
+                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    }`}
                   >
-                    Adicionar
+                    {produto.stock > 0 ? 'Adicionar' : 'Esgotado'}
                   </button>
                 </div>
               ))}
@@ -408,7 +437,7 @@ export default function FrenteCaixa() {
             )}
           </div>
 
-          {/* 🟢 PAINEL DE DESCONTO */}
+          {/* PAINEL DE DESCONTO */}
           {cart.length > 0 && (
             <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-6">
               <h3 className="text-sm font-bold text-gray-700 mb-2">Aplicar Desconto</h3>
@@ -431,14 +460,14 @@ export default function FrenteCaixa() {
                   type="text" 
                   placeholder="Valor..."
                   value={valorDescontoInput}
-                  onChange={(e) => setValorDescontoInput(e.target.value.replace(/[^0-9.,]/g, ''))} // Aceita só números, ponto e vírgula
+                  onChange={(e) => setValorDescontoInput(e.target.value.replace(/[^0-9.,]/g, ''))}
                   className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-[#0D9488]"
                 />
               </div>
             </div>
           )}
 
-          {/* 🟢 RESUMO DE CÁLCULOS */}
+          {/* RESUMO DE CÁLCULOS */}
           <div className="border-t pt-4">
             <div className="flex justify-between items-center mb-2 text-sm">
               <span className="text-gray-500 font-medium">Subtotal</span>
