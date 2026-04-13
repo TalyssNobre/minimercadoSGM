@@ -9,21 +9,26 @@ export const createSale = async ({ data, itensCarrinho }) => {
     if (!itensCarrinho || itensCarrinho.length === 0) {
             throw new Error("Não é possível finalizar uma venda sem itens no carrinho.");
         }
+    
     try {
         const saleEntity = new Sale({ 
             ...data, 
-            items: itensCarrinho 
+            items: itensCarrinho,
+            discount:  data.discount
         });
 
+    
         const dataSale = {
             date: saleEntity.date,
             total_value: saleEntity.total_value,
             payment_date: saleEntity.payment_date,
             status: saleEntity.status,
             user_id: saleEntity.user_id,
-            member_id: saleEntity.member_id
+            member_id: saleEntity.member_id,
+            discount : saleEntity.discount
         };
         
+
         const results = await SaleModel.createSale(dataSale);
 
         const itensComVinculo = saleEntity.items.map(item => {
