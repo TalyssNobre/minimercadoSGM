@@ -9,7 +9,8 @@ import ResumoTotais from '@/src/components/MeuHistorico/ResumoTotais';
 import { useMeuHistorico } from '@/src/components/MeuHistorico/hooks/useMeuHistorico';
 
 export default function MeuHistoricoPage() {
-  const { operadorAtual, vendas, isLoading, totalVendidoPago, totalVendidoFiado } = useMeuHistorico();
+  // 🟢 1. Aqui nós puxamos o formatDate do Hook
+  const { operadorAtual, vendas, isLoading, totalVendidoPago, totalVendidoFiado, formatDate } = useMeuHistorico();
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 max-w-[1400px] mx-auto relative mt-6">
@@ -28,10 +29,18 @@ export default function MeuHistoricoPage() {
       </div>
 
       {/* TABELA DE VENDAS */}
-      <TabelaMinhasVendas vendas={vendas} isLoading={isLoading} />
+      {/* 🟢 2. E aqui nós entregamos a função para a Tabela usar */}
+      <TabelaMinhasVendas 
+        vendas={vendas} 
+        isLoading={isLoading} 
+        formatDate={formatDate} 
+      />
 
       {/* TOTALIZADORES SEPARADOS */}
-      <ResumoTotais totalVendidoPago={totalVendidoPago} totalVendidoFiado={totalVendidoFiado} />
+      <ResumoTotais 
+        totalVendidoPago={totalVendidoPago} 
+        totalVendidoFiado={totalVendidoFiado} 
+      />
       
     </div>
   );

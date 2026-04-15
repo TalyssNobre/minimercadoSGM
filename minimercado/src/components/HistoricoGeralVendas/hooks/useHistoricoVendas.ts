@@ -9,11 +9,17 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
   const [isLoading, setIsLoading] = useState(true);
   const [filtroVendedor, setFiltroVendedor] = useState<string>('Todos');
 
+  // 🟢 NOVA FUNÇÃO BLINDADA CONTRA FUSO HORÁRIO
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
-    const datePart = dateString.split('T')[0];
-    const [year, month, day] = datePart.split('-');
-    return `${day}/${month}/${year}`;
+    // Pega apenas a parte da data (ex: "2026-04-15") e ignora a hora ("T23:56...")
+    const apenasData = dateString.split('T')[0];
+    
+    // Divide nos pedaços exatos
+    const [ano, mes, dia] = apenasData.split('-');
+    
+    // Monta do jeito brasileiro
+    return `${dia}/${mes}/${ano}`;
   };
 
   const fetchDados = async () => {
@@ -32,7 +38,7 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
           const itensBrutos = row.Item_sale || row.item_sale || row.itemSale || [];
           return {
             sale_id: row.id, 
-            date: formatDate(row.date), 
+            date: formatDate(row.date), // 👈 Usa a função blindada aqui
             operator_id: row.user_id || 0,
             operator_name: row.User?.name || row.user?.name || 'Desconhecido',
             client_name: row.Member?.name || row.member?.name || 'Cliente Avulso',

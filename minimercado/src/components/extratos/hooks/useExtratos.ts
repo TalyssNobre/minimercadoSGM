@@ -17,11 +17,13 @@ export function useExtratos(exibirAlerta: (msg: string, tipo: 'success' | 'error
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingHistorico, setIsLoadingHistorico] = useState(false);
 
+  // 🟢 NOVA FUNÇÃO BLINDADA CONTRA FUSO HORÁRIO
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
-    const datePart = dateString.split('T')[0];
-    const [year, month, day] = datePart.split('-');
-    return `${day}/${month}/${year}`;
+    // Pega apenas a parte da data (ex: "2026-04-15") ignorando o horário "T..."
+    const apenasData = dateString.split('T')[0];
+    const [ano, mes, dia] = apenasData.split('-');
+    return `${dia}/${mes}/${ano}`; // Retorna padrão brasileiro DD/MM/AAAA
   };
 
   // Carrega Equipes e Membros iniciais
@@ -57,6 +59,7 @@ export function useExtratos(exibirAlerta: (msg: string, tipo: 'success' | 'error
           
           todasVendas.forEach((venda: any) => {
             const status = venda.status ? 'PAGO' : 'PENDENTE';
+            // 🟢 Aplica a formatação limpa aqui
             const dataFormatada = formatDate(venda.date);
             
             venda.Item_sale.forEach((item: any) => {
@@ -89,7 +92,8 @@ export function useExtratos(exibirAlerta: (msg: string, tipo: 'success' | 'error
     const comprasBrutas = historicoBruto.filter(item => item.member_id === selectedMember.id && item.status === activeTab);
 
     const agrupado = comprasBrutas.reduce((acc: Record<string, ItemAgrupado>, curr) => {
-      const dataDia = curr.date.split(' ')[0]; 
+      // 🟢 Como já formatamos como "DD/MM/AAAA", não precisamos mais do split(' ')[0]
+      const dataDia = curr.date; 
       const key = `${dataDia}-${curr.product_name}-${curr.status}`;
       
       if (!acc[key]) {

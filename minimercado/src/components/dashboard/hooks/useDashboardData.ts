@@ -10,11 +10,13 @@ export function useDashboardData() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 🟢 NOVA FUNÇÃO BLINDADA CONTRA FUSO HORÁRIO
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
-    const datePart = dateString.split('T')[0];
-    const [year, month, day] = datePart.split('-');
-    return `${day}/${month}/${year}`;
+    // Pega apenas a parte da data e cria a String DD/MM/AAAA manualmente
+    const apenasData = dateString.split('T')[0];
+    const [ano, mes, dia] = apenasData.split('-');
+    return `${dia}/${mes}/${ano}`;
   };
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export function useDashboardData() {
           const rawSales = Array.isArray(salesRes.data) ? salesRes.data : [];
           const vendasMapeadas: Sale[] = rawSales.map((venda: any) => ({
             sale_id: venda.id || venda.sale_id,
-            date: formatDate(venda.date),
+            date: formatDate(venda.date), // 👈 Aplica a formatação limpa aqui
             operator_name: venda.user?.name || venda.User?.name || venda.operator_name || 'Sistema', 
             client_name: venda.member?.name || venda.Member?.name || venda.client_name || 'Avulso', 
             status: 'ATIVA', 

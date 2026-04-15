@@ -4,17 +4,12 @@ import { Sale } from './types';
 interface Props {
   vendas: Sale[];
   isLoading: boolean;
+  // 🟢 Avisamos o componente que ele vai receber a função de fora
+  formatDate: (dateString: string) => string; 
 }
 
-export default function TabelaMinhasVendas({ vendas, isLoading }: Props) {
+export default function TabelaMinhasVendas({ vendas, isLoading, formatDate }: Props) {
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-  
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    const datePart = dateString.split('T')[0];
-    const [year, month, day] = datePart.split('-');
-    return `${day}/${month}/${year}`;
-  };
 
   return (
     <div className="overflow-x-auto overflow-y-auto max-h-[380px] border border-gray-200 rounded-lg shadow-sm">
@@ -45,6 +40,7 @@ export default function TabelaMinhasVendas({ vendas, isLoading }: Props) {
           ) : (
             vendas.map((venda) => (
               <tr key={venda.id} className="hover:bg-gray-50 transition-colors">
+                {/* 🟢 Aqui a tabela apenas usa a função que recebeu por Props */}
                 <td className="py-3 px-4 text-sm text-gray-800">{formatDate(venda.date)}</td>
                 <td className="py-3 px-4 text-sm text-gray-600">
                   <div className="flex flex-col">

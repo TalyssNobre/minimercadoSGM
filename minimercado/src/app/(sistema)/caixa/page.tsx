@@ -46,9 +46,13 @@ export default function CaixaPage() {
       formData.append('user_id', vendedorId.toString());
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
       formData.append('discount_value', carrinho.valorDescontoCalculado.toString());
-      formData.append('date', new Date().toISOString());
       
-      if (statusVenda === 'PAGO') formData.append('payment_date', new Date().toISOString());
+      // 🟢 VOLTAMOS PARA O PADRÃO OFICIAL (UTC)
+      // O banco de dados salva a hora universal, e os nossos Hooks agora traduzem corretamente para o Brasil na hora de mostrar!
+      formData.append('date', new Date().toISOString());
+      if (statusVenda === 'PAGO') {
+        formData.append('payment_date', new Date().toISOString());
+      }
 
       const itensCarrinho = carrinho.cart.map(item => ({
         product_id: item.product.id,

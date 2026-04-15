@@ -8,6 +8,18 @@ export function useMeuHistorico() {
   const [vendas, setVendas] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 🟢 1. ADICIONAMOS A FUNÇÃO AQUI DENTRO (Corrigida para Fuso Horário Local)
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    // Converte automaticamente do UTC para o fuso horário do PC do usuário
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
   useEffect(() => {
     async function carregarDadosDoSupabase() {
       setIsLoading(true);
@@ -74,5 +86,13 @@ export function useMeuHistorico() {
     return vendas.filter(v => v.status === false).reduce((acc, curr) => acc + (curr.total_value || 0), 0);
   }, [vendas]);
 
-  return { operadorAtual, vendas, isLoading, totalVendidoPago, totalVendidoFiado };
+  // 🟢 2. EXPORTAMOS A FUNÇÃO AQUI NO RETURN
+  return { 
+    operadorAtual, 
+    vendas, 
+    isLoading, 
+    totalVendidoPago, 
+    totalVendidoFiado,
+    formatDate // <-- Adicionado aqui!
+  };
 }
