@@ -1,0 +1,108 @@
+import { useState, useEffect } from 'react';
+import { getAllProducts, updateProduct, deleteProduct } from '@/src/Server/controllers/ProductController';
+import { getAllCategory } from '@/src/Server/controllers/CategoryController'; 
+import { Produto, Categoria } from '../types';
+
+export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error') => void) {
+  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  async function carregarDados() {
+    setIsLoading(true);
+    try {
+      let listaCategorias: Categoria[] = [];
+      const catResponse = await getAllCategory() as any;
+      
+      if (catResponse?.success) {
+        const catData = catResponse.data || catResponse.category || catResponse;
+        if (Array.isArray(catData)) listaCategorias = catData;
+        else if (catData?.data && Array.isArray(catData.data)) listaCategorias = catData.data;
+        setCategorias(listaCategorias);
+      }
+
+      const prodResponse = await getAllProducts() as any;
+      
+      if (prodResponse?.success) {
+        let listaProdutos: any[] = [];
+        const prodData = prodResponse.data || prodResponse.product || prodResponse;
+
+        if (Array.isArray(prodData)) listaProdutos = prodData;
+        else if (prodData?.product && Array.isArray(prodData.product)) listaProdutos = prodData.product;
+        else if (prodData?.data && Array.isArray(prodData.data)) listaProdutos = prodData.data;
+
+        const produtosFormatados = listaProdutos.map((item: any) => {
+          const categoriaEncontrada = listaCategorias.find(c => c.id === item.category_id);
+          return {
+            id: item.id,
+            name: item.name || 'Produto sem nome',
+            category_id: item.category_id,
+            price: Number(item.price) || 0,
+            stock: Number(item.stock) || 0,
+            category_name: categoriaEncontrada?.name || 'Sem Categoria'
+          };
+        });
+        
+        setProdutos(produtosFormatados);
+      } else {
+        exibirAlerta("Erro ao buscar produtos: " + prodResponse?.message, 'error');
+      }
+    } catch (error) {
+      exibirAlerta("Erro fatal ao carregar dados do estoque.", 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  const salvarEdicao = async (produtoEditado: Produto) => {
+    try {
+      const formData = new FormData();
+      formData.append('id', String(produtoEditado.id));
+      formData.append('name', produtoEditado.name);
+      formData.append('category_id', String(produtoEditado.category_id || ''));
+      formData.append('price', String(produtoEditado.price || 0));
+      formData.append('stock', String(produtoEditado.stock || 0));
+      formData.append('image', ''); 
+
+      const response = await updateProduct(formData) as any;
+
+      if (!response?.success && !(response as any)?.sucess) {
+        exibirAlerta("Erro ao atualizar: " + (response?.message || "Desconhecido"), 'error');
+        return false;
+      }
+
+      await carregarDados(); 
+      exibirAlerta("Produto atualizado com sucesso!", 'success');
+      return true;
+
+    } catch (error) {
+      exibirAlerta("Erro ao atualizar o produto. Verifique o console.", 'error');
+      return false;
+    }
+  };
+
+  const excluirProduto = async (id: number) => {
+    try {
+      const response = await deleteProduct(id) as any;
+
+      if (response?.success === false || (response as any)?.sucess === false) {
+        exibirAlerta("Erro ao excluir: " + response?.message, 'error');
+        return false;
+      }
+
+      await carregarDados();
+      exibirAlerta("Produto excluído com sucesso!", 'success');
+      return true;
+
+    } catch (error) {
+      exibirAlerta("Erro técnico ao excluir o produto.", 'error');
+      return false;
+    }
+  };
+
+  return { produtos, categorias, isLoading, salvarEdicao, excluirProduto };
+}
