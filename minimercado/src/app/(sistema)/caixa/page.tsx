@@ -8,6 +8,7 @@ import GradeProdutos from '@/src/components/pdv/GradeProdutos';
 import CarrinhoLateral from '@/src/components/pdv/CarrinhoLateral';
 
 // Hooks
+// 🟢 Importamos o atualizarDados que criamos no hook usePDVDados
 import { usePDVDados } from '@/src/components/pdv/hooks/usePDVDados';
 import { useCarrinho } from '@/src/components/pdv/hooks/useCarrinho';
 import { Equipe, Membro } from '@/src/components/pdv/types';
@@ -17,7 +18,8 @@ import { createSale } from '@/src/Server/controllers/SaleController';
 import { getLoggedUserController } from '@/src/Server/controllers/UserController';
 
 export default function CaixaPage() {
-  const { equipes, membros, produtos, categorias, isLoading } = usePDVDados();
+  // 🟢 Desestruturamos o atualizarDados aqui
+  const { equipes, membros, produtos, categorias, isLoading, atualizarDados } = usePDVDados();
   const carrinho = useCarrinho();
 
   const [selectedTeam, setSelectedTeam] = useState<Equipe | null>(null);
@@ -47,8 +49,6 @@ export default function CaixaPage() {
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
       formData.append('discount_value', carrinho.valorDescontoCalculado.toString());
       
-      // 🟢 VOLTAMOS PARA O PADRÃO OFICIAL (UTC)
-      // O banco de dados salva a hora universal, e os nossos Hooks agora traduzem corretamente para o Brasil na hora de mostrar!
       formData.append('date', new Date().toISOString());
       if (statusVenda === 'PAGO') {
         formData.append('payment_date', new Date().toISOString());
@@ -69,6 +69,11 @@ export default function CaixaPage() {
         carrinho.limparCarrinho();
         setSelectedMember(null);
         setSelectedTeam(null);
+        
+        // 🟢 ETAPA 1: Chamamos a revitalização dos dados aqui!
+        // Isso força o front-end a buscar o estoque atualizado do banco.
+        atualizarDados(); 
+        
       } else {
         carrinho.exibirAlerta(resposta.message || "Erro ao salvar.", 'error');
       }

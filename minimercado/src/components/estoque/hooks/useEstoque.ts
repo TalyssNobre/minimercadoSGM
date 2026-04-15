@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react'; 
 import { getAllProducts, updateProduct, deleteProduct } from '@/src/Server/controllers/ProductController';
 import { getAllCategory } from '@/src/Server/controllers/CategoryController'; 
 import { Produto, Categoria } from '../types';
@@ -8,8 +8,15 @@ export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error'
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  async function carregarDados() {
-    setIsLoading(true);
+  // 🟢 TRUQUE DE MESTRE: Usamos um useRef para a função de alerta.
+  // Isso impede que o Hook entre em loop se a página principal mudar.
+  const alertaRef = useRef(exibirAlerta);
+  useEffect(() => {
+    alertaRef.current = exibirAlerta;
+  }, [exibirAlerta]);
+
+  const carregarDados = useCallback(async () => {
+    // Não chamamos setIsLoading(true) aqui se já estiver carregando para evitar loops
     try {
       let listaCategorias: Categoria[] = [];
       const catResponse = await getAllCategory() as any;
@@ -17,7 +24,6 @@ export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error'
       if (catResponse?.success) {
         const catData = catResponse.data || catResponse.category || catResponse;
         if (Array.isArray(catData)) listaCategorias = catData;
-        else if (catData?.data && Array.isArray(catData.data)) listaCategorias = catData.data;
         setCategorias(listaCategorias);
       }
 
@@ -44,19 +50,18 @@ export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error'
         });
         
         setProdutos(produtosFormatados);
-      } else {
-        exibirAlerta("Erro ao buscar produtos: " + prodResponse?.message, 'error');
       }
     } catch (error) {
-      exibirAlerta("Erro fatal ao carregar dados do estoque.", 'error');
+      console.error("Erro ao carregar dados:", error);
     } finally {
       setIsLoading(false);
     }
-  }
+  }, []); // 🟢 Array vazio aqui mata o loop infinito!
 
+  // Roda apenas uma vez ao montar o componente
   useEffect(() => {
     carregarDados();
-  }, []);
+  }, [carregarDados]);
 
   const salvarEdicao = async (produtoEditado: Produto) => {
     try {
@@ -71,16 +76,15 @@ export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error'
       const response = await updateProduct(formData) as any;
 
       if (!response?.success && !(response as any)?.sucess) {
-        exibirAlerta("Erro ao atualizar: " + (response?.message || "Desconhecido"), 'error');
+        alertaRef.current("Erro ao atualizar: " + (response?.message || "Desconhecido"), 'error');
         return false;
       }
 
       await carregarDados(); 
-      exibirAlerta("Produto atualizado com sucesso!", 'success');
+      alertaRef.current("Produto atualizado com sucesso!", 'success');
       return true;
-
     } catch (error) {
-      exibirAlerta("Erro ao atualizar o produto. Verifique o console.", 'error');
+      alertaRef.current("Erro ao atualizar o produto.", 'error');
       return false;
     }
   };
@@ -88,21 +92,19 @@ export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error'
   const excluirProduto = async (id: number) => {
     try {
       const response = await deleteProduct(id) as any;
-
       if (response?.success === false || (response as any)?.sucess === false) {
-        exibirAlerta("Erro ao excluir: " + response?.message, 'error');
+        alertaRef.current("Erro ao excluir: " + response?.message, 'error');
         return false;
       }
 
       await carregarDados();
-      exibirAlerta("Produto excluído com sucesso!", 'success');
+      alertaRef.current("Produto excluído com sucesso!", 'success');
       return true;
-
     } catch (error) {
-      exibirAlerta("Erro técnico ao excluir o produto.", 'error');
+      alertaRef.current("Erro técnico ao excluir o produto.", 'error');
       return false;
     }
   };
 
-  return { produtos, categorias, isLoading, salvarEdicao, excluirProduto };
+  return { produtos, categorias, isLoading, salvarEdicao, excluirProduto, atualizarDados: carregarDados };
 }
