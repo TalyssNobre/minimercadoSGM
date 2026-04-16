@@ -6,13 +6,9 @@ export async function authAdmin() {
 
     if (!user) throw new Error("Usuário não logado");
 
-    const { data: record } = await supabase
-        .from("User")
-        .select("profile") 
-        .eq("user_id", user.id)
-        .maybeSingle();
+    const { data: userAdmin } = await supabase.from("User").select("profile") .eq("user_id", user.id).maybeSingle();
 
-    if (!record || record.profile !== 'Admin') {
+    if (!userAdmin || userAdmin.profile !== 'Admin') {
         throw new Error("Acesso Negado. Somente administradores podem acessar");
     }
 

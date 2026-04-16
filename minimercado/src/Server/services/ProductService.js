@@ -17,8 +17,15 @@ export const createProduct = async({data, image}) => {
         }
         
         let imageUrl = null;
+         //MEXI NO TAMANHO DA IMAGEM E O TIPO
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', '/image/jpg'];
+        const MAX_SIZE = 2 * 1024 * 1024;   
 
-       if (image && image.size > 0) {
+        if (!allowedTypes.includes(image.type)) {
+        return { error: "Formato de imagem inválido. Use JPG, PNG ou WebP." };
+        }
+              
+       if (image && image.size > 0 || image && image.size < MAX_SIZE) {
             const fileExt = image.name.split('.').pop();
             const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
             const fileBuffer = await image.arrayBuffer();
@@ -77,21 +84,34 @@ try{
 
             imageUrl = publicUrlData.publicUrl;
         }
+        
 
         // 3. Valida os novos dados com a Entity
-        const finalData = { ...data, image: imageUrl };
-        const productEntity = new Product(finalData);
+        const finalData = { ...productexisting,...data, image: imageUrl };
+        console.log("OQ TA VINDO NO PRODUCT: ", finalData)
+    
+        console.log("OQ VAI PRA MODEL: ", finalData)
 
-        const results = await ProductModel.updateProduct(id, productEntity);
+        const results = await ProductModel.updateProduct(id, finalData);
         return {success: true, product : results, message : "Produto atualizado com sucesso!"}
     }catch(error){
         return { error: error.message };
+
+        
     }
 }
 export const getAllProducts = async()=> {
     try{
         const results = await ProductModel.getAllProducts();
-        return{success: true, product: results}
+
+        const produtosComPromo = results.map(product => { 
+            const productEntity = new Product(product)
+            return{
+                ...product,
+                 finalPrice: productEntity.PromoPrice
+            };
+        })
+        return{success: true, product: produtosComPromo}
     }catch(error){
         return{error: error.message}
     }

@@ -8,10 +8,9 @@ export const createProduct = async(productEntity) => {
     } return data;
 }
 
-export const updateProduct = async(id, productEntity) => {
+export const updateProduct = async(id, finalData) => {
    const supabase = await getSupabaseServer();
-
-   const{data,error} = await supabase.from("Product").update(productEntity).eq("id", id).select().single();
+   const{data,error} = await supabase.from("Product").update(finalData).eq("id", id).select().single();
    if(error){ throw new Error(error.message);
     } return data;
 }

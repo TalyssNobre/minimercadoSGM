@@ -14,7 +14,7 @@ export const createSale = async(dataFront) =>{
             itensCarrinho: itensCarrinho
         });
         if (results.error) return { success: false,sale: results,  message: results.error };
-        revalidatePath("/sale");
+        revalidatePath("/caixa");
         return{ success: true, message: "Venda Criada!"}
     }catch(error){return{error: error.message}}
 }
@@ -43,7 +43,7 @@ export const deleteSale = async(id) =>{
     try{
         const results = await SaleService.deleteSale(id);
         if (results.error) return { success: false,sale: results,  message: results.error };
-        revalidatePath("/sale");
+        revalidatePath("/admin/historico-vendas");
         return{success: true , message: "Venda Excluída"}
     }catch(error){return{error: error.message}}
 }
