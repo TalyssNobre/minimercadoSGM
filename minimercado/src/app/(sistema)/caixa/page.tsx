@@ -8,7 +8,6 @@ import GradeProdutos from '@/src/components/pdv/GradeProdutos';
 import CarrinhoLateral from '@/src/components/pdv/CarrinhoLateral';
 
 // Hooks
-// 🟢 Importamos o atualizarDados que criamos no hook usePDVDados
 import { usePDVDados } from '@/src/components/pdv/hooks/usePDVDados';
 import { useCarrinho } from '@/src/components/pdv/hooks/useCarrinho';
 import { Equipe, Membro } from '@/src/components/pdv/types';
@@ -18,7 +17,6 @@ import { createSale } from '@/src/Server/controllers/SaleController';
 import { getLoggedUserController } from '@/src/Server/controllers/UserController';
 
 export default function CaixaPage() {
-  // 🟢 Desestruturamos o atualizarDados aqui
   const { equipes, membros, produtos, categorias, isLoading, atualizarDados } = usePDVDados();
   const carrinho = useCarrinho();
 
@@ -49,9 +47,15 @@ export default function CaixaPage() {
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
       formData.append('discount_value', carrinho.valorDescontoCalculado.toString());
       
-      formData.append('date', new Date().toISOString());
+      // 🟢 CORREÇÃO DEFINITIVA DO FUSO HORÁRIO
+      // Pegamos a hora local do computador e ajustamos o offset antes de converter para ISO
+      const agora = new Date();
+      const timezoneOffset = agora.getTimezoneOffset() * 60000;
+      const dataLocalISO = new Date(agora.getTime() - timezoneOffset).toISOString();
+
+      formData.append('date', dataLocalISO);
       if (statusVenda === 'PAGO') {
-        formData.append('payment_date', new Date().toISOString());
+        formData.append('payment_date', dataLocalISO);
       }
 
       const itensCarrinho = carrinho.cart.map(item => ({
@@ -70,8 +74,6 @@ export default function CaixaPage() {
         setSelectedMember(null);
         setSelectedTeam(null);
         
-        // 🟢 ETAPA 1: Chamamos a revitalização dos dados aqui!
-        // Isso força o front-end a buscar o estoque atualizado do banco.
         atualizarDados(); 
         
       } else {
