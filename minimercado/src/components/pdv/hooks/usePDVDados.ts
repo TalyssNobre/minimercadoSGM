@@ -12,7 +12,6 @@ export function usePDVDados() {
   const [categorias, setCategorias] = useState<string[]>(['Todos']);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 🟢 Transformamos em useCallback para poder exportar e reutilizar com segurança
   const fetchDados = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -35,14 +34,26 @@ export function usePDVDados() {
 
       if (productsResp?.success) {
         const listaProdutos = productsResp.data || productsResp.product || [];
-        setProdutos(listaProdutos.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          category: catMap.get(p.category_id) || p.category_name || 'Sem Categoria',
-          price: Number(p.price) || 0,
-          image: p.image_url || p.image || null,
-          stock: Number(p.stock) || 0
-        })));
+        setProdutos(listaProdutos.map((p: any) => {
+          // 🟢 Lógica da Promoção
+          const precoOriginal = Number(p.price) || 0;
+          const emPromo = Boolean(p.promo_status);
+          const precoPromo = Number(p.promo_price) || 0;
+          
+          // Se estiver em promo, o preço oficial vira o da promo
+          const precoEfetivo = (emPromo && precoPromo > 0) ? precoPromo : precoOriginal;
+
+          return {
+            id: p.id,
+            name: p.name,
+            category: catMap.get(p.category_id) || p.category_name || 'Sem Categoria',
+            price: precoEfetivo, // 👈 O Carrinho vai ler esse!
+            base_price: precoOriginal, // 👈 Guardamos o original para as contas
+            promo_status: emPromo,
+            image: p.image_url || p.image || null,
+            stock: Number(p.stock) || 0
+          };
+        }));
       }
     } catch (error) {
       console.error("Erro ao carregar dados do PDV:", error);
@@ -51,11 +62,9 @@ export function usePDVDados() {
     }
   }, []);
 
-  // Roda ao carregar a página pela primeira vez
   useEffect(() => {
     fetchDados();
   }, [fetchDados]);
 
-  // 🟢 Exportamos o fetchDados para a página poder "revitalizar" os dados
   return { equipes, membros, produtos, categorias, isLoading, atualizarDados: fetchDados };
 }

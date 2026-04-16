@@ -47,7 +47,15 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {produtosFiltrados.map(produto => (
-            <div key={produto.id} className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center transition-all hover:shadow-md">
+            <div key={produto.id} className={`bg-white p-3 rounded-xl shadow-sm border flex flex-col items-center text-center transition-all hover:shadow-md relative ${produto.promo_status ? 'border-orange-300' : 'border-gray-100'}`}>
+              
+              {/* 🟢 Etiqueta de Promoção */}
+              {produto.promo_status && (
+                <div className="absolute -top-2 -left-2 bg-orange-500 text-white text-[10px] font-black px-2 py-1 rounded shadow-md z-20 animate-pulse">
+                  OFERTA
+                </div>
+              )}
+
               <div className="w-full aspect-square bg-gray-50 rounded-lg mb-3 overflow-hidden relative">
                 <span className={`absolute top-1.5 right-1.5 text-[10px] px-1.5 py-0.5 rounded font-bold z-10 shadow-sm ${produto.stock <= 0 ? 'bg-red-500 text-white' : 'bg-black/60 text-white'}`}>
                   {produto.stock} un
@@ -59,8 +67,20 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
                 )}
               </div>
               <h3 className="text-xs font-bold text-gray-700 mb-1 line-clamp-2 min-h-[2.5rem] leading-tight">{produto.name}</h3>
-              <span className="text-sm font-black text-[#0D9488] mb-3">{formatCurrency(produto.price)}</span>
-              <button disabled={produto.stock <= 0} onClick={() => onAddToCart(produto)} className={`w-full font-bold py-2 rounded-lg text-xs transition-colors mt-auto active:scale-95 ${produto.stock > 0 ? 'bg-[#0D9488] hover:bg-[#0f766e] text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}>
+              
+              {/* 🟢 Preço Riscado se estiver em promo */}
+              <div className="min-h-[2.5rem] flex flex-col justify-center items-center mb-2">
+                {produto.promo_status && produto.base_price ? (
+                  <>
+                    <span className="text-[10px] text-gray-400 line-through">De: {formatCurrency(produto.base_price)}</span>
+                    <span className="text-sm font-black text-orange-500">Por: {formatCurrency(produto.price)}</span>
+                  </>
+                ) : (
+                  <span className="text-sm font-black text-[#0D9488]">{formatCurrency(produto.price)}</span>
+                )}
+              </div>
+
+              <button disabled={produto.stock <= 0} onClick={() => onAddToCart(produto)} className={`w-full font-bold py-2 rounded-lg text-xs transition-colors mt-auto active:scale-95 ${produto.stock > 0 ? (produto.promo_status ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-[#0D9488] hover:bg-[#0f766e] text-white') : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}>
                 {produto.stock > 0 ? 'Adicionar' : 'Esgotado'}
               </button>
             </div>

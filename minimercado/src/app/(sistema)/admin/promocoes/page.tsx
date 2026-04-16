@@ -2,31 +2,26 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
-import { InputPesquisa } from '@/src/components/ui/InputPesquisa'; // 🟢 Importamos a Lupa
-import { getAllProducts } from '@/src/Server/controllers/ProductController';
+import { InputPesquisa } from '@/src/components/ui/InputPesquisa'; 
+import { getAllProducts, updateProduct } from '@/src/Server/controllers/ProductController';
 
 export default function PromocoesPage() {
   const [produtosDisponiveis, setProdutosDisponiveis] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // 🟢 ESTADO PARA A LUPA (Busca)
+  // ESTADO DA LUPA (Busca)
   const [buscaTexto, setBuscaTexto] = useState('');
   
-  const [ofertasAtivas, setOfertasAtivas] = useState<any[]>([
-    { id: 1, produto_id: 10, name: 'Coca-cola 310ml', preco_original: 5.00, preco_promo: 4.00 }
-  ]);
-  
+  // DADOS FAKES DE COMBOS MANTIDOS (Faremos na próxima etapa)
   const [combosCadastrados, setCombosCadastrados] = useState<any[]>([
     { 
-      id: 1, 
-      name: 'Combo Café da manhã', 
-      itens: '1x Café expresso, 1x Pão de queijo', 
+      id: 1, name: 'Combo Café da manhã', itens: '1x Café expresso, 1x Pão de queijo', 
       rawItens: [
         { produto_id: 991, nome: 'Café expresso', preco_unitario: 3.00, quantidade: 1, subtotal: 3.00 },
         { produto_id: 992, nome: 'Pão de queijo', preco_unitario: 3.00, quantidade: 1, subtotal: 3.00 }
       ],
-      preco_original: 6.00, 
-      preco_final: 5.00 
+      preco_original: 6.00, preco_final: 5.00 
     }
   ]);
 
@@ -62,12 +57,17 @@ export default function PromocoesPage() {
     }
   }
 
-  // 🟢 FILTRO DINÂMICO PARA A LUPA
+  // 🟢 1. OFERTAS REAIS: Pegamos todos os produtos que estão com status promocional = true
+  const ofertasAtivas = useMemo(() => {
+    return produtosDisponiveis.filter(p => p.promo_status === true);
+  }, [produtosDisponiveis]);
+
+  // FILTRO DINÂMICO PARA A LUPA
   const produtosFiltrados = useMemo(() => {
     if (!buscaTexto) return [];
     return produtosDisponiveis.filter(p => 
       p.name.toLowerCase().includes(buscaTexto.toLowerCase())
-    ).slice(0, 5); // Mostra apenas os 5 primeiros para não poluir
+    ).slice(0, 5); 
   }, [produtosDisponiveis, buscaTexto]);
 
   const stats = useMemo(() => {
@@ -86,7 +86,7 @@ export default function PromocoesPage() {
     setItensDoCombo([]);
     setOfertaProdutoId('');
     setOfertaPreco('');
-    setBuscaTexto(''); // 🟢 Limpa a busca ao fechar
+    setBuscaTexto('');
   };
 
   const handleAdicionarProdutoNoCombo = () => {
@@ -100,7 +100,7 @@ export default function PromocoesPage() {
         subtotal: Number(produtoEncontrado.price) * quantidadeSelecionada
       }]);
       setProdutoSelecionadoId('');
-      setBuscaTexto(''); // Limpa para a próxima busca
+      setBuscaTexto(''); 
       setQuantidadeSelecionada(1);
     }
   };
@@ -111,6 +111,55 @@ export default function PromocoesPage() {
     setPrecoCombo(combo.preco_final);
     setItensDoCombo(combo.rawItens || []);
     setIsModalComboOpen(true);
+  };
+
+  // 🟢 2. SALVAR OFERTA REAIS (Integração Backend)
+  const handleAtivarOferta = async () => {
+    if(!ofertaProdutoId || !ofertaPreco) return alert("Selecione um produto e digite o preço!");
+    
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('id', ofertaProdutoId);
+      formData.append('promo_status', 'true');
+      formData.append('promo_price', ofertaPreco.toString());
+      // O backend de update exige que os outros campos vão junto ou pode ignorar se a sua amiga tratou. 
+      // Por segurança, vamos mandar o essencial.
+      
+      const resp = await updateProduct(formData);
+      if(resp.success) {
+        alert("Oferta ativada com sucesso!");
+        carregarProdutos(); // Recarrega a tela para mostrar a oferta nova
+        fecharModais();
+      } else {
+        alert("Erro ao ativar: " + resp.message);
+      }
+    } catch (error) {
+      alert("Erro de conexão");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 🟢 3. DESATIVAR OFERTAS REAIS (Integração Backend)
+  const handleDesativarOferta = async (produtoId: number) => {
+    if(!confirm("Deseja realmente encerrar esta oferta?")) return;
+    
+    try {
+      const formData = new FormData();
+      formData.append('id', produtoId.toString());
+      formData.append('promo_status', 'false');
+      formData.append('promo_price', '0'); // Zera o preço promocional
+      
+      const resp = await updateProduct(formData);
+      if(resp.success) {
+        carregarProdutos(); // Recarrega a tela para a oferta sumir
+      } else {
+        alert("Erro ao desativar: " + resp.message);
+      }
+    } catch (error) {
+      alert("Erro de conexão");
+    }
   };
 
   const valorTotalOriginal = itensDoCombo.reduce((acc, item) => acc + item.subtotal, 0);
@@ -147,28 +196,52 @@ export default function PromocoesPage() {
         </div>
       </div>
 
-      {/* SEÇÃO 1: OFERTAS */}
+      {/* SEÇÃO 1: OFERTAS REAIS */}
       <div className="mb-10">
         <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
           <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
           Ofertas Relâmpago Ativas
         </h2>
-        {/* ... Grid de ofertas igual ao seu ... */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {ofertasAtivas.map(oferta => (
-                <div key={oferta.id} className="group relative bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="font-bold text-gray-800 text-center mb-1">{oferta.name}</h3>
-                    <div className="flex flex-col items-center mb-4">
-                        <span className="text-gray-400 line-through text-xs">De: R$ {oferta.preco_original.toFixed(2)}</span>
-                        <span className="text-2xl font-black text-[#0D9488]">R$ {oferta.preco_promo.toFixed(2)}</span>
-                    </div>
-                    <button onClick={() => setOfertasAtivas(prev => prev.filter(o => o.id !== oferta.id))} className="w-full bg-gray-50 text-gray-400 py-2 rounded-lg font-bold text-xs hover:text-red-500 transition-all">DESATIVAR</button>
-                </div>
-            ))}
-        </div>
+        
+        {isLoading ? (
+          <div className="text-gray-400 text-center py-10">Carregando promoções...</div>
+        ) : ofertasAtivas.length === 0 ? (
+          <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-10 text-center">
+            <p className="text-gray-400 font-medium">Nenhuma oferta ativa no momento.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {ofertasAtivas.map(produto => {
+                const precoReal = Number(produto.price);
+                const precoPromo = Number(produto.promo_price);
+                const porcentagem = precoReal > 0 ? (((precoReal - precoPromo) / precoReal) * 100).toFixed(0) : 0;
+                
+                return (
+                  <div key={produto.id} className="group relative bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:border-teal-200 transition-colors">
+                      {/* Badge de % */}
+                      <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
+                        {porcentagem}% OFF
+                      </div>
+                      
+                      <h3 className="font-bold text-gray-800 text-center mb-1 truncate" title={produto.name}>{produto.name}</h3>
+                      <div className="flex flex-col items-center mb-4">
+                          <span className="text-gray-400 line-through text-xs italic">De: R$ {precoReal.toFixed(2)}</span>
+                          <span className="text-2xl font-black text-[#0D9488]">R$ {precoPromo.toFixed(2)}</span>
+                      </div>
+                      <button 
+                        onClick={() => handleDesativarOferta(produto.id)} 
+                        className="w-full bg-gray-50 text-gray-400 py-2 rounded-lg font-bold text-xs hover:bg-red-50 hover:text-red-500 transition-all border border-transparent hover:border-red-100"
+                      >
+                        DESATIVAR
+                      </button>
+                  </div>
+                );
+              })}
+          </div>
+        )}
       </div>
 
-      {/* SEÇÃO 2: COMBOS */}
+      {/* SEÇÃO 2: COMBOS (Inalterado) */}
       <div>
         <h2 className="text-lg font-bold text-gray-800 mb-4">Combos & Kits Registrados</h2>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -200,9 +273,10 @@ export default function PromocoesPage() {
         </div>
       </div>
 
-      {/* 🟢 MODAL: COMBO (Ajustado com a Lupa) */}
+      {/* MODAL COMBO (Inalterado) */}
       {isModalComboOpen && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
+          {/* ... conteúdo do combo ... */}
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
             <div className="bg-[#0D9488] px-6 py-4 flex justify-between items-center text-white font-bold">
               <h2>{idEditando ? 'Editar Combo' : 'Configurar Novo Combo'}</h2>
@@ -221,7 +295,6 @@ export default function PromocoesPage() {
                 </div>
               </div>
 
-              {/* LUPA DE PESQUISA PARA COMPOSIÇÃO */}
               <div className="space-y-2 bg-gray-50 p-4 rounded-xl border relative">
                 <label className="block text-xs font-black text-gray-400 uppercase">Buscar Produto para Composição</label>
                 <div className="flex gap-2">
@@ -232,7 +305,6 @@ export default function PromocoesPage() {
                         placeholder="Digite o nome do produto..." 
                     />
                     
-                    {/* Lista Flutuante de Resultados */}
                     {produtosFiltrados.length > 0 && (
                       <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl max-h-48 overflow-y-auto">
                         {produtosFiltrados.map(p => (
@@ -257,7 +329,6 @@ export default function PromocoesPage() {
                 </div>
               </div>
 
-              {/* TABELA DE ITENS NO MODAL */}
               <div className="max-h-[200px] overflow-y-auto border rounded-lg">
                 <table className="w-full text-xs text-left">
                   <thead className="bg-gray-50 text-gray-400 sticky top-0">
@@ -299,7 +370,7 @@ export default function PromocoesPage() {
         </div>
       )}
 
-      {/* 🟢 MODAL: OFERTA (Ajustado com a Lupa) */}
+      {/* 🟢 MODAL: OFERTA REAIS (Botão de Salvar alterado) */}
       {isModalOfertaOpen && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col text-left">
@@ -309,7 +380,7 @@ export default function PromocoesPage() {
             </div>
             <div className="p-6 space-y-4">
               <div className="relative">
-                <label className="block text-xs font-black text-gray-400 uppercase mb-1">Buscar Produto</label>
+                <label className="block text-xs font-black text-gray-400 uppercase mb-1">Buscar Produto (Apenas S/ Promo)</label>
                 <InputPesquisa 
                     value={buscaTexto} 
                     onChange={setBuscaTexto} 
@@ -318,7 +389,8 @@ export default function PromocoesPage() {
                 
                 {produtosFiltrados.length > 0 && !ofertaProdutoId && (
                   <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl max-h-40 overflow-y-auto">
-                    {produtosFiltrados.map(p => (
+                    {/* Filtra para não mostrar produtos que JÁ ESTÃO em promoção */}
+                    {produtosFiltrados.filter(p => !p.promo_status).map(p => (
                       <button
                         key={p.id}
                         onClick={() => {
@@ -340,12 +412,9 @@ export default function PromocoesPage() {
             </div>
             <div className="bg-gray-50 p-4 flex justify-end gap-3 border-t">
               <ButtonSistema variant="outline" onClick={fecharModais}>Cancelar</ButtonSistema>
-              <ButtonSistema variant="primary" className="bg-[#0D9488]" onClick={() => {
-                const prod = produtosDisponiveis.find(p => p.id === Number(ofertaProdutoId));
-                if(!prod || !ofertaPreco) return alert("Selecione um produto e preço!");
-                setOfertasAtivas(prev => [...prev, { id: Date.now(), name: prod.name, preco_original: Number(prod.price), preco_promo: Number(ofertaPreco) }]);
-                fecharModais();
-              }}>ATIVAR OFERTA</ButtonSistema>
+              <ButtonSistema variant="primary" className="bg-[#0D9488] disabled:opacity-50" disabled={isSubmitting} onClick={handleAtivarOferta}>
+                {isSubmitting ? 'ATIVANDO...' : 'ATIVAR OFERTA'}
+              </ButtonSistema>
             </div>
           </div>
         </div>

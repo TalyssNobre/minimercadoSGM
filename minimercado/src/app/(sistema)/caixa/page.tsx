@@ -46,10 +46,27 @@ export default function CaixaPage() {
       formData.append('user_id', vendedorId.toString());
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
       
-      // 🟢 AQUI ESTÁ A INTEGRAÇÃO! 
-      // Mudamos de 'discount_value' para 'discount' para bater perfeitamente com o DER da sua amiga.
-      formData.append('discount', carrinho.valorDescontoCalculado.toString());
-      
+      // 🟢 MÁGICA CONTÁBIL: Calcula o desconto oculto das Promoções Relâmpago
+      let descontoDasPromocoes = 0;
+
+      const itensCarrinho = carrinho.cart.map(item => {
+        const precoBase = item.product.base_price || item.product.price;
+        const precoEfetivo = item.product.price; // Valor com a promo aplicada
+        
+        // Se estava em promo, a diferença vira desconto
+        descontoDasPromocoes += (precoBase - precoEfetivo) * item.quantity;
+
+        return {
+          product_id: item.product.id,
+          quantity: item.quantity,
+          unit_price: precoBase // 👈 Enviamos o valor BRUTO para o backend criar o total_value certo
+        };
+      });
+
+      // 🟢 O Desconto Total = (Desconto Manual do Carrinho) + (Diferença das Ofertas)
+      const descontoFinalTotal = carrinho.valorDescontoCalculado + descontoDasPromocoes;
+      formData.append('discount', descontoFinalTotal.toString());
+
       // Fuso horário corrigido
       const agora = new Date();
       const timezoneOffset = agora.getTimezoneOffset() * 60000;
@@ -59,12 +76,6 @@ export default function CaixaPage() {
       if (statusVenda === 'PAGO') {
         formData.append('payment_date', dataLocalISO);
       }
-
-      const itensCarrinho = carrinho.cart.map(item => ({
-        product_id: item.product.id,
-        quantity: item.quantity,
-        unit_price: item.product.price
-      }));
 
       formData.append('cart', JSON.stringify(itensCarrinho));
 
