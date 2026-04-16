@@ -9,16 +9,10 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
   const [isLoading, setIsLoading] = useState(true);
   const [filtroVendedor, setFiltroVendedor] = useState<string>('Todos');
 
-  // 🟢 NOVA FUNÇÃO BLINDADA CONTRA FUSO HORÁRIO
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
-    // Pega apenas a parte da data (ex: "2026-04-15") e ignora a hora ("T23:56...")
     const apenasData = dateString.split('T')[0];
-    
-    // Divide nos pedaços exatos
     const [ano, mes, dia] = apenasData.split('-');
-    
-    // Monta do jeito brasileiro
     return `${dia}/${mes}/${ano}`;
   };
 
@@ -38,11 +32,13 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
           const itensBrutos = row.Item_sale || row.item_sale || row.itemSale || [];
           return {
             sale_id: row.id, 
-            date: formatDate(row.date), // 👈 Usa a função blindada aqui
+            date: formatDate(row.date), 
             operator_id: row.user_id || 0,
             operator_name: row.User?.name || row.user?.name || 'Desconhecido',
             client_name: row.Member?.name || row.member?.name || 'Cliente Avulso',
-            total_value: row.total_value, 
+            total_value: Number(row.total_value) || 0, 
+            // 🟢 Capturamos o desconto aqui
+            discount: Number(row.discount) || 0,
             status: Boolean(row.status), 
             items: itensBrutos.map((item: any) => ({
               id_item_sale: item.id_item_sale, 
@@ -70,8 +66,9 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
     return vendas.filter(v => v.operator_id.toString() === filtroVendedor);
   }, [vendas, filtroVendedor]);
 
+  // 🟢 Ajustamos a matemática para subtrair o desconto do valor total
   const totalFiltrado = useMemo(() => {
-    return vendasFiltradas.filter(v => v.status === true).reduce((acc, curr) => acc + curr.total_value, 0);
+    return vendasFiltradas.filter(v => v.status === true).reduce((acc, curr) => acc + (curr.total_value - (curr.discount || 0)), 0);
   }, [vendasFiltradas]);
 
   const cancelarVenda = async (sale_id: number) => {

@@ -45,10 +45,12 @@ export default function CaixaPage() {
       formData.append('member_id', selectedMember.id.toString());
       formData.append('user_id', vendedorId.toString());
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
-      formData.append('discount_value', carrinho.valorDescontoCalculado.toString());
       
-      // 🟢 CORREÇÃO DEFINITIVA DO FUSO HORÁRIO
-      // Pegamos a hora local do computador e ajustamos o offset antes de converter para ISO
+      // 🟢 AQUI ESTÁ A INTEGRAÇÃO! 
+      // Mudamos de 'discount_value' para 'discount' para bater perfeitamente com o DER da sua amiga.
+      formData.append('discount', carrinho.valorDescontoCalculado.toString());
+      
+      // Fuso horário corrigido
       const agora = new Date();
       const timezoneOffset = agora.getTimezoneOffset() * 60000;
       const dataLocalISO = new Date(agora.getTime() - timezoneOffset).toISOString();

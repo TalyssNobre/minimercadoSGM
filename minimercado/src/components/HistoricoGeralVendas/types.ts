@@ -13,6 +13,7 @@ export interface Venda {
   total_value: number;
   status: boolean; 
   items: ItemVenda[];
+  discount?: number; 
 }
 
 export interface Operador {

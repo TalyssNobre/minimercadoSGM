@@ -10,10 +10,8 @@ export function useDashboardData() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 🟢 NOVA FUNÇÃO BLINDADA CONTRA FUSO HORÁRIO
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
-    // Pega apenas a parte da data e cria a String DD/MM/AAAA manualmente
     const apenasData = dateString.split('T')[0];
     const [ano, mes, dia] = apenasData.split('-');
     return `${dia}/${mes}/${ano}`;
@@ -36,11 +34,12 @@ export function useDashboardData() {
           const rawSales = Array.isArray(salesRes.data) ? salesRes.data : [];
           const vendasMapeadas: Sale[] = rawSales.map((venda: any) => ({
             sale_id: venda.id || venda.sale_id,
-            date: formatDate(venda.date), // 👈 Aplica a formatação limpa aqui
+            date: formatDate(venda.date),
             operator_name: venda.user?.name || venda.User?.name || venda.operator_name || 'Sistema', 
             client_name: venda.member?.name || venda.Member?.name || venda.client_name || 'Avulso', 
             status: 'ATIVA', 
-            payment_status: venda.status ? 'PAGO' : 'FIADO', 
+            payment_status: venda.status ? 'PAGO' : 'FIADO',
+            discount: Number(venda.discount) || 0, // 🟢 Pega o desconto da venda
             items: (venda.Item_sale || venda.item_sale || venda.items || []).map((item: any) => ({
               product_id: item.product_id,
               qty: item.quantity || item.qty,
@@ -70,17 +69,30 @@ export function useDashboardData() {
     const vendasValidas = sales.filter(s => s.status !== 'CANCELADA');
 
     vendasValidas.forEach(venda => {
+      // 🟢 1. Calcula o total bruto da venda para sabermos o "peso" de cada item
+      const valorBrutoVenda = venda.items.reduce((acc, item) => acc + (item.qty * item.price), 0);
+      const descontoVenda = venda.discount || 0;
+
       venda.items.forEach(item => {
-        const valorItemTotal = item.qty * item.price;
+        const valorItemBruto = item.qty * item.price;
         const produto = products.find(p => p.id === item.product_id);
         
         if (produto) {
-          totalVendido += valorItemTotal;
-          if (venda.payment_status === 'PAGO') totalRecebido += valorItemTotal;
-          if (venda.payment_status === 'FIADO') totalAReceber += valorItemTotal;
+          // 🟢 2. Calcula a proporção. Ex: O item representou 30% da venda? Ele leva 30% do desconto.
+          let valorItemLiquido = valorItemBruto;
+          if (valorBrutoVenda > 0 && descontoVenda > 0) {
+            const proporcaoDoItem = valorItemBruto / valorBrutoVenda;
+            const descontoDoItem = descontoVenda * proporcaoDoItem;
+            valorItemLiquido = Math.max(0, valorItemBruto - descontoDoItem);
+          }
+
+          // 🟢 3. Somas globais e de categoria usando o valor LÍQUIDO
+          totalVendido += valorItemLiquido;
+          if (venda.payment_status === 'PAGO') totalRecebido += valorItemLiquido;
+          if (venda.payment_status === 'FIADO') totalAReceber += valorItemLiquido;
 
           if (catTotals[produto.category_id] !== undefined) {
-            catTotals[produto.category_id] += valorItemTotal;
+            catTotals[produto.category_id] += valorItemLiquido;
           }
 
           historico.push({
@@ -92,7 +104,8 @@ export function useDashboardData() {
             categoria_id: produto.category_id,
             qty: item.qty,
             pagamento: venda.payment_status,
-            valor_total: valorItemTotal
+            valor_total: valorItemBruto,
+            valor_liquido: valorItemLiquido // Enviamos pro visual
           });
         }
       });

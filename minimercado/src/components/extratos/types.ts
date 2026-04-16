@@ -9,24 +9,17 @@ export interface Membro {
   name: string;
 }
 
-export interface LinhaHistorico {
-  id_linha: number; 
-  member_id: number;
-  date: string; 
-  product_name: string; 
-  category_name: string; 
-  quantity: number; 
-  price: number; 
-  status: 'PENDENTE' | 'PAGO'; 
+// 🟢 Agora a nossa linha do extrato representa a VENDA inteira, igual nos outros painéis
+export interface ItemAgrupado {
+  id_agrupado: string; 
+  sale_id: number;
+  date: string;
+  items_resumo: string; // Ex: "1x Pão, 2x Café"
+  valor_bruto: number;
+  desconto: number;
+  valor_liquido: number;
+  status: 'PENDENTE' | 'PAGO';
 }
 
-export interface ItemAgrupado {
-  id_agrupado: string;
-  date: string;
-  product_name: string;
-  category_name: string;
-  quantity: number;
-  price: number;
-  status: 'PENDENTE' | 'PAGO';
-  ids_originais: number[];
-}
+// Podemos manter essa vazia ou apagar, não usaremos mais a linha fragmentada
+export interface LinhaHistorico {}

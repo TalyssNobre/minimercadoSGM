@@ -8,8 +8,6 @@ export function useMeuHistorico() {
   const [vendas, setVendas] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 🟢 NOVA FUNÇÃO BLINDADA (Método Split)
-  // Esse método não deixa o fuso horário de Londres mudar o dia da venda
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     const apenasData = dateString.split('T')[0];
@@ -17,7 +15,6 @@ export function useMeuHistorico() {
     return `${dia}/${mes}/${ano}`;
   };
 
-  // 🟢 Transformamos em useCallback para ser nossa função de "Revitalizar"
   const carregarDadosDoSupabase = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -36,7 +33,6 @@ export function useMeuHistorico() {
         if (salesResp?.success && salesResp?.data) {
           const todasVendas = Array.isArray(salesResp.data) ? salesResp.data : (salesResp.data.sale || []);
           
-          // Filtra apenas as vendas deste operador
           const minhasVendas = todasVendas.filter((v: any) => v.user_id === userLogado.id);
 
           const vendasFormatadas: Sale[] = minhasVendas.map((row: any) => {
@@ -45,8 +41,10 @@ export function useMeuHistorico() {
 
             return {
               id: row.id,
-              date: row.date, // Passamos a data bruta, a tabela vai formatar
-              total_value: row.total_value,
+              date: row.date, 
+              total_value: Number(row.total_value) || 0,
+              // 🟢 Puxamos o discount. Se for nulo ou vazio no banco, vira 0.
+              discount: Number(row.discount) || 0, 
               status: row.status, 
               payment_date: row.payment_date,
               member: {
@@ -76,9 +74,10 @@ export function useMeuHistorico() {
     carregarDadosDoSupabase();
   }, [carregarDadosDoSupabase]);
 
-  // Cálculos automáticos
-  const totalVendidoPago = vendas.filter(v => v.status === true).reduce((acc, curr) => acc + (curr.total_value || 0), 0);
-  const totalVendidoFiado = vendas.filter(v => v.status === false).reduce((acc, curr) => acc + (curr.total_value || 0), 0);
+  // 🟢 Cálculos automáticos agora consideram o desconto
+  // Subtraímos o desconto do valor total para saber o quanto de dinheiro REAL entrou
+  const totalVendidoPago = vendas.filter(v => v.status === true).reduce((acc, curr) => acc + ((curr.total_value || 0) - (curr.discount || 0)), 0);
+  const totalVendidoFiado = vendas.filter(v => v.status === false).reduce((acc, curr) => acc + ((curr.total_value || 0) - (curr.discount || 0)), 0);
 
   return { 
     operadorAtual, 
@@ -87,6 +86,6 @@ export function useMeuHistorico() {
     totalVendidoPago, 
     totalVendidoFiado,
     formatDate,
-    atualizarDados: carregarDadosDoSupabase // 🟢 Exportamos a revitalização
+    atualizarDados: carregarDadosDoSupabase 
   };
 }

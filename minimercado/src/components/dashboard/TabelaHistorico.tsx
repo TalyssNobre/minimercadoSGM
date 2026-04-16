@@ -53,25 +53,38 @@ export default function TabelaHistorico({ categories, historico, activeTab, setA
               <th className="py-3 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-50">Produto</th>
               <th className="py-3 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-center bg-gray-50">Qtd</th>
               <th className="py-3 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-center bg-gray-50">Pagamento</th>
-              <th className="py-3 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right bg-gray-50">Valor Total</th>
+              <th className="py-3 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right bg-gray-50">Valor Líquido</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 bg-white">
-            {historicoFiltrado.map((linha) => (
-              <tr key={linha.id_unico} className="hover:bg-gray-50 transition-colors">
-                <td className="py-3 px-6 text-sm text-gray-600">{linha.data}</td>
-                <td className="py-3 px-6 text-sm text-gray-800 font-medium">{linha.operador}</td>
-                <td className="py-3 px-6 text-sm text-gray-600">{linha.cliente}</td>
-                <td className="py-3 px-6 text-sm text-gray-800 font-medium">{linha.produto_nome}</td>
-                <td className="py-3 px-6 text-sm text-gray-800 text-center">{linha.qty}</td>
-                <td className="py-3 px-6 text-center">
-                  <span className={`text-xs font-bold px-2 py-1 rounded ${linha.pagamento === 'PAGO' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                    {linha.pagamento}
-                  </span>
-                </td>
-                <td className="py-3 px-6 text-sm font-bold text-[#0D9488] text-right">{formatCurrency(linha.valor_total)}</td>
-              </tr>
-            ))}
+            {historicoFiltrado.map((linha) => {
+              // 🟢 A MÁGICA VISUAL AQUI
+              const liquido = linha.valor_liquido ?? linha.valor_total;
+              const temDesconto = liquido < linha.valor_total;
+
+              return (
+                <tr key={linha.id_unico} className="hover:bg-gray-50 transition-colors">
+                  <td className="py-3 px-6 text-sm text-gray-600">{linha.data}</td>
+                  <td className="py-3 px-6 text-sm text-gray-800 font-medium">{linha.operador}</td>
+                  <td className="py-3 px-6 text-sm text-gray-600">{linha.cliente}</td>
+                  <td className="py-3 px-6 text-sm text-gray-800 font-medium">{linha.produto_nome}</td>
+                  <td className="py-3 px-6 text-sm text-gray-800 text-center">{linha.qty}</td>
+                  <td className="py-3 px-6 text-center">
+                    <span className={`text-xs font-bold px-2 py-1 rounded ${linha.pagamento === 'PAGO' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      {linha.pagamento}
+                    </span>
+                  </td>
+                  <td className="py-3 px-6 text-sm font-bold text-right flex flex-col items-end">
+                    <span className="text-[#0D9488]">{formatCurrency(liquido)}</span>
+                    {temDesconto && (
+                      <span className="text-[10px] text-gray-400 line-through">
+                        {formatCurrency(linha.valor_total)}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
             {historicoFiltrado.length === 0 && (
               <tr>
                 <td colSpan={7} className="py-12 text-center text-gray-500 bg-white">

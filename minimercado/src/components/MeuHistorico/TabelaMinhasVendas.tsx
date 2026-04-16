@@ -1,10 +1,11 @@
 import React from 'react';
 import { Sale } from './types';
 
+// 🟢 Atualizei a interface Sale aqui localmente só para o typescript não chiar
+// (No seu sistema real, certifique-se de adicionar `discount?: number` no seu arquivo global types.ts)
 interface Props {
-  vendas: Sale[];
+  vendas: (Sale & { discount?: number })[];
   isLoading: boolean;
-  // 🟢 Avisamos o componente que ele vai receber a função de fora
   formatDate: (dateString: string) => string; 
 }
 
@@ -20,7 +21,7 @@ export default function TabelaMinhasVendas({ vendas, isLoading, formatDate }: Pr
             <th className="py-3 px-4 text-sm font-bold text-gray-700 w-48">Cliente / Equipe</th>
             <th className="py-3 px-4 text-sm font-bold text-gray-700">Itens da Compra</th>
             <th className="py-3 px-4 text-sm font-bold text-gray-700 w-32 text-center">Status</th>
-            <th className="py-3 px-4 text-sm font-bold text-gray-700 w-32 text-right">Valor Total</th>
+            <th className="py-3 px-4 text-sm font-bold text-gray-700 w-32 text-right">Valor Líquido</th>
           </tr>
         </thead>
         
@@ -38,37 +39,53 @@ export default function TabelaMinhasVendas({ vendas, isLoading, formatDate }: Pr
               </td>
             </tr>
           ) : (
-            vendas.map((venda) => (
-              <tr key={venda.id} className="hover:bg-gray-50 transition-colors">
-                {/* 🟢 Aqui a tabela apenas usa a função que recebeu por Props */}
-                <td className="py-3 px-4 text-sm text-gray-800">{formatDate(venda.date)}</td>
-                <td className="py-3 px-4 text-sm text-gray-600">
-                  <div className="flex flex-col">
-                    <span>{venda.member?.name || 'Cliente Avulso'}</span>
-                    {venda.member?.Team?.name && (
-                      <span className="text-xs text-gray-400">Equipe: {venda.member.Team.name}</span>
+            vendas.map((venda) => {
+              // 🟢 A MÁGICA ACONTECE AQUI
+              const desconto = venda.discount || 0;
+              const valorBruto = venda.total_value || 0;
+              const valorLiquido = valorBruto - desconto;
+
+              return (
+                <tr key={venda.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="py-3 px-4 text-sm text-gray-800">{formatDate(venda.date)}</td>
+                  <td className="py-3 px-4 text-sm text-gray-600">
+                    <div className="flex flex-col">
+                      <span>{venda.member?.name || 'Cliente Avulso'}</span>
+                      {venda.member?.Team?.name && (
+                        <span className="text-xs text-gray-400">Equipe: {venda.member.Team.name}</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-600">
+                    <div className="flex flex-wrap gap-1">
+                      {venda.Item_sale?.map((item, idx) => (
+                        <span key={idx} className="px-2 py-0.5 rounded text-xs border border-gray-200 bg-gray-50">
+                          {item.quantity}x {item.Product?.name || 'Produto'}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${venda.status ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      {venda.status ? 'Pago' : 'Fiado'}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-sm font-medium text-right flex flex-col items-end">
+                    {/* 🟢 SE TEVE DESCONTO, MOSTRA O VALOR FINAL E UMA ETIQUETA COM O BRUTO RISCADO */}
+                    <span className="text-gray-900 font-bold text-base">
+                      {formatCurrency(valorLiquido)}
+                    </span>
+                    
+                    {desconto > 0 && (
+                      <div className="flex items-center gap-1 text-[10px]">
+                        <span className="text-gray-400 line-through">{formatCurrency(valorBruto)}</span>
+                        <span className="text-orange-500 font-bold bg-orange-50 px-1 rounded">- {formatCurrency(desconto)}</span>
+                      </div>
                     )}
-                  </div>
-                </td>
-                <td className="py-3 px-4 text-sm text-gray-600">
-                  <div className="flex flex-wrap gap-1">
-                    {venda.Item_sale?.map((item, idx) => (
-                      <span key={idx} className="px-2 py-0.5 rounded text-xs border border-gray-200 bg-gray-50">
-                        {item.quantity}x {item.Product?.name || 'Produto'}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${venda.status ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                    {venda.status ? 'Pago' : 'Fiado'}
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-sm font-medium text-right text-gray-800">
-                  {formatCurrency(venda.total_value)}
-                </td>
-              </tr>
-            ))
+                  </td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>

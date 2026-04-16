@@ -23,6 +23,7 @@ export interface Sale {
   status: 'ATIVA' | 'CANCELADA'; 
   payment_status: 'PAGO' | 'FIADO'; 
   items: ItemSale[]; 
+  discount?: number; // 🟢 Novo
 }
 
 export interface HistoricoLinha {
@@ -35,4 +36,5 @@ export interface HistoricoLinha {
   qty: number;
   pagamento: string;
   valor_total: number;
+  valor_liquido?: number; // 🟢 Novo: Valor do item após a proporção do desconto
 }
