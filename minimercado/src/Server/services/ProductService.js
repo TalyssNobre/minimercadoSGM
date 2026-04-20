@@ -4,7 +4,8 @@ import Product from "../entitys/ProductEntity";
 import * as ProductModel from "@/src/Server/models/ProductModel";
 
 export const createProduct = async({data, image}) => {
-
+    // No seu ProductController.js ou Service
+console.log("Dados recebidos:", JSON.stringify(data, null, 2));
         const supabase = await getSupabaseServer();
         const product = new Product(data)
         const productexisting = await ProductModel.findByName(data.name)
@@ -50,6 +51,7 @@ export const createProduct = async({data, image}) => {
     try {
         const productEntity = new Product(finalData); 
         const results = await ProductModel.createProduct(productEntity);
+        
         return { 
             success: true, 
             message: "Produto cadastrado com sucesso!" 
@@ -86,11 +88,7 @@ try{
         }
         
 
-        // 3. Valida os novos dados com a Entity
         const finalData = { ...productexisting,...data, image: imageUrl };
-        console.log("OQ TA VINDO NO PRODUCT: ", finalData)
-    
-        console.log("OQ VAI PRA MODEL: ", finalData)
 
         const results = await ProductModel.updateProduct(id, finalData);
         return {success: true, product : results, message : "Produto atualizado com sucesso!"}

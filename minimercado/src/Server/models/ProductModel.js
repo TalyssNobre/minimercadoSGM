@@ -40,6 +40,9 @@ export const updateProductStock = async (productId, quantityChange) => {
      throw new Error(error.message);}
     
     const newStock = Number(product.stock) + Number(quantityChange);
+    if (newStock < 0) {
+        throw new Error("Estoque insuficiente para realizar esta operação.");
+    }
     
     const { data, error: updateError } = await supabase.from("Product").update({ stock: newStock }).eq("id", productId);
     
