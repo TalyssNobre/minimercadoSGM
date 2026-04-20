@@ -35,15 +35,12 @@ export function usePDVDados() {
       if (productsResp?.success) {
         const listaProdutos = productsResp.data || productsResp.product || [];
         
-        // 🟢 1. MAPA DE ESTOQUE: Guarda o estoque real de todos os produtos individuais primeiro
         const mapaDeEstoque = new Map();
         listaProdutos.forEach((p: any) => {
           mapaDeEstoque.set(p.id, Number(p.stock) || 0);
         });
 
-        // 🟢 2. MONTAGEM DOS PRODUTOS
         setProdutos(listaProdutos.map((p: any) => {
-          // Lógica da Promoção (Mantida intacta)
           const precoOriginal = Number(p.price) || 0;
           const emPromo = Boolean(p.promo_status);
           const precoPromo = Number(p.promo_price) || 0;
@@ -52,27 +49,20 @@ export function usePDVDados() {
           let estoqueFinal = Number(p.stock) || 0;
           let isCombo = false;
 
-          // 🟢 3. LÓGICA DO COMBO: Descobrir o gargalo
           if (p.combo && p.combo !== 'null' && p.combo !== null) {
             isCombo = true;
             try {
               const comboItens = typeof p.combo === 'string' ? JSON.parse(p.combo) : p.combo;
               
               if (!comboItens || comboItens.length === 0) {
-                estoqueFinal = 0; // Se o combo não tem itens, não pode ser vendido
+                estoqueFinal = 0;
               } else {
-                // Calcula quantas vezes o combo pode ser feito com base em cada ingrediente
                 const possibilidades = comboItens.map((item: any) => {
                   const idIngrediente = item.product_id || item.produto_id;
                   const qtdNecessaria = item.quantity || item.qty || 1;
-                  
                   const estoqueAtualDoIngrediente = mapaDeEstoque.get(idIngrediente) || 0;
-                  
-                  // Se tenho 10 pães e o combo pede 2, posso fazer 5 combos.
                   return Math.floor(estoqueAtualDoIngrediente / qtdNecessaria);
                 });
-
-                // O estoque do Combo é o MENOR número da lista (O ingrediente que acaba primeiro)
                 estoqueFinal = Math.min(...possibilidades);
               }
             } catch(e) {
@@ -89,8 +79,8 @@ export function usePDVDados() {
             base_price: precoOriginal,
             promo_status: emPromo,
             image: p.image_url || p.image || null,
-            stock: estoqueFinal, // 👈 Se for combo, assume o valor calculado
-            isCombo: isCombo // 👈 Flag adicionada caso no futuro queira por uma estrelinha de combo na foto
+            stock: estoqueFinal,
+            isCombo: isCombo
           };
         }));
       }
@@ -101,9 +91,23 @@ export function usePDVDados() {
     }
   }, []);
 
+  // 🟢 MÁGICA: Atualiza apenas o produto que mudou no banco, sem recarregar a tela!
+  const atualizarEstoqueLocal = useCallback((payload: any) => {
+    if (payload.eventType === 'UPDATE' && payload.new) {
+      setProdutos((prevProdutos) => 
+        prevProdutos.map(produto => 
+          produto.id === payload.new.id 
+            ? { ...produto, stock: payload.new.stock } 
+            : produto
+        )
+      );
+    }
+  }, []);
+
   useEffect(() => {
     fetchDados();
   }, [fetchDados]);
 
-  return { equipes, membros, produtos, categorias, isLoading, atualizarDados: fetchDados };
+  // 🟢 Retornando a nova função cirúrgica
+  return { equipes, membros, produtos, categorias, isLoading, atualizarDados: fetchDados, atualizarEstoqueLocal };
 }
