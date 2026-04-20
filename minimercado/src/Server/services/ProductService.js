@@ -29,7 +29,7 @@ export const createProduct = async({data, image}) => {
         return { error: "Formato de imagem inválido. Use JPG, PNG ou WebP." };
         }
               
-       if (image && image.size > 0 || image && image.size < MAX_SIZE) {
+       if (image && image.size > 0 && image && image.size <= MAX_SIZE) {
             const fileExt = image.name.split('.').pop();
             const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
             const fileBuffer = await image.arrayBuffer();
