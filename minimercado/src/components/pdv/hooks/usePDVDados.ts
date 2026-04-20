@@ -34,24 +34,63 @@ export function usePDVDados() {
 
       if (productsResp?.success) {
         const listaProdutos = productsResp.data || productsResp.product || [];
+        
+        // 🟢 1. MAPA DE ESTOQUE: Guarda o estoque real de todos os produtos individuais primeiro
+        const mapaDeEstoque = new Map();
+        listaProdutos.forEach((p: any) => {
+          mapaDeEstoque.set(p.id, Number(p.stock) || 0);
+        });
+
+        // 🟢 2. MONTAGEM DOS PRODUTOS
         setProdutos(listaProdutos.map((p: any) => {
-          // 🟢 Lógica da Promoção
+          // Lógica da Promoção (Mantida intacta)
           const precoOriginal = Number(p.price) || 0;
           const emPromo = Boolean(p.promo_status);
           const precoPromo = Number(p.promo_price) || 0;
-          
-          // Se estiver em promo, o preço oficial vira o da promo
           const precoEfetivo = (emPromo && precoPromo > 0) ? precoPromo : precoOriginal;
+
+          let estoqueFinal = Number(p.stock) || 0;
+          let isCombo = false;
+
+          // 🟢 3. LÓGICA DO COMBO: Descobrir o gargalo
+          if (p.combo && p.combo !== 'null' && p.combo !== null) {
+            isCombo = true;
+            try {
+              const comboItens = typeof p.combo === 'string' ? JSON.parse(p.combo) : p.combo;
+              
+              if (!comboItens || comboItens.length === 0) {
+                estoqueFinal = 0; // Se o combo não tem itens, não pode ser vendido
+              } else {
+                // Calcula quantas vezes o combo pode ser feito com base em cada ingrediente
+                const possibilidades = comboItens.map((item: any) => {
+                  const idIngrediente = item.product_id || item.produto_id;
+                  const qtdNecessaria = item.quantity || item.qty || 1;
+                  
+                  const estoqueAtualDoIngrediente = mapaDeEstoque.get(idIngrediente) || 0;
+                  
+                  // Se tenho 10 pães e o combo pede 2, posso fazer 5 combos.
+                  return Math.floor(estoqueAtualDoIngrediente / qtdNecessaria);
+                });
+
+                // O estoque do Combo é o MENOR número da lista (O ingrediente que acaba primeiro)
+                estoqueFinal = Math.min(...possibilidades);
+              }
+            } catch(e) {
+              console.error("Erro ao ler JSON do combo", e);
+              estoqueFinal = 0;
+            }
+          }
 
           return {
             id: p.id,
             name: p.name,
             category: catMap.get(p.category_id) || p.category_name || 'Sem Categoria',
-            price: precoEfetivo, // 👈 O Carrinho vai ler esse!
-            base_price: precoOriginal, // 👈 Guardamos o original para as contas
+            price: precoEfetivo,
+            base_price: precoOriginal,
             promo_status: emPromo,
             image: p.image_url || p.image || null,
-            stock: Number(p.stock) || 0
+            stock: estoqueFinal, // 👈 Se for combo, assume o valor calculado
+            isCombo: isCombo // 👈 Flag adicionada caso no futuro queira por uma estrelinha de combo na foto
           };
         }));
       }

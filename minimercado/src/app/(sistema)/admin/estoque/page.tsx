@@ -44,7 +44,7 @@ export default function GerenciarEstoquePage() {
       {/* CABEÇALHO */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800 tracking-tight">Gerenciamento de Estoque</h1>
-        <Link href="/admin/produto">
+        <Link href="/admin/produtos">
           <ButtonSistema type="button" variant="primary" className="gap-2">
             <span className="text-xl leading-none">+</span> Novo Produto
           </ButtonSistema>
