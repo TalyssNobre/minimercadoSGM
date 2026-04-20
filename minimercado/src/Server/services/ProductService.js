@@ -4,17 +4,21 @@ import Product from "../entitys/ProductEntity";
 import * as ProductModel from "@/src/Server/models/ProductModel";
 
 export const createProduct = async({data, image}) => {
-
         const supabase = await getSupabaseServer();
         const product = new Product(data)
+
+        if (data.combo && typeof data.combo === 'string') data.combo = JSON.parse(data.combo);
+
         const productexisting = await ProductModel.findByName(data.name)
         if(productexisting){
             return{ error : "Produto já cadastrado"}
         }
-        const searchCategoryProduct = await getCategoryById({id: data.category_id});
-        if(searchCategoryProduct.error){
-            return{error : "Produto não vinculado a uma Categoria"}
-        }
+        if (!data.combo) {
+            const searchCategoryProduct = await getCategoryById({id: data.category_id});
+            if (searchCategoryProduct.error) {
+                return { error: "Categoria Inexistente" };
+            }
+}
         
         let imageUrl = null;
          //MEXI NO TAMANHO DA IMAGEM E O TIPO
@@ -50,6 +54,7 @@ export const createProduct = async({data, image}) => {
     try {
         const productEntity = new Product(finalData); 
         const results = await ProductModel.createProduct(productEntity);
+        
         return { 
             success: true, 
             message: "Produto cadastrado com sucesso!" 
@@ -86,11 +91,7 @@ try{
         }
         
 
-        // 3. Valida os novos dados com a Entity
         const finalData = { ...productexisting,...data, image: imageUrl };
-        console.log("OQ TA VINDO NO PRODUCT: ", finalData)
-    
-        console.log("OQ VAI PRA MODEL: ", finalData)
 
         const results = await ProductModel.updateProduct(id, finalData);
         return {success: true, product : results, message : "Produto atualizado com sucesso!"}

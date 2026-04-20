@@ -39,13 +39,35 @@ export const updateSaleStatus = async (sale_id) => {
     return result;
 };
 
-export const deleteSale = async(id) =>{
+/*export const deleteSale = async(id) =>{
     try{
         const results = await SaleService.deleteSale(id);
         if (results.error) return { success: false,sale: results,  message: results.error };
         revalidatePath("/admin/historico-vendas");
         return{success: true , message: "Venda Excluída"}
     }catch(error){return{error: error.message}}
+}*/
+
+export const deleteSale = async (dataFront) => {
+    try {
+        // 🟢 A MÁGICA: Identifica se o Front mandou um FormData ou o ID direto
+        const id = (dataFront && typeof dataFront.get === 'function') ? dataFront.get("id") : dataFront;
+
+        if (!id) {
+            return { success: false, message: "Erro: ID da venda não foi recebido." };
+        }
+        const results = await SaleService.deleteSale(id);
+        
+        if (results.error) {
+            return { success: false, message: results.error };
+        }
+        
+        revalidatePath("/admin/historico-vendas");
+        return { success: true, message: "Venda Excluída" };
+
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
 }
 
 export const fetchMemberStatement = async(member_id) => {
