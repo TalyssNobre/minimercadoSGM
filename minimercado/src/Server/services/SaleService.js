@@ -2,7 +2,8 @@ import * as SaleModel from "../models/SaleModel";
 import * as ItemSaleModel from "../models/ItemSaleModel";
 import Sale from "../entitys/SaleEntity";
 import ItemSale from "../entitys/ItemSaleEntity";
-import * as ProductModel from "../models/ProductModel"
+import * as ProductModel from "../models/ProductModel";
+import { ensureArray, safeParseJSON } from "../utils/formatter";
 
 export const createSale = async ({ data, itensCarrinho }) => {
     console.log("Dados chegando do front:", data, itensCarrinho);
@@ -46,11 +47,28 @@ export const createSale = async ({ data, itensCarrinho }) => {
         });
 
         await ItemSaleModel.createItems(itensComVinculo);
-
+        
+      // 🟢 CORREÇÃO AQUI: Baixa de Estoque
         for (const item of itensCarrinho) {
-            await ProductModel.updateProductStock(item.product_id, -item.quantity);
-        }
+            const newProduct = await ProductModel.getProductById(item.product_id);
 
+            if (newProduct && newProduct.combo) {
+                const comboArray = ensureArray(safeParseJSON(newProduct.combo));
+
+                for (const itemDoCombo of comboArray) {
+                    const idDoIngrediente = itemDoCombo.product_id || itemDoCombo.produto_id;
+                    const qtdDoIngrediente = itemDoCombo.quantity || itemDoCombo.qty;
+
+                    if (!idDoIngrediente) continue; 
+
+                    const totalParaBaixar = qtdDoIngrediente * item.quantity;
+                    await ProductModel.updateProductStock(idDoIngrediente, -totalParaBaixar);
+                }
+            } else {
+                // Se NÃO for combo, baixa o produto normal
+                await ProductModel.updateProductStock(item.product_id, -item.quantity);
+            }
+        }
         return { success: true, sale: results };
 
     } catch (error) {
@@ -89,23 +107,46 @@ export const updateSaleStatus = async (sale_id) => {
     }
 };
 
-export const deleteSale = async(id) => {
-   const saleExisting = await SaleModel.getSaleById(id);
-    if(!saleExisting){
-        throw new Error("Venda não encontrada")
-    }
-    try{
-    const itemsToRestore = await ItemSaleModel.getItemsBySaleId(id);
-        for (const item of itemsToRestore) {
-            await ProductModel.updateProductStock(item.product_id, item.quantity);
-     }
+export const deleteSale = async (id) => {
+    try {
+        // 1. Verifica se a venda existe
+        const saleExisting = await SaleModel.getSaleById(id);
+        if (!saleExisting) {
+            return { success: false, error: "Venda não encontrada" };
+        }
 
-    await ItemSaleModel.deleteItemSaleById(id);
-    const results = await SaleModel.deleteSale(id);
-    return{sucess : true, sale: results}
-   }catch(error){
-         return { success: false, error: error.message }; 
-   }
+        const itemsToRestore = ensureArray(await ItemSaleModel.getItemsBySaleId(id));
+        
+        for (const item of itemsToRestore) {
+            if (!item || !item.product_id) continue; 
+
+            const newProduct = await ProductModel.getProductById(item.product_id);
+
+            if (newProduct && newProduct.combo) {
+                const comboArray = ensureArray(safeParseJSON(newProduct.combo));
+
+                for (const ingrediente of comboArray) {
+                    const idDoIngrediente = ingrediente.product_id || ingrediente.produto_id;
+                    const qtdDoIngrediente = ingrediente.quantity || ingrediente.qty;
+
+                    if (!idDoIngrediente) continue;
+
+                    const totalParaDevolver = qtdDoIngrediente * item.quantity;
+                    await ProductModel.updateProductStock(idDoIngrediente, totalParaDevolver);
+                }
+            } else {
+                await ProductModel.updateProductStock(item.product_id, item.quantity);
+            }
+        }
+        await ItemSaleModel.deleteItemSaleById(id);
+        const results = await SaleModel.deleteSale(id);
+
+        return { success: true, sale: results };
+
+    } catch (error) {
+        console.error("Erro ao deletar venda:", error);
+        return { success: false, error: error.message }; 
+    }
 }
 
 export const getMemberStatement = async(member_id) => {

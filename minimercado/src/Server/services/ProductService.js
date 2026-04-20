@@ -4,18 +4,21 @@ import Product from "../entitys/ProductEntity";
 import * as ProductModel from "@/src/Server/models/ProductModel";
 
 export const createProduct = async({data, image}) => {
-    // No seu ProductController.js ou Service
-console.log("Dados recebidos:", JSON.stringify(data, null, 2));
         const supabase = await getSupabaseServer();
         const product = new Product(data)
+
+        if (data.combo && typeof data.combo === 'string') data.combo = JSON.parse(data.combo);
+
         const productexisting = await ProductModel.findByName(data.name)
         if(productexisting){
             return{ error : "Produto já cadastrado"}
         }
-        const searchCategoryProduct = await getCategoryById({id: data.category_id});
-        if(searchCategoryProduct.error){
-            return{error : "Produto não vinculado a uma Categoria"}
-        }
+        if (!data.combo) {
+            const searchCategoryProduct = await getCategoryById({id: data.category_id});
+            if (searchCategoryProduct.error) {
+                return { error: "Categoria Inexistente" };
+            }
+}
         
         let imageUrl = null;
          //MEXI NO TAMANHO DA IMAGEM E O TIPO
