@@ -14,3 +14,11 @@ export async function authAdmin() {
 
     return user; 
 }
+
+export async function authUser() {
+    const supabase = await getSupabaseServer();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("Usuario não logado");
+    return user; 
+}

@@ -31,12 +31,13 @@ export const createUser = async ({data}) => {
 }
 
 export const loginUser = async ({email , password}) => {
-    const supabase = await getSupabaseServer();
+    try {
+         const supabase = await getSupabaseServer();
     const {data : authData, error : authError } = await supabase.auth.signInWithPassword({email : email, password: password});
     if(authError){
         throw new Error("Email ou senha invalido")
+
     }
-    try {
         const userProfile = await UserModel.getUserById(authData.user.id);
         return { success: true, user: userProfile };
     } catch (error) {
@@ -79,8 +80,7 @@ export const getIdByUser = async({id}) => {
 
 export const deleteUser = async (id) => {
     try {
-        // Note: Deletar no Auth é diferente de deletar na tabela. 
-        // Aqui deletamos apenas o perfil na sua tabela User via Model.
+
         await UserModel.deleteUser(id);
         return { success: true, message: "Usuário removido" };
     } catch (error) {

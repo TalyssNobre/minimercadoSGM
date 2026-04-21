@@ -1,5 +1,5 @@
 'use server';
-import { authAdmin } from "@/src/Server/utils/auth";
+import { authAdmin, authUser } from "@/src/Server/utils/auth";
 import { formatText } from "@/src/Server/utils/formatter";
  import * as categoryService from "../services/CategoryService"
  import { revalidatePath } from "next/cache";
@@ -41,6 +41,7 @@ import { formatText } from "@/src/Server/utils/formatter";
 
 export async function getAllCategory() {
     try{
+        await authUser();
         const results = await categoryService.getAllCategory();
         if (!results || results.error) {
             return { success: false, data: [], message: "results.error" };
@@ -53,6 +54,7 @@ export async function getAllCategory() {
 
  export async function getCategoryById(id) {
     try{
+        await authUser();
         const results = await categoryService.getCategoryById(id);
         if(results.error) { return{success: false, message: results.error}
         }return { success:true,data : results.category, message: "Produto Encontrado"}

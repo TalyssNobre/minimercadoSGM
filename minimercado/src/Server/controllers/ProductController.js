@@ -1,5 +1,5 @@
 'use server'
-import { authAdmin } from "@/src/Server/utils/auth";
+import { authAdmin,authUser } from "@/src/Server/utils/auth";
 import { formatText } from "@/src/Server/utils/formatter";
 import * as ProductService from "../services/ProductService";
 import { revalidatePath } from "next/cache";
@@ -52,6 +52,7 @@ export async function updateProduct(dataFront) {
 
 export async function getAllProducts() {
     try{
+        await authUser();
         const results = await ProductService.getAllProducts() 
     if (!results || results.error) {
             return { success: false, data: [], message: results.error };
@@ -64,6 +65,7 @@ export async function getAllProducts() {
 
 export async function getProductById(id) {
     try{
+        await authUser();
         const results = await ProductService.getProductById(id)
          if(results.error) { return{success: false, message: results.error}
         }return { success:true,data : results.product, message: "Produto Encontrado"}
