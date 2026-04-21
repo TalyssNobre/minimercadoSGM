@@ -25,7 +25,7 @@ export const createProduct = async({data, image}) => {
         const MAX_SIZE = 2 * 1024 * 1024;   
 
         if (!allowedTypes.includes(image.type)) {
-        return { error: "Formato de imagem inválido.Use JPG, PNG ou WebP" };
+        return { error: "Formato de image inválido.Use JPG, PNG ou WebP" };
         }
               
         if (image && image.size > 0 && image.size <= MAX_SIZE) {
@@ -34,7 +34,7 @@ export const createProduct = async({data, image}) => {
             const fileBuffer = await image.arrayBuffer();
 
             const { error: uploadError } = await supabase.storage.from('produtos').upload(fileName, fileBuffer, {contentType: image.type });
-            if (uploadError) return { error: "Erro ao fazer upload da imagem no Storage." };
+            if (uploadError) return { error: "Erro ao fazer upload da image no Storage." };
 
         const { data: publicUrlData } = supabase.storage.from('produtos').getPublicUrl(fileName);
 
@@ -57,34 +57,55 @@ export const createProduct = async({data, image}) => {
 };
 
 
-export const updateProduct = async ({id, data, imagem }) => {
+export const updateProduct = async ({ id, data, image }) => {
     const supabase = await getSupabaseServer();
-try{
-    const productexisting = await ProductModel.getProductById(data.id);
-    if(!productexisting){
-        return{error :  "O Produto não existe"}
-    }
-    let imageUrl = productexisting.image;
-    if (imagem && imagem.size > 0) {
-        const fileExt = imagem.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    try {
+        const productexisting = await ProductModel.getProductById(id);
+        if (!productexisting) {
+            return { error: "O Produto não existe" };
+        }
 
-        const { error: uploadError } = await supabase.storage.from('produtos').upload(fileName, imagem);
+        let imageUrl = productexisting.image;
 
-        if (uploadError) return { error: "Erro ao atualizar imagem: " + uploadError.message };
-        const { data: publicUrlData } = supabase.storage.from('produtos').getPublicUrl(fileName);
+        if (image && image.size > 0) {
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+            const MAX_SIZE = 2 * 1024 * 1024;
 
+            if (!allowedTypes.includes(image.type)) {
+                return { error: "Formato de image inválido.Use JPG, PNG ou WebP" };
+            }
+
+            if (image.size > MAX_SIZE) {
+                return { error: "Imagem incompatível: deve ter no máximo 2MB" };
+            }
+
+            const fileExt = image.name.split('.').pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+            const { error: uploadError } = await supabase.storage.from('produtos').upload(fileName, image, { contentType: image.type });
+
+            if (uploadError) return { error: "Erro ao atualizar imagem: " + uploadError.message };
+
+            const { data: publicUrlData } = supabase.storage.from('produtos').getPublicUrl(fileName);
             imageUrl = publicUrlData.publicUrl;
         }
-        
-        const finalData = { ...productexisting,...data, image: imageUrl };
+
+        const { image: formImage, ...newData } = data;
+
+        const finalData = { 
+            ...productexisting, 
+            ...newData, 
+            image: imageUrl
+        };
 
         const results = await ProductModel.updateProduct(id, finalData);
-        return {success: true, product : results, message : "Produto atualizado com sucesso!"}
-    }catch(error){
+        return { success: true, product: results, message: "Produto atualizado com sucesso!" };
+        
+    } catch (error) {
         return { error: error.message };
     }
-}
+};
+
 export const getAllProducts = async()=> {
     try{
         const results = await ProductModel.getAllProducts();
