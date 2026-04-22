@@ -90,7 +90,8 @@ export default function CadastroProdutoPage() {
                   <option value="" disabled>{categoriasHook.categorias.length === 0 ? "Carregando..." : "Selecione..."}</option>
                   {categoriasHook.categorias.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                 </select>
-                <ButtonSistema type="button" onClick={() => categoriasHook.setIsModalCategoriaOpen(true)} className="px-4 py-2.5 text-xs h-[46px] whitespace-nowrap">+ Nova</ButtonSistema>
+                {/* 🟢 Botão alterado para Gerenciar */}
+                <ButtonSistema type="button" onClick={() => categoriasHook.setIsModalCategoriaOpen(true)} className="px-4 py-2.5 text-xs h-[46px] whitespace-nowrap">Gerenciar</ButtonSistema>
               </div>
             </div>
 
@@ -136,15 +137,46 @@ export default function CadastroProdutoPage() {
         </form>
       </div>
 
-      {/* Modal Categoria (Injetado via Hook) */}
+      {/* 🟢 Modal de Gerenciamento de Categorias Atualizado */}
       {categoriasHook.isModalCategoriaOpen && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
-            <h2 className="text-lg font-bold mb-4">Nova Categoria</h2>
-            <input type="text" autoFocus value={categoriasHook.novaCategoriaNome} onChange={(e) => categoriasHook.setNovaCategoriaNome(e.target.value)} placeholder="Nome da categoria" className={inputClasses} onKeyDown={(e) => e.key === 'Enter' && categoriasHook.handleSalvarCategoria(e as any, setCategoriaId)} />
-            <div className="flex justify-end gap-2 mt-6">
-              <ButtonSistema type="button" variant="outline" onClick={() => categoriasHook.setIsModalCategoriaOpen(false)}>Cancelar</ButtonSistema>
-              <ButtonSistema type="button" onClick={(e) => categoriasHook.handleSalvarCategoria(e, setCategoriaId)}>Salvar</ButtonSistema>
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[85vh]">
+            <h2 className="text-lg font-bold mb-4 text-gray-800">Gerenciar Categorias</h2>
+            
+            {/* Adicionar Nova */}
+            <div className="flex gap-2 mb-6">
+              <input type="text" value={categoriasHook.novaCategoriaNome} onChange={(e) => categoriasHook.setNovaCategoriaNome(e.target.value)} placeholder="Nova categoria..." className={inputClasses} onKeyDown={(e) => e.key === 'Enter' && categoriasHook.handleSalvarCategoria(e as any, setCategoriaId)} />
+              <ButtonSistema type="button" onClick={(e) => categoriasHook.handleSalvarCategoria(e, setCategoriaId)}>Add</ButtonSistema>
+            </div>
+
+            {/* Lista com Scroll */}
+            <div className="flex-1 overflow-y-auto pr-2 space-y-2 scrollbar-thin">
+              {categoriasHook.categorias.map(cat => (
+                <div key={cat.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg hover:border-[#0D9488]/30 transition-colors">
+                  {categoriasHook.editandoId === cat.id ? (
+                    <div className="flex-1 flex items-center gap-2">
+                      <input type="text" autoFocus value={categoriasHook.editandoNome} onChange={e => categoriasHook.setEditandoNome(e.target.value)} className="flex-1 px-3 py-1.5 text-sm border rounded outline-none focus:ring-2 focus:ring-[#0D9488]" />
+                      <button onClick={() => categoriasHook.handleAtualizarCategoria(cat.id)} className="text-green-600 hover:text-green-800 font-bold text-xs uppercase px-2 py-1 bg-green-100 rounded">Salvar</button>
+                      <button onClick={() => categoriasHook.setEditandoId(null)} className="text-gray-500 hover:text-gray-700 font-bold text-xs uppercase px-2 py-1 bg-gray-200 rounded">✕</button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="font-semibold text-gray-700 text-sm">{cat.name}</span>
+                      <div className="flex gap-3">
+                        <button onClick={() => categoriasHook.iniciarEdicao(cat)} className="text-blue-500 hover:scale-110 transition-transform" title="Editar">✏️</button>
+                        <button onClick={() => categoriasHook.handleExcluirCategoria(cat.id)} className="text-red-500 hover:scale-110 transition-transform" title="Excluir">🗑️</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+              {categoriasHook.categorias.length === 0 && (
+                <p className="text-center text-sm text-gray-400 py-6">Nenhuma categoria cadastrada.</p>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-6 pt-4 border-t border-gray-100">
+              <ButtonSistema type="button" variant="outline" onClick={() => categoriasHook.setIsModalCategoriaOpen(false)}>Fechar</ButtonSistema>
             </div>
           </div>
         </div>

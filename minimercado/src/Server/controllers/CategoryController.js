@@ -20,7 +20,7 @@ import { formatText } from "@/src/Server/utils/formatter";
     }
  }
 
- /*export async function updateCategory(dataFront) {
+ export async function updateCategory(dataFront) {
     try{
         await authAdmin();
         const data = Object.fromEntries(dataFront.entries());
@@ -36,7 +36,7 @@ import { formatText } from "@/src/Server/utils/formatter";
     }catch(error){
         return { success: false, message: error.message };
     }
- }*/
+ }
 
 
 export async function getAllCategory() {
@@ -63,7 +63,7 @@ export async function getAllCategory() {
     }
 }
 
-/*export async function deleteCategory (id) {
+export async function deleteCategory (id) {
     try{
         await authAdmin();
         const results = await categoryService.deleteCategory(id)
@@ -75,4 +75,4 @@ export async function getAllCategory() {
     }catch(error){
         return { success: false, message: error.message  };
     }
-}*/
+}

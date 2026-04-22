@@ -35,8 +35,11 @@ export function usePDVDados() {
       if (productsResp?.success) {
         const listaProdutos = productsResp.data || productsResp.product || [];
         
+        const mapaDeNomes = new Map();
         const mapaDeEstoque = new Map();
+        
         listaProdutos.forEach((p: any) => {
+          mapaDeNomes.set(p.id, p.name);
           mapaDeEstoque.set(p.id, Number(p.stock) || 0);
         });
 
@@ -48,6 +51,7 @@ export function usePDVDados() {
 
           let estoqueFinal = Number(p.stock) || 0;
           let isCombo = false;
+          let comboDescription = ''; 
 
           if (p.combo && p.combo !== 'null' && p.combo !== null) {
             isCombo = true;
@@ -57,13 +61,22 @@ export function usePDVDados() {
               if (!comboItens || comboItens.length === 0) {
                 estoqueFinal = 0;
               } else {
+                // 🟢 CORREÇÃO: Dizendo explicitamente que é uma lista de textos (string)
+                const descricoes: string[] = []; 
+                
                 const possibilidades = comboItens.map((item: any) => {
                   const idIngrediente = item.product_id || item.produto_id;
                   const qtdNecessaria = item.quantity || item.qty || 1;
+                  const nomeIngrediente = mapaDeNomes.get(idIngrediente) || 'Item';
+                  
+                  descricoes.push(`${qtdNecessaria}x ${nomeIngrediente}`);
+                  
                   const estoqueAtualDoIngrediente = mapaDeEstoque.get(idIngrediente) || 0;
                   return Math.floor(estoqueAtualDoIngrediente / qtdNecessaria);
                 });
+                
                 estoqueFinal = Math.min(...possibilidades);
+                comboDescription = descricoes.join(', '); 
               }
             } catch(e) {
               console.error("Erro ao ler JSON do combo", e);
@@ -80,7 +93,8 @@ export function usePDVDados() {
             promo_status: emPromo,
             image: p.image_url || p.image || null,
             stock: estoqueFinal,
-            isCombo: isCombo
+            isCombo: isCombo,
+            combo_description: comboDescription 
           };
         }));
       }
@@ -91,13 +105,12 @@ export function usePDVDados() {
     }
   }, []);
 
-  // 🟢 MÁGICA: Atualiza apenas o produto que mudou no banco, sem recarregar a tela!
   const atualizarEstoqueLocal = useCallback((payload: any) => {
     if (payload.eventType === 'UPDATE' && payload.new) {
       setProdutos((prevProdutos) => 
         prevProdutos.map(produto => 
           produto.id === payload.new.id 
-            ? { ...produto, stock: payload.new.stock } 
+            ? { ...produto, stock: Number(payload.new.stock) } 
             : produto
         )
       );
@@ -108,6 +121,5 @@ export function usePDVDados() {
     fetchDados();
   }, [fetchDados]);
 
-  // 🟢 Retornando a nova função cirúrgica
   return { equipes, membros, produtos, categorias, isLoading, atualizarDados: fetchDados, atualizarEstoqueLocal };
 }

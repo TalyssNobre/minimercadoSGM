@@ -8,15 +8,12 @@ export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error'
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 🟢 TRUQUE DE MESTRE: Usamos um useRef para a função de alerta.
-  // Isso impede que o Hook entre em loop se a página principal mudar.
   const alertaRef = useRef(exibirAlerta);
   useEffect(() => {
     alertaRef.current = exibirAlerta;
   }, [exibirAlerta]);
 
   const carregarDados = useCallback(async () => {
-    // Não chamamos setIsLoading(true) aqui se já estiver carregando para evitar loops
     try {
       let listaCategorias: Categoria[] = [];
       const catResponse = await getAllCategory() as any;
@@ -45,7 +42,8 @@ export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error'
             category_id: item.category_id,
             price: Number(item.price) || 0,
             stock: Number(item.stock) || 0,
-            category_name: categoriaEncontrada?.name || 'Sem Categoria'
+            category_name: categoriaEncontrada?.name || 'Sem Categoria',
+            image: item.image_url || item.image || null // 🟢 Pegando a imagem do banco
           };
         });
         
@@ -56,14 +54,14 @@ export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error'
     } finally {
       setIsLoading(false);
     }
-  }, []); // 🟢 Array vazio aqui mata o loop infinito!
+  }, []);
 
-  // Roda apenas uma vez ao montar o componente
   useEffect(() => {
     carregarDados();
   }, [carregarDados]);
 
-  const salvarEdicao = async (produtoEditado: Produto) => {
+  // 🟢 Atualizado para receber o arquivo de imagem
+  const salvarEdicao = async (produtoEditado: Produto, imageFile?: File | null) => {
     try {
       const formData = new FormData();
       formData.append('id', String(produtoEditado.id));
@@ -71,7 +69,11 @@ export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error'
       formData.append('category_id', String(produtoEditado.category_id || ''));
       formData.append('price', String(produtoEditado.price || 0));
       formData.append('stock', String(produtoEditado.stock || 0));
-      formData.append('image', ''); 
+      
+      // 🟢 Se houver uma nova imagem, envia para o backend
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
 
       const response = await updateProduct(formData) as any;
 
