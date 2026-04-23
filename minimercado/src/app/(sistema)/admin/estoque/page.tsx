@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
 import { ModalAlerta } from '@/src/components/ui/ModalAlerta';
 
+// 🟢 Importando o Radar de Tempo Real
+import { useRealtimeSync } from '@/src/hooks/useRealtimeSync';
+
 // Subcomponentes
 import TabelaEstoque from '@/src/components/estoque/TabelaEstoque';
 import ModalEditarProduto from '@/src/components/estoque/ModalEditarProduto';
@@ -19,7 +22,10 @@ export default function GerenciarEstoquePage() {
 
   const estoqueData = useEstoque(exibirAlerta);
 
-  // Controles de Filtro e Ordenação 🟢
+  // 🟢 Ligando o Radar: Quando a tabela 'Product' mudar no banco, roda a atualizarEstoqueLocal
+  useRealtimeSync('Product', estoqueData.atualizarEstoqueLocal);
+
+  // Controles de Filtro e Ordenação
   const [filtroCategoria, setFiltroCategoria] = useState<string>('Todos');
   const [ordemEstoque, setOrdemEstoque] = useState<'maior' | 'menor'>('maior');
 
@@ -39,16 +45,13 @@ export default function GerenciarEstoquePage() {
     setIsDeleteModalOpen(true);
   };
 
-  // 🟢 MÁGICA DOS FILTROS: Calcula a lista que vai pra tabela na hora
   const produtosFiltradosEOrdenados = useMemo(() => {
     let lista = [...estoqueData.produtos];
     
-    // 1. Filtra por categoria se não for "Todos"
     if (filtroCategoria !== 'Todos') {
       lista = lista.filter(p => p.category_id === Number(filtroCategoria));
     }
     
-    // 2. Ordena
     lista.sort((a, b) => {
       if (ordemEstoque === 'maior') return b.stock - a.stock;
       return a.stock - b.stock; // menor
@@ -70,7 +73,7 @@ export default function GerenciarEstoquePage() {
         </Link>
       </div>
 
-      {/* 🟢 BARRA DE FILTROS */}
+      {/* BARRA DE FILTROS */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <label className="block text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Filtrar por Categoria</label>
@@ -99,7 +102,7 @@ export default function GerenciarEstoquePage() {
         </div>
       </div>
 
-      {/* TABELA VISUAL - Agora recebe a lista processada! */}
+      {/* TABELA VISUAL */}
       <TabelaEstoque 
         produtos={produtosFiltradosEOrdenados} 
         isLoading={estoqueData.isLoading}

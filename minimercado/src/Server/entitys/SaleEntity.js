@@ -1,8 +1,6 @@
 export default class Sale {
     constructor({id, date, total_value, payment_date,status,user_id,member_id, items, discount}) {
-        console.log("--- DEBUG ENTITY ---");
-        console.log("Dados recebidos no constructor:",id, date, total_value, payment_date,status,user_id,member_id,discount);
-        
+
         this.id = id;
         this.date = date;
         this.payment_date = payment_date;

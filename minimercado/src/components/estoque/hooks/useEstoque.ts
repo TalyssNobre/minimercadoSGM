@@ -43,7 +43,7 @@ export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error'
             price: Number(item.price) || 0,
             stock: Number(item.stock) || 0,
             category_name: categoriaEncontrada?.name || 'Sem Categoria',
-            image: item.image_url || item.image || null // 🟢 Pegando a imagem do banco
+            image: item.image_url || item.image || null
           };
         });
         
@@ -60,7 +60,19 @@ export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error'
     carregarDados();
   }, [carregarDados]);
 
-  // 🟢 Atualizado para receber o arquivo de imagem
+  // 🟢 NOVA FUNÇÃO: Radar que atualiza só o número do estoque em tempo real!
+  const atualizarEstoqueLocal = useCallback((payload: any) => {
+    if (payload.new && payload.new.id) {
+      setProdutos(prevProdutos => prevProdutos.map(produto => {
+        if (produto.id === payload.new.id) {
+          // Mantém tudo do produto, só atualiza o estoque com o número novo do banco
+          return { ...produto, stock: Number(payload.new.stock) || 0 };
+        }
+        return produto;
+      }));
+    }
+  }, []);
+
   const salvarEdicao = async (produtoEditado: Produto, imageFile?: File | null) => {
     try {
       const formData = new FormData();
@@ -70,7 +82,6 @@ export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error'
       formData.append('price', String(produtoEditado.price || 0));
       formData.append('stock', String(produtoEditado.stock || 0));
       
-      // 🟢 Se houver uma nova imagem, envia para o backend
       if (imageFile) {
         formData.append('image', imageFile);
       }
@@ -108,5 +119,14 @@ export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error'
     }
   };
 
-  return { produtos, categorias, isLoading, salvarEdicao, excluirProduto, atualizarDados: carregarDados };
+  // 🟢 Não esqueça de exportar a nova função aqui no final!
+  return { 
+    produtos, 
+    categorias, 
+    isLoading, 
+    salvarEdicao, 
+    excluirProduto, 
+    atualizarDados: carregarDados,
+    atualizarEstoqueLocal 
+  };
 }

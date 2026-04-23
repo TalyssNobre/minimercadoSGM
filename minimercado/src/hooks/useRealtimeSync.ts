@@ -18,10 +18,10 @@ export function useRealtimeSync(tabela: string, onUpdateCallback?: (payload: any
         'postgres_changes',
         { event: '*', schema: 'public', table: tabela },
         (payload) => {
-          console.log(`[Realtime] Mudança detectada na tabela: ${tabela}`, payload);
+          // 🟢 console.log REMOVIDO DAQUI PARA MAIOR SEGURANÇA NO FRONT-END
           
           if (onUpdateCallback) {
-            onUpdateCallback(payload); // 🟢 Repassando a informação da mudança para a página!
+            onUpdateCallback(payload); // Repassando a informação da mudança para a página
           } else {
             router.refresh();
           }
