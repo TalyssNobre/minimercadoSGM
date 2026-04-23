@@ -1,7 +1,6 @@
 'use server'
 
 import { authAdmin, authUser } from "@/src/Server/utils/auth";
-import {getSupabaseAdmin} from "@/src/lib/supabaseServer"
 import * as UserService from "@/src/Server/services/UserService";
 import { revalidatePath } from "next/cache";
 
@@ -24,7 +23,6 @@ export async function loginController({ email, password }) {
         return { success: false, message: error.message};
     }
 }
-
 
 export async function logoutController() {
     try {

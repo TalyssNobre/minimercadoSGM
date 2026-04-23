@@ -23,10 +23,14 @@ export const createMember = async ({data})=> {
 }
 
 export const updateMember = async (id, data) => {
-    const  memberexisting = await MemberModel.getMemberById(data.id)
+    const memberexisting = await MemberModel.getMemberById(data.id)
     if(!memberexisting){
-        throw new Error("O Membro não existe")
+        throw new Error("Membro não encontrado")
     }
+    const memberNameexisting= await MemberModel.findByName(data.name);
+    if(memberNameexisting){
+        throw new Error("Membro já cadastrado")
+    } 
     try{
         const memberEntity  = new Member(data)
         const results = await MemberModel.updateMember(id, memberEntity);
@@ -41,7 +45,7 @@ export const getAllMember = async() => {
         const results = await MemberModel.getAllMember();
         return{success : true, member : results}
     } catch(error){
-        return{error: error.message}
+        return{error: "Membros não encontrados"}
     }
 }
 
@@ -55,9 +59,9 @@ export const getMemberById = async(id) => {
 }
 
 export const deleteMember = async(id) => {
-    const  memberexisting = await MemberModel.getMemberById(id)
+    const memberexisting = await MemberModel.getMemberById(id)
     if(!memberexisting){
-        throw new Error("O Membro não existe")
+        throw new Error("Membro não encontrado")
     }
    try{
         const results = await MemberModel.deleteMember(id);

@@ -23,6 +23,10 @@ export const updateTeam = async ({data,id} ) => {
     if(!teamexisting ){
         throw new Error("Time não cadastrado")
     }
+    const memberNameexisting= await TeamModel.findByName(data.name);
+    if(memberNameexisting){
+        throw new Error("Time já cadastrado")
+    } 
     try{
         const teamEntity  = new Team(data);
         const results = await TeamModel.updateTeam(id ,teamEntity);

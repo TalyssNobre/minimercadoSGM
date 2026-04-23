@@ -59,7 +59,7 @@ export async function getAllCategory() {
         if(results.error) { return{success: false, message: results.error}
         }return { success:true,data : results.category, message: "Produto Encontrado"}
     }catch(error){
-        return { success: false, message: error.message  };
+        return { success: false, message: error.message };
     }
 }
 

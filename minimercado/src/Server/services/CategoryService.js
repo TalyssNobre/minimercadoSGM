@@ -27,10 +27,9 @@ export const getAllCategory = async() => {
 }
 
 export const getCategoryById = async ({id}) => {
-    const supabase = await getSupabaseServer();
-    const {data : categoryId} =  await supabase.from("Category").select("*").eq("id", id).single();
-    if(!categoryId){
-        throw new Error("Categoria Inexistente")
+    const  existingCategory = await CategoryModel.getCategoryById(id);
+    if(!existingCategory){
+        throw new Error("Categoria não existe");
     }
     try{
         const results = await CategoryModel.getCategoryById(id);
@@ -40,16 +39,12 @@ export const getCategoryById = async ({id}) => {
     }
 }
 
-// 🟢 NOVA FUNÇÃO ADICIONADA: Atualizar Categoria
-export const updateCategory = async ({data}) => {
-    const supabase = await getSupabaseServer();
-    
-    // Verifica se a categoria existe antes de atualizar
-    const {data : existingCategory} = await supabase.from("Category").select("*").eq("id", data.id).single();
-    if(!existingCategory){
-        throw new Error("Categoria Inexistente");
-    }
 
+export const updateCategory = async ({data}) => {
+    const  existingCategory = await CategoryModel.getCategoryById(data.id);
+    if(!existingCategory){
+        throw new Error("Categoria não existe");
+    }
     try {
         const categoryEntity = new Category(data);
         const results = await CategoryModel.updateCategory(data.id, categoryEntity);
@@ -59,16 +54,11 @@ export const updateCategory = async ({data}) => {
     }
 }
 
-// 🟢 NOVA FUNÇÃO ADICIONADA: Deletar Categoria
 export const deleteCategory = async (id) => {
-    const supabase = await getSupabaseServer();
-    
-    // Verifica se a categoria existe
-    const {data : existingCategory} = await supabase.from("Category").select("*").eq("id", id).single();
+    const  existingCategory = await CategoryModel.getCategoryById(id);
     if(!existingCategory){
-        throw new Error("Categoria Inexistente");
+        throw new Error("Categoria não existe");
     }
-
     try {
         const results = await CategoryModel.deleteCategory(id);
         return { success: true, category: results };
