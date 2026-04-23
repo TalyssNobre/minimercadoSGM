@@ -26,22 +26,21 @@ export const createUser = async ({data}) => {
 
         return { success: true };
     } catch (error) {
-        return { error: error.message };
+        return { error: "Erro ao criar Usuario" };
     }
 }
 
 export const loginUser = async ({email , password}) => {
-    try {
-         const supabase = await getSupabaseServer();
+    const supabase = await getSupabaseServer();
     const {data : authData, error : authError } = await supabase.auth.signInWithPassword({email : email, password: password});
     if(authError){
         throw new Error("Email ou senha invalido")
-
     }
+    try {
         const userProfile = await UserModel.getUserById(authData.user.id);
         return { success: true, user: userProfile };
     } catch (error) {
-        return { error: error.message };
+        return { error: "Erro ao logar" };
     }
 }
 
@@ -74,13 +73,12 @@ export const getIdByUser = async({id}) => {
         const results = await UserModel.getUserById(id);
         return{success : true, team : results}
     }catch(error){
-        return{error: error.message}
+        return{error: "Erro ao buscar"}
     }
 }
 
 export const deleteUser = async (id) => {
     try {
-
         await UserModel.deleteUser(id);
         return { success: true, message: "Usuário removido" };
     } catch (error) {
@@ -90,7 +88,6 @@ export const deleteUser = async (id) => {
 export const getLoggedUserData = async () => {
     try {
         const supabase = await getSupabaseServer();
-        // 1. Pega a sessão atual do Supabase
         const { data: { user }, error } = await supabase.auth.getUser();
 
         if (error || !user) {

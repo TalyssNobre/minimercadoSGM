@@ -1,5 +1,4 @@
 'use server'
-import { getSupabaseServer } from '@/src/lib/supabaseServer';
 import Category from "../entitys/CategoryEntity";
 import * as CategoryModel from "../models/CategoryModel"
 
@@ -45,6 +44,10 @@ export const updateCategory = async ({data}) => {
     if(!existingCategory){
         throw new Error("Categoria não existe");
     }
+    const memberNameexisting= await CategoryModel.findByName(data.name);
+        if(memberNameexisting){
+            throw new Error("Categoria já cadastrada")
+        }
     try {
         const categoryEntity = new Category(data);
         const results = await CategoryModel.updateCategory(data.id, categoryEntity);
@@ -55,7 +58,7 @@ export const updateCategory = async ({data}) => {
 }
 
 export const deleteCategory = async (id) => {
-    const  existingCategory = await CategoryModel.getCategoryById(id);
+    const existingCategory = await CategoryModel.getCategoryById(id);
     if(!existingCategory){
         throw new Error("Categoria não existe");
     }

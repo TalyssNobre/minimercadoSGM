@@ -14,7 +14,7 @@ export const createTeam = async ({data}) =>{
         const results = await TeamModel.createTeam(teamEntity);
         return { success: true, team: results };
     } catch (error) {
-        return { error: error.message };
+        return { error: "Erro ao criar o time" };
     }
 }
 
@@ -32,7 +32,7 @@ export const updateTeam = async ({data,id} ) => {
         const results = await TeamModel.updateTeam(id ,teamEntity);
         return {success: true, team : results}
     }catch(error){
-        return { error: error.message };
+        return { error: "Erro ao atualizar o time" };
     }
 }
 
@@ -42,7 +42,7 @@ export const getAllTeams = async() => {
         const results = await TeamModel.getAllTeams();
         return{success : true, team : results}
     } catch(error){
-        return{error: error.message}
+        return{error:"Erro ao buscar os times"}
     }
 }
 
@@ -55,7 +55,7 @@ export const getTeamById = async (id) => {
 
         return { success: true, team: results };
     } catch (error) {
-        return { error: error.message };
+        return { error: "Erro ao buscar time" };
     }
 }
 
@@ -64,6 +64,6 @@ export const deleteTeam = async (id) => {
         const results = await TeamModel.deleteTeam(id);
         return{success : true, team : results}
     }catch(error){
-        return{error: error.message}
+        return{error: "Erro ao deletar o time"}
     }
 }

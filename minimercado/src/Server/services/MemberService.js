@@ -1,4 +1,3 @@
-import {getSupabaseServer} from "@/src/lib/supabaseServer";
 import {getTeamById} from "../services/TeamService";
 import * as MemberModel from "../models/MemberModel";
 import Member from "../entitys/MemberEntity";
@@ -18,7 +17,7 @@ export const createMember = async ({data})=> {
         const results = await MemberModel.createMember(memberEntity);
         return {success: true, member : results}
     }catch(error){
-        return { error: error.message };
+        return { error: "Erro ao criar Membro" };
     }
 }
 
@@ -36,7 +35,7 @@ export const updateMember = async (id, data) => {
         const results = await MemberModel.updateMember(id, memberEntity);
         return {success: true, member : results}
     }catch(error){
-        return { error: error.message };
+        return { error:"Erro ao atualizar o membro" };
     }
 }
 
@@ -54,7 +53,7 @@ export const getMemberById = async(id) => {
         const results = await MemberModel.getMemberById(id);
         return{success : true, member : results}
     }catch(error){
-        return{error: error.message}
+        return{error: "Erro ao buscar"}
     }
 }
 
@@ -67,6 +66,6 @@ export const deleteMember = async(id) => {
         const results = await MemberModel.deleteMember(id);
         return{success : true, member : results}
     }catch(error){
-        return{error: error.message}
+        return{error:"Erro ao deletar membro"}
     }
 }

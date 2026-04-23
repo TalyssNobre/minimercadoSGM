@@ -6,11 +6,9 @@ import * as ProductModel from "../models/ProductModel";
 import { ensureArray, safeParseJSON } from "../utils/formatter";
 
 export const createSale = async ({ data, itensCarrinho }) => {
-    console.log("Dados chegando do front:", data, itensCarrinho);
     if (!itensCarrinho || itensCarrinho.length === 0) {
             throw new Error("Não é possível finalizar uma venda sem itens no carrinho.");
         }
-    
     try {
         const saleEntity = new Sale({ 
             ...data, 
@@ -48,7 +46,6 @@ export const createSale = async ({ data, itensCarrinho }) => {
 
         await ItemSaleModel.createItems(itensComVinculo);
         
-      // 🟢 CORREÇÃO AQUI: Baixa de Estoque
         for (const item of itensCarrinho) {
             const newProduct = await ProductModel.getProductById(item.product_id);
 
@@ -65,14 +62,13 @@ export const createSale = async ({ data, itensCarrinho }) => {
                     await ProductModel.updateProductStock(idDoIngrediente, -totalParaBaixar);
                 }
             } else {
-                // Se NÃO for combo, baixa o produto normal
                 await ProductModel.updateProductStock(item.product_id, -item.quantity);
             }
         }
         return { success: true, sale: results };
 
     } catch (error) {
-        return { success: false, error: error.message }; 
+        return { success: false, error: "Erro ao criar Venda"}; 
     }
 };
 
@@ -81,7 +77,7 @@ export const getAllSales = async() =>{
         const results = await SaleModel.getAllSales();
         return{success: true, sale: results}
     }catch(error){
-        return{error: error.message}
+        return{error: "Erro ao Buscar"}
     }
 }
 
@@ -94,7 +90,7 @@ export const getSaleById = async(id) => {
     const results = await SaleModel.getSaleById(id);
     return{sucess : true, sale: results}
     }catch(error){
-        return{sucess: false , error :error.message}
+        return{sucess: false , error :"Erro ao buscar"}
     }
 }
 
@@ -103,13 +99,12 @@ export const updateSaleStatus = async (sale_id) => {
         const results = await SaleModel.updateSaleStatus(sale_id, true);
         return { success: true, data: results };
     } catch (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: "Erro ao atualizar" };
     }
 };
 
 export const deleteSale = async (id) => {
     try {
-        // 1. Verifica se a venda existe
         const saleExisting = await SaleModel.getSaleById(id);
         if (!saleExisting) {
             return { success: false, error: "Venda não encontrada" };
@@ -144,8 +139,7 @@ export const deleteSale = async (id) => {
         return { success: true, sale: results };
 
     } catch (error) {
-        console.error("Erro ao deletar venda:", error);
-        return { success: false, error: error.message }; 
+        return { success: false, error: "Erro ao deletar venda" }; 
     }
 }
 

@@ -52,7 +52,7 @@ export const createProduct = async({data, image}) => {
         
         return { success: true, message: "Produto cadastrado" };
     } catch (error) {
-        return { error: error.message };
+        return { error: "Erro ao criar produto" };
     }
 };
 
@@ -123,7 +123,7 @@ export const getAllProducts = async()=> {
         })
         return{success: true, product: produtosComPromo}
     }catch(error){
-        return{error: error.message}
+        return{error: "Erro ao buscar produtos"}
     }
 }
 
@@ -136,19 +136,19 @@ export const getProductById = async(id) => {
         const results = await ProductModel.getProductById(id);
         return{success : true, product : results}
     }catch(error){
-        return{error: error.message}
+        return{error: "Erro ao buscar produtos"}
     }
 }
 
 export const deleteProduct = async(id) =>{
     const productexisting = await ProductModel.getProductById(id);
     if(!productexisting){
-        return{error :  "o Produto não encontrado"}
+        return{error :  "Produto não encontrado"}
     }
     try{
         const results = await ProductModel.deleteProduct(id);
         return{success : true, product : results}
     }catch(error){
-        return{error : error.message}
+        return{error :"Erro ao deletar produto"}
     }
 }
