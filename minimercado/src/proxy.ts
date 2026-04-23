@@ -1,5 +1,17 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+const ratelimit = new Ratelimit({
+  redis: redis,
+  limiter: Ratelimit.slidingWindow(15, '10 s'),
+});
 
 // 🟢 MUDANÇA AQUI: A função agora se chama "proxy" em vez de "middleware"
 export async function proxy(request: NextRequest) {
@@ -55,6 +67,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|logo.svg|fundologin.svg|.*\\..*$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|logo.svg|fundologin.svg|.*\\..*$).*)',
   ],
 };

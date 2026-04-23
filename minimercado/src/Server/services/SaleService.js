@@ -7,7 +7,7 @@ import { ensureArray, safeParseJSON } from "../utils/formatter";
 
 export const createSale = async ({ data, itensCarrinho }) => {
     if (!itensCarrinho || itensCarrinho.length === 0) {
-            throw new Error("Não é possível finalizar uma venda sem itens no carrinho.");
+            throw new Error("Não é possível finalizar uma venda sem itens no carrinho");
         }
     try {
         const saleEntity = new Sale({ 
