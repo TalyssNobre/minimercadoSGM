@@ -18,12 +18,12 @@ import { createSale } from '@/src/Server/controllers/SaleController';
 import { getLoggedUserController } from '@/src/Server/controllers/UserController';
 
 export default function CaixaPage() {
-  // 🟢 Extraímos a nova função atualizarEstoqueLocal
-  const { equipes, membros, produtos, categorias, isLoading, atualizarDados, atualizarEstoqueLocal } = usePDVDados();
+  // 🟢 Puxando a função com o nome novo
+  const { equipes, membros, produtos, categorias, isLoading, atualizarDados, atualizarProdutoAoVivo } = usePDVDados();
   const carrinho = useCarrinho();
 
-  // 🟢 Agora o Realtime aciona a função cirúrgica que muda só o número da bolinha!
-  useRealtimeSync('Product', atualizarEstoqueLocal);
+  // 🟢 O Realtime agora aciona a função que atualiza estoque, preço e etiqueta de promoção
+  useRealtimeSync('Product', atualizarProdutoAoVivo);
 
   const [selectedTeam, setSelectedTeam] = useState<Equipe | null>(null);
   const [selectedMember, setSelectedMember] = useState<Membro | null>(null);
@@ -90,7 +90,6 @@ export default function CaixaPage() {
         
         // Mantemos o atualizarDados aqui porque quando VOCÊ faz a venda, 
         // é bom garantir que a base toda recarregue com segurança para sua próxima venda.
-        // O atualizarEstoqueLocal ocorrerá no PC dos seus colegas!
         atualizarDados(); 
         
       } else {

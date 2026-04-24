@@ -54,7 +54,7 @@ export function useEquipes(exibirAlerta: (msg: string, tipo: 'success' | 'error'
       }
       
       if (response?.success === false || response?.sucess === false) {
-        exibirAlerta("Erro retornado pelo servidor: " + response.message, 'error');
+        exibirAlerta("Atenção: " + response.message, 'error');
         return false;
       }
 

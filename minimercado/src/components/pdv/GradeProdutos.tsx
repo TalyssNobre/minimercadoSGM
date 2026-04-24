@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Produto } from './types';
+// 🟢 Importando o componente de pesquisa global
+import { InputPesquisa } from '@/src/components/ui/InputPesquisa'; 
 
 interface GradeProdutosProps {
   produtos: Produto[];
@@ -25,13 +27,14 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
   return (
     <div>
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="relative w-full md:w-64">
-          <input 
-            type="text" placeholder="Buscar Produto..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full outline-none focus:ring-2 focus:ring-[#0D9488] text-sm transition-shadow focus:shadow-md"
-          />
-          <svg className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-        </div>
+        
+        {/* 🟢 Substituímos o input antigo pelo seu novo componente InputPesquisa */}
+        <InputPesquisa 
+          placeholder="Buscar Produto..."
+          value={searchQuery}
+          onChange={setSearchQuery}
+          className="w-full md:w-64"
+        />
 
         <div className="flex-1 flex gap-2 overflow-x-auto pb-2 scrollbar-hide md:justify-end">
           {categorias.map(cat => (
@@ -75,14 +78,13 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
               
               <h3 className="text-xs font-bold text-gray-700 mb-1 line-clamp-2 min-h-[2.5rem] leading-tight transition-colors group-hover:text-black">{produto.name}</h3>
               
-              {/* 🟢 DESCRIÇÃO DO COMBO APARECE AQUI */}
+              {/* DESCRIÇÃO DO COMBO */}
               {produto.isCombo && produto.combo_description && (
                 <p className="text-[9px] text-gray-400 italic mb-2 line-clamp-2 min-h-[1.5rem]" title={produto.combo_description}>
                   {produto.combo_description}
                 </p>
               )}
               
-              {/* O min-h-[2.5rem] no preço garante que o botão não suba e desça dependendo se o combo tem texto ou não */}
               <div className="min-h-[2.5rem] flex flex-col justify-center items-center mb-2 w-full mt-auto">
                 {produto.promo_status && produto.base_price ? (
                   <>

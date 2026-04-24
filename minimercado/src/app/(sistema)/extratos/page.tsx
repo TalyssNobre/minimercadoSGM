@@ -49,6 +49,7 @@ export default function ExtratosPage() {
               totais={extratoData.totais}
               isSubmitting={extratoData.isSubmitting}
               hasSelectedItems={extratoData.selectedItems.length > 0}
+              userRole={extratoData.userRole}
               onQuitar={extratoData.handleQuitarPendencia}
             />
           </div>

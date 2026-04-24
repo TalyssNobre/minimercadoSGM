@@ -105,14 +105,28 @@ export function usePDVDados() {
     }
   }, []);
 
-  const atualizarEstoqueLocal = useCallback((payload: any) => {
+  // 🟢 TURBINADO: Agora atualiza o estoque E recalcula as promoções ao vivo!
+  const atualizarProdutoAoVivo = useCallback((payload: any) => {
     if (payload.eventType === 'UPDATE' && payload.new) {
       setProdutos((prevProdutos) => 
-        prevProdutos.map(produto => 
-          produto.id === payload.new.id 
-            ? { ...produto, stock: Number(payload.new.stock) } 
-            : produto
-        )
+        prevProdutos.map(produto => {
+          if (produto.id === payload.new.id) {
+            // Recalcula a lógica de preço e promoção usando os dados recém-chegados do banco
+            const precoOriginal = Number(payload.new.price) || 0;
+            const emPromo = Boolean(payload.new.promo_status);
+            const precoPromo = Number(payload.new.promo_price) || 0;
+            const precoEfetivo = (emPromo && precoPromo > 0) ? precoPromo : precoOriginal;
+
+            return { 
+              ...produto, 
+              stock: Number(payload.new.stock) || 0,
+              promo_status: emPromo,
+              base_price: precoOriginal,
+              price: precoEfetivo
+            };
+          }
+          return produto;
+        })
       );
     }
   }, []);
@@ -121,5 +135,6 @@ export function usePDVDados() {
     fetchDados();
   }, [fetchDados]);
 
-  return { equipes, membros, produtos, categorias, isLoading, atualizarDados: fetchDados, atualizarEstoqueLocal };
+  // 🟢 Exportando a nova função
+  return { equipes, membros, produtos, categorias, isLoading, atualizarDados: fetchDados, atualizarProdutoAoVivo };
 }

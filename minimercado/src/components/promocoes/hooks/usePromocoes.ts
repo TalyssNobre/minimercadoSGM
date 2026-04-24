@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { getAllProducts, updateProduct, createProduct, deleteProduct } from '@/src/Server/controllers/ProductController';
 import { getAllCategory } from '@/src/Server/controllers/CategoryController';
 
-// 🟢 IMPORTANDO O HOOK GLOBAL DE PRODUTOS (Reaproveitamento de código!)
 import { useImageUpload } from '@/src/components/produtos/hooks/useImageUpload';
 
 export function usePromocoes() {
@@ -32,7 +31,19 @@ export function usePromocoes() {
     setModalAlerta({ isOpen: true, mensagem, tipo });
   };
 
-  // 🟢 INJETANDO O HOOK DE PRODUTOS AQUI
+  // 🟢 NOVO: Estado para controlar o modal de confirmação
+  const [modalConfirmacao, setModalConfirmacao] = useState({
+    isOpen: false,
+    titulo: '',
+    mensagem: '',
+    onConfirm: () => {}
+  });
+
+  // 🟢 NOVO: Função auxiliar para chamar o modal
+  const pedirConfirmacao = (titulo: string, mensagem: string, acao: () => void) => {
+    setModalConfirmacao({ isOpen: true, titulo, mensagem, onConfirm: acao });
+  };
+
   const imageHook = useImageUpload();
   const [imagemAtualUrl, setImagemAtualUrl] = useState<string | null>(null);
 
@@ -194,17 +205,19 @@ export function usePromocoes() {
     }
   };
 
-  const handleExcluirCombo = async (id: number) => {
-    if(!confirm("Deseja realmente excluir este combo?")) return;
-    try {
-      const resp = await deleteProduct(id) as any;
-      if(resp?.success) {
-         exibirAlerta("Combo excluído com sucesso!", 'success');
-         carregarDados();
-      } else {
-         exibirAlerta("Erro ao excluir: " + resp.message, 'error');
-      }
-    } catch (e) { exibirAlerta("Erro de conexão com o banco.", 'error'); }
+  const handleExcluirCombo = (id: number) => {
+    // 🟢 Chamando o Modal em vez do confirm()
+    pedirConfirmacao("Excluir Combo?", "Tem certeza que deseja excluir este combo permanentemente?", async () => {
+      try {
+        const resp = await deleteProduct(id) as any;
+        if(resp?.success) {
+           exibirAlerta("Combo excluído com sucesso!", 'success');
+           carregarDados();
+        } else {
+           exibirAlerta("Erro ao excluir: " + resp.message, 'error');
+        }
+      } catch (e) { exibirAlerta("Erro de conexão com o banco.", 'error'); }
+    });
   };
 
   const handleAtivarOferta = async () => {
@@ -228,25 +241,28 @@ export function usePromocoes() {
     finally { setIsSubmitting(false); }
   };
 
-  const handleDesativarOferta = async (produtoId: number) => {
-    if(!confirm("Deseja realmente encerrar esta oferta?")) return;
-    try {
-      const formData = new FormData();
-      formData.append('id', produtoId.toString());
-      formData.append('promo_status', 'false');
-      formData.append('promo_price', '0');
-      
-      const resp = await updateProduct(formData);
-      if(resp.success) {
-        exibirAlerta("Oferta encerrada com sucesso!", 'success');
-        carregarDados();
-      } else { exibirAlerta("Erro ao desativar: " + resp.message, 'error'); }
-    } catch (error) { exibirAlerta("Erro de conexão.", 'error'); }
+  const handleDesativarOferta = (produtoId: number) => {
+    // 🟢 Chamando o Modal em vez do confirm()
+    pedirConfirmacao("Encerrar Oferta?", "Deseja realmente retirar este produto da promoção?", async () => {
+      try {
+        const formData = new FormData();
+        formData.append('id', produtoId.toString());
+        formData.append('promo_status', 'false');
+        formData.append('promo_price', '0');
+        
+        const resp = await updateProduct(formData);
+        if(resp.success) {
+          exibirAlerta("Oferta encerrada com sucesso!", 'success');
+          carregarDados();
+        } else { exibirAlerta("Erro ao desativar: " + resp.message, 'error'); }
+      } catch (error) { exibirAlerta("Erro de conexão.", 'error'); }
+    });
   };
 
   return {
     dados: { produtosDisponiveis, categorias, isLoading, isSubmitting, ofertasAtivas, combosCadastrados, produtosFiltrados, stats },
-    modais: { isModalOfertaOpen, setIsModalOfertaOpen, isModalComboOpen, setIsModalComboOpen, fecharModais, modalAlerta, setModalAlerta },
+    // 🟢 Adicionamos o modalConfirmacao aqui no export dos modais
+    modais: { isModalOfertaOpen, setIsModalOfertaOpen, isModalComboOpen, setIsModalComboOpen, fecharModais, modalAlerta, setModalAlerta, modalConfirmacao, setModalConfirmacao },
     comboForm: { idEditando, nomeCombo, setNomeCombo, precoCombo, setPrecoCombo, categoriaId, setCategoriaId, itensDoCombo, setItensDoCombo, produtoSelecionadoId, setProdutoSelecionadoId, quantidadeSelecionada, setQuantidadeSelecionada, buscaTexto, setBuscaTexto, imagemAtualUrl, setImagemAtualUrl, imageHook, handleAdicionarProdutoNoCombo, handleEditarCombo, handleSalvarCombo, handleExcluirCombo },
     ofertaForm: { ofertaProdutoId, setOfertaProdutoId, ofertaPreco, setOfertaPreco, handleAtivarOferta, handleDesativarOferta, buscaTexto, setBuscaTexto }
   };
