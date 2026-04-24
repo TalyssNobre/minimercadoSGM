@@ -2,9 +2,6 @@ import { getSupabaseServer, getSupabaseAdmin } from '@/src/lib/supabaseServer';
 import User from "../entitys/UserEntity";
 import * as UserModel from "../models/UserModel";
 
-
-
-
 export const createUser = async ({data}) => {
     try {
         const userEntity = new User({
@@ -43,7 +40,6 @@ export const loginUser = async ({email , password}) => {
         return { error: "Erro ao logar" };
     }
 }
-
 
 export const logoutUser = async () => {
     const supabase =  await getSupabaseServer();
@@ -93,8 +89,6 @@ export const getLoggedUserData = async () => {
         if (error || !user) {
             return { error: "Nenhum usuário logado." };
         }
-
-        // 2. Chama a SUA função do Model que já estava pronta!
         const userData = await UserModel.getUserById(user.id);
 
         return { 

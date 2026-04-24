@@ -1,7 +1,6 @@
 import * as TeamModel from "../models/TeamModel";
 import Team from "../entitys/TeamEntity";
 
-
 export const createTeam = async ({data}) =>{
 
     const teamexisting = await TeamModel.findByName(data.name);
@@ -35,7 +34,6 @@ export const updateTeam = async ({data,id} ) => {
         return { error: "Erro ao atualizar o time" };
     }
 }
-
 
 export const getAllTeams = async() => {
     try{
