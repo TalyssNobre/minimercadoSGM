@@ -15,7 +15,10 @@ export const createUser = async ({data}) => {
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email: data.email,
             password: data.senha,
-        });
+            options : {
+                data : {profile : data.profile}
+            }
+    });
 
         if (authError){ throw new Error(authError.message);}
         userEntity.id = authData.user.id;

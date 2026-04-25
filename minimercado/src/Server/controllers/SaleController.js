@@ -15,7 +15,9 @@ export const createSale = async(dataFront) =>{
         if (results.error) return { success: false,sale: results,  message: results.error };
         revalidatePath("/caixa");
         return{ success: true, message: "Venda Criada!"}
-    }catch(error){return{error: error.message}}
+    }catch(error){
+        return{sucess: false , message: error.message}
+    }
 }
 
 export const getAllSales = async() =>{
@@ -27,7 +29,7 @@ export const getAllSales = async() =>{
         }
         return { success: true, data: results.sale };
     }catch(error){
-        return { success: false, message: "Erro de conexão" };
+        return { success: false, message: error.message };
 }
 }
 
