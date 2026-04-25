@@ -18,7 +18,6 @@ export default class User {
         if (!this.email || !this.email.includes("@")) {
             throw new Error("E-mail inválido.");
         }
-        // Garante que só existam esses dois cargos no sistema
         const validProfiles = ['Admin', 'Operador'];
         if (!validProfiles.includes(this.profile)) {
             throw new Error("Perfil de acesso inválido.");

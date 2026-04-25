@@ -61,7 +61,7 @@ export function useMeuHistorico() {
           setVendas(vendasFormatadas);
         }
       } else {
-        setOperadorAtual({ id: 0, name: 'Sessão Expirada', user_id: '' });
+        setOperadorAtual({ id: 0, name: 'Sessão Expirada, NOME NÃO ENCONTRADO', user_id: '' });
       }
     } catch (error) {
       console.error("Erro ao buscar histórico:", error);

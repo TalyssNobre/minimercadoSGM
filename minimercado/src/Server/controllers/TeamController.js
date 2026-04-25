@@ -1,5 +1,5 @@
 'use server'
-import { authAdmin } from "@/src/Server/utils/auth";
+import { authAdmin,authUser } from "@/src/Server/utils/auth";
 import { formatText } from "@/src/Server/utils/formatter";
 import * as TeamService from "@/src/Server/services/TeamService";
 import { revalidatePath } from "next/cache";
@@ -46,7 +46,8 @@ export async function updateTeam(dataFront) {
 
 export async function getAllTeams() {
  try{
-        const results = await TeamService.getAllTeams() 
+    await authUser();
+    const results = await TeamService.getAllTeams() 
     if (!results || results.error) {
             return { success: false, data: [], message: results.error };
         }
@@ -58,7 +59,7 @@ export async function getAllTeams() {
 
 export async function getTeamById(id) {
     try {
-        // results aqui será o que o Service retornou: { success: true, team: {id, name...} }
+        await authUser();
         const results = await TeamService.getTeamById(id);
 
         if (results.error) {

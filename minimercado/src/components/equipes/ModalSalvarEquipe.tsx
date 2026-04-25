@@ -11,7 +11,7 @@ interface Props {
 
 export default function ModalSalvarEquipe({ isOpen, equipeOriginal, onClose, onSave }: Props) {
   const [nome, setNome] = useState('');
-  const [cor, setCor] = useState('#0D9488');
+  const [cor, setCor] = useState('#7e2aec');
 
   useEffect(() => {
     if (isOpen) {

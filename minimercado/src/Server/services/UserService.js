@@ -2,9 +2,6 @@ import { getSupabaseServer, getSupabaseAdmin } from '@/src/lib/supabaseServer';
 import User from "../entitys/UserEntity";
 import * as UserModel from "../models/UserModel";
 
-
-
-
 export const createUser = async ({data}) => {
     try {
         const userEntity = new User({
@@ -26,7 +23,7 @@ export const createUser = async ({data}) => {
 
         return { success: true };
     } catch (error) {
-        return { error: error.message };
+        return { error: "Erro ao criar Usuario" };
     }
 }
 
@@ -40,10 +37,9 @@ export const loginUser = async ({email , password}) => {
         const userProfile = await UserModel.getUserById(authData.user.id);
         return { success: true, user: userProfile };
     } catch (error) {
-        return { error: error.message };
+        return { error: "Erro ao logar" };
     }
 }
-
 
 export const logoutUser = async () => {
     const supabase =  await getSupabaseServer();
@@ -73,14 +69,12 @@ export const getIdByUser = async({id}) => {
         const results = await UserModel.getUserById(id);
         return{success : true, team : results}
     }catch(error){
-        return{error: error.message}
+        return{error: "Erro ao buscar"}
     }
 }
 
 export const deleteUser = async (id) => {
     try {
-        // Note: Deletar no Auth é diferente de deletar na tabela. 
-        // Aqui deletamos apenas o perfil na sua tabela User via Model.
         await UserModel.deleteUser(id);
         return { success: true, message: "Usuário removido" };
     } catch (error) {
@@ -90,14 +84,11 @@ export const deleteUser = async (id) => {
 export const getLoggedUserData = async () => {
     try {
         const supabase = await getSupabaseServer();
-        // 1. Pega a sessão atual do Supabase
         const { data: { user }, error } = await supabase.auth.getUser();
 
         if (error || !user) {
             return { error: "Nenhum usuário logado." };
         }
-
-        // 2. Chama a SUA função do Model que já estava pronta!
         const userData = await UserModel.getUserById(user.id);
 
         return { 

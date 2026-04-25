@@ -5,11 +5,15 @@ interface Props {
   totais: { pago: number; pendente: number; selecionado: number };
   isSubmitting: boolean;
   hasSelectedItems: boolean;
+  userRole: string; 
   onQuitar: () => void;
 }
 
-export default function ResumoExtrato({ activeTab, totais, isSubmitting, hasSelectedItems, onQuitar }: Props) {
+export default function ResumoExtrato({ activeTab, totais, isSubmitting, hasSelectedItems, userRole, onQuitar }: Props) {
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+  // 🟢 Checa de forma exata se o texto resultante é ADMIN
+  const isAdmin = userRole === 'ADMIN';
 
   return (
     <div className="bg-white p-6 border-t border-gray-200 flex flex-col md:flex-row justify-between items-end gap-6 mt-auto">
@@ -32,10 +36,20 @@ export default function ResumoExtrato({ activeTab, totais, isSubmitting, hasSele
       {activeTab === 'PENDENTE' && (
         <button 
           onClick={onQuitar} 
-          disabled={!hasSelectedItems || isSubmitting} 
-          className="w-full md:w-auto bg-[#1a7f71] hover:bg-[#15665a] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-md transition-all shadow-md text-sm md:text-base uppercase tracking-wide flex items-center justify-center gap-2"
+          disabled={!hasSelectedItems || isSubmitting || !isAdmin} 
+          title={!isAdmin ? "Apenas administradores podem dar baixa em fiados." : ""}
+          className={`w-full md:w-auto font-bold py-3 px-8 rounded-md transition-all shadow-md text-sm md:text-base uppercase tracking-wide flex items-center justify-center gap-2 ${
+            !isAdmin 
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+              : 'bg-[#1a7f71] hover:bg-[#15665a] text-white disabled:bg-gray-400 disabled:cursor-not-allowed'
+          }`}
         >
-          {isSubmitting ? 'Processando baixa...' : `Quitar Pendência Selecionada (${formatCurrency(totais.selecionado)})`}
+          {/* 🟢 O MODO DETETIVE: Imprime o cargo no botão se estiver bloqueado */}
+          {isSubmitting 
+            ? 'Processando baixa...' 
+            : !isAdmin 
+              ? `Acesso Restrito: Apenas Admin Podem Dar Baixa` 
+              : `Quitar Pendência Selecionada (${formatCurrency(totais.selecionado)})`}
         </button>
       )}
     </div>

@@ -1,5 +1,5 @@
 "use server"
-import { authAdmin } from "@/src/Server/utils/auth";
+import { authAdmin, authUser } from "@/src/Server/utils/auth";
 import { formatText } from "@/src/Server/utils/formatter";
 import * as MemberService from "@/src/Server/services/MemberService"
 import { revalidatePath } from "next/cache";
@@ -46,6 +46,7 @@ export async function updateMember(dataFront) {
 
 export async function getAllMember() {
     try{
+    await authUser();
     const supabase = await getSupabaseServer();
     const results = await MemberService.getAllMember(supabase);
     if (!results || results.error) {
@@ -59,6 +60,7 @@ export async function getAllMember() {
 
 export async function getMemberById(id) {
     try{
+        await authUser();
         const supabase = await getSupabaseServer();
         const results = await MemberService.getMemberById(supabase, id);
         if (results.error) return { success: false, message: results.error };
@@ -72,7 +74,6 @@ export async function getMemberById(id) {
 export async function deleteMember(id) {
     try{
         await authAdmin();
-
         const results = await MemberService.deleteMember(id);
         if(results.error) { return{sucess: false, message: results.error}
         }

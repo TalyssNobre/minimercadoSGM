@@ -1,5 +1,5 @@
 'use server';
-import { authAdmin } from "@/src/Server/utils/auth";
+import { authAdmin, authUser } from "@/src/Server/utils/auth";
 import { formatText } from "@/src/Server/utils/formatter";
  import * as categoryService from "../services/CategoryService"
  import { revalidatePath } from "next/cache";
@@ -20,7 +20,7 @@ import { formatText } from "@/src/Server/utils/formatter";
     }
  }
 
- /*export async function updateCategory(dataFront) {
+ export async function updateCategory(dataFront) {
     try{
         await authAdmin();
         const data = Object.fromEntries(dataFront.entries());
@@ -36,11 +36,12 @@ import { formatText } from "@/src/Server/utils/formatter";
     }catch(error){
         return { success: false, message: error.message };
     }
- }*/
+ }
 
 
 export async function getAllCategory() {
     try{
+        await authUser();
         const results = await categoryService.getAllCategory();
         if (!results || results.error) {
             return { success: false, data: [], message: "results.error" };
@@ -53,15 +54,16 @@ export async function getAllCategory() {
 
  export async function getCategoryById(id) {
     try{
+        await authUser();
         const results = await categoryService.getCategoryById(id);
         if(results.error) { return{success: false, message: results.error}
         }return { success:true,data : results.category, message: "Produto Encontrado"}
     }catch(error){
-        return { success: false, message: error.message  };
+        return { success: false, message: error.message };
     }
 }
 
-/*export async function deleteCategory (id) {
+export async function deleteCategory (id) {
     try{
         await authAdmin();
         const results = await categoryService.deleteCategory(id)
@@ -73,4 +75,4 @@ export async function getAllCategory() {
     }catch(error){
         return { success: false, message: error.message  };
     }
-}*/
+}

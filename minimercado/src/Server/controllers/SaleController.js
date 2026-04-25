@@ -1,14 +1,13 @@
 'use server'
 import * as SaleService from "../services/SaleService"
 import { revalidatePath } from "next/cache";
+import { authAdmin, authUser } from "../utils/auth";
 
 export const createSale = async(dataFront) =>{
     try{
-
+        await authUser();
         const data = Object.fromEntries(dataFront.entries());
-        console.log("Oq esta vindo do front: ", data)
         const itensCarrinho = JSON.parse(data.cart);
-        console.log("chegando", data,itensCarrinho);
         const results = await SaleService.createSale({
             data: data,
             itensCarrinho: itensCarrinho
@@ -21,6 +20,7 @@ export const createSale = async(dataFront) =>{
 
 export const getAllSales = async() =>{
     try{
+        await authUser();
         const results =await SaleService.getAllSales();
          if (!results || results.error) {
             return { success: false, data: [], message: results.error };
@@ -32,6 +32,7 @@ export const getAllSales = async() =>{
 }
 
 export const updateSaleStatus = async (sale_id) => {
+    await authUser();
     const result = await SaleService.updateSaleStatus(sale_id);
     if (result.success) {
         revalidatePath("/extratos");
@@ -39,29 +40,17 @@ export const updateSaleStatus = async (sale_id) => {
     return result;
 };
 
-/*export const deleteSale = async(id) =>{
-    try{
-        const results = await SaleService.deleteSale(id);
-        if (results.error) return { success: false,sale: results,  message: results.error };
-        revalidatePath("/admin/historico-vendas");
-        return{success: true , message: "Venda Excluída"}
-    }catch(error){return{error: error.message}}
-}*/
-
 export const deleteSale = async (dataFront) => {
     try {
-        // 🟢 A MÁGICA: Identifica se o Front mandou um FormData ou o ID direto
+        await authAdmin();
         const id = (dataFront && typeof dataFront.get === 'function') ? dataFront.get("id") : dataFront;
-
         if (!id) {
             return { success: false, message: "Erro: ID da venda não foi recebido." };
         }
         const results = await SaleService.deleteSale(id);
-        
         if (results.error) {
             return { success: false, message: results.error };
-        }
-        
+        } 
         revalidatePath("/admin/historico-vendas");
         return { success: true, message: "Venda Excluída" };
 
@@ -71,12 +60,14 @@ export const deleteSale = async (dataFront) => {
 }
 
 export const fetchMemberStatement = async(member_id) => {
+    await authUser();
     if (!member_id) return { success: false, message: "ID do membro é obrigatório" };
     return await SaleService.getMemberStatement(member_id);
 };
 
 export const settleMultipleSales = async (id) => {
     try {
+        await authUser();
         if (!id || id.length === 0) {
             return { success: false, message: "Nenhuma venda selecionada." };
         }

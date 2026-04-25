@@ -1,4 +1,3 @@
-
 import { getSupabaseServer } from '@/src/lib/supabaseServer';
 
 export const createTeam = async(teamEntity) => {
@@ -40,7 +39,6 @@ export const findByName = async(name) => {
    if(error){ throw new Error(error.message);
     } return data;
 }
-
 
 export const deleteTeam = async(id) =>{
     const supabase = await getSupabaseServer();

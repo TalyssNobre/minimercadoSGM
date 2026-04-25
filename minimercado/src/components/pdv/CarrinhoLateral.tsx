@@ -37,6 +37,14 @@ export default function CarrinhoLateral({
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="text-xs font-bold text-gray-800 truncate">{item.product.name}</h4>
+                
+                {/* 🟢 MÁGICA: Adicionada a descrição do combo no carrinho */}
+                {item.product.isCombo && item.product.combo_description && (
+                  <p className="text-[9px] text-gray-400 italic truncate" title={item.product.combo_description}>
+                    {item.product.combo_description}
+                  </p>
+                )}
+                
                 <div className="flex items-center gap-2 mt-1">
                   <div className="flex items-center border border-gray-200 rounded text-[10px]">
                     <button onClick={() => updateQuantity(item.product.id, -1)} className="px-2 py-1 hover:bg-gray-100">-</button>

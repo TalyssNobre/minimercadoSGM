@@ -3,9 +3,12 @@
 import React from 'react';
 import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
 import { ModalAlerta } from '@/src/components/ui/ModalAlerta';
+
+// 🟢 Importando o novo Modal de Confirmação
+import { ModalConfirmacao } from '@/src/components/ui/ModalConfirmacao';
+
 import { usePromocoes } from '@/src/components/promocoes/hooks/usePromocoes';
 
-// Estes são os componentes que vamos criar na Etapa 2:
 import DashboardPromocoes from '@/src/components/promocoes/DashboardPromocoes';
 import OfertasAtivas from '@/src/components/promocoes/OfertasAtivas';
 import TabelaCombos from '@/src/components/promocoes/TabelaCombos';
@@ -58,6 +61,15 @@ export default function PromocoesPage() {
         mensagem={promocoes.modais.modalAlerta.mensagem}
         tipo={promocoes.modais.modalAlerta.tipo as any}
         onClose={() => promocoes.modais.setModalAlerta({ ...promocoes.modais.modalAlerta, isOpen: false })}
+      />
+
+      {/* 🟢 MODAL DE CONFIRMAÇÃO */}
+      <ModalConfirmacao
+        isOpen={promocoes.modais.modalConfirmacao.isOpen}
+        titulo={promocoes.modais.modalConfirmacao.titulo}
+        mensagem={promocoes.modais.modalConfirmacao.mensagem}
+        onConfirm={promocoes.modais.modalConfirmacao.onConfirm}
+        onCancel={() => promocoes.modais.setModalConfirmacao(prev => ({ ...prev, isOpen: false }))}
       />
     </div>
   );

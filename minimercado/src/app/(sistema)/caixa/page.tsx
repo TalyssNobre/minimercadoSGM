@@ -11,14 +11,19 @@ import CarrinhoLateral from '@/src/components/pdv/CarrinhoLateral';
 import { usePDVDados } from '@/src/components/pdv/hooks/usePDVDados';
 import { useCarrinho } from '@/src/components/pdv/hooks/useCarrinho';
 import { Equipe, Membro } from '@/src/components/pdv/types';
+import { useRealtimeSync } from '@/src/hooks/useRealtimeSync';
 
 // Controllers
 import { createSale } from '@/src/Server/controllers/SaleController';
 import { getLoggedUserController } from '@/src/Server/controllers/UserController';
 
 export default function CaixaPage() {
-  const { equipes, membros, produtos, categorias, isLoading, atualizarDados } = usePDVDados();
+  // 🟢 Puxando a função com o nome novo
+  const { equipes, membros, produtos, categorias, isLoading, atualizarDados, atualizarProdutoAoVivo } = usePDVDados();
   const carrinho = useCarrinho();
+
+  // 🟢 O Realtime agora aciona a função que atualiza estoque, preço e etiqueta de promoção
+  useRealtimeSync('Product', atualizarProdutoAoVivo);
 
   const [selectedTeam, setSelectedTeam] = useState<Equipe | null>(null);
   const [selectedMember, setSelectedMember] = useState<Membro | null>(null);
@@ -46,28 +51,24 @@ export default function CaixaPage() {
       formData.append('user_id', vendedorId.toString());
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
       
-      // 🟢 MÁGICA CONTÁBIL: Calcula o desconto oculto das Promoções Relâmpago
       let descontoDasPromocoes = 0;
 
       const itensCarrinho = carrinho.cart.map(item => {
         const precoBase = item.product.base_price || item.product.price;
-        const precoEfetivo = item.product.price; // Valor com a promo aplicada
+        const precoEfetivo = item.product.price;
         
-        // Se estava em promo, a diferença vira desconto
         descontoDasPromocoes += (precoBase - precoEfetivo) * item.quantity;
 
         return {
           product_id: item.product.id,
           quantity: item.quantity,
-          unit_price: precoBase // 👈 Enviamos o valor BRUTO para o backend criar o total_value certo
+          unit_price: precoBase
         };
       });
 
-      // 🟢 O Desconto Total = (Desconto Manual do Carrinho) + (Diferença das Ofertas)
       const descontoFinalTotal = carrinho.valorDescontoCalculado + descontoDasPromocoes;
       formData.append('discount', descontoFinalTotal.toString());
 
-      // Fuso horário corrigido
       const agora = new Date();
       const timezoneOffset = agora.getTimezoneOffset() * 60000;
       const dataLocalISO = new Date(agora.getTime() - timezoneOffset).toISOString();
@@ -87,6 +88,8 @@ export default function CaixaPage() {
         setSelectedMember(null);
         setSelectedTeam(null);
         
+        // Mantemos o atualizarDados aqui porque quando VOCÊ faz a venda, 
+        // é bom garantir que a base toda recarregue com segurança para sua próxima venda.
         atualizarDados(); 
         
       } else {
@@ -100,7 +103,7 @@ export default function CaixaPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-4">
+    <div className="max-w-7xl mx-auto py-4 text-left">
       <div className="flex flex-col lg:flex-row gap-6 relative">
         
         {/* Lado Esquerdo */}

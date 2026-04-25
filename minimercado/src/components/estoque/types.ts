@@ -5,6 +5,7 @@ export interface Produto {
   category_name?: string; 
   price: number;
   stock: number;
+  image?: string | null;
 }
 
 export interface Categoria {
