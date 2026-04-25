@@ -39,7 +39,7 @@ export const findByName = async(name) => {
 
 export const deleteCategory = async(id) =>{
     const supabase = await getSupabaseServer();
-    const{data,error} = await supabase.from("Category").delete().eq("id", id).select().single()
+    const{data,error} = await supabase.from("Category").delete().eq("id", id).select().maybeSingle()
        if(error){ throw new Error(error.message);
     } return data;
 }

@@ -65,7 +65,7 @@ export const updateProduct = async ({ id, data, image }) => {
             return { error: "O Produto não existe" };
         }
         const memberNameexisting= await ProductModel.findByName(data.name);
-        if(memberNameexisting){
+        if(memberNameexisting && String(memberNameexisting.id) !== String(id)){
             throw new Error("Produto já cadastrado")
         } 
 

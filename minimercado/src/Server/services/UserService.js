@@ -23,7 +23,7 @@ export const createUser = async ({data}) => {
 
         return { success: true };
     } catch (error) {
-        return { error: "Erro ao criar Usuario" };
+        return { error:  error.message };
     }
 }
 
