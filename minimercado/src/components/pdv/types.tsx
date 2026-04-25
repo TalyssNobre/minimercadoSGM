@@ -7,6 +7,9 @@ export interface Produto {
   promo_status?: boolean; 
   image: string | null;
   stock: number;
+
+  isCombo?: boolean;
+  combo_description?: string;
 }
 
 export interface Equipe {

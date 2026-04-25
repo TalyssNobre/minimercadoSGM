@@ -10,7 +10,7 @@ const redis = new Redis({
 
 const ratelimit = new Ratelimit({
   redis: redis,
-  limiter: Ratelimit.slidingWindow(150, '10 s'),
+  limiter: Ratelimit.slidingWindow(40, '10 s'),
 });
 
 export async function proxy(request: NextRequest) {
@@ -18,12 +18,12 @@ export async function proxy(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1';
   const { success } = await ratelimit.limit(ip);
 
-  // Se a loja toda junta fizer mais de 150 pedidos em 10 segundos, aí sim bloqueia para proteger o servidor!
+  // Se o utilizador fez mais de 15 pedidos em 10 segundos, bloqueia!
   if (!success) {
-    return new NextResponse('Muitas requisições da mesma rede. Tente novamente em instantes.', { status: 429 });
+    return new NextResponse('Muitas requisições. Tente novamente em instantes.', { status: 429 });
   }
 
-  
+  // 🟢 2. CONFIGURAÇÃO DO SUPABASE
   let supabaseResponse = NextResponse.next({
     request: { headers: request.headers },
   });
