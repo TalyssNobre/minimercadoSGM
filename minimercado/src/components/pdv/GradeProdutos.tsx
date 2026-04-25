@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react'; // 🟢 1. Adicionado o useEffect
 import { Produto } from './types';
 // 🟢 Importando o componente de pesquisa global
 import { InputPesquisa } from '@/src/components/ui/InputPesquisa'; 
@@ -11,16 +11,30 @@ interface GradeProdutosProps {
 }
 
 export default function GradeProdutos({ produtos, categorias, isLoading, onAddToCart }: GradeProdutosProps) {
+  // Estado que atualiza na hora para a lupa não travar
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // 🟢 2. Novo estado que guarda o texto com o atraso do debounce
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  
   const [selectedCategory, setSelectedCategory] = useState('Todos');
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // 🟢 4. O filtro agora escuta o debouncedSearchQuery em vez do searchQuery
   const produtosFiltrados = useMemo(() => {
     return produtos.filter(p => {
       const matchCategory = selectedCategory === 'Todos' || p.category === selectedCategory;
-      const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchSearch = p.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
       return matchCategory && matchSearch;
     });
-  }, [searchQuery, selectedCategory, produtos]);
+  }, [debouncedSearchQuery, selectedCategory, produtos]);
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
@@ -28,7 +42,7 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
     <div>
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         
-        {/* 🟢 Substituímos o input antigo pelo seu novo componente InputPesquisa */}
+        {/* O input continua recebendo o searchQuery rápido! */}
         <InputPesquisa 
           placeholder="Buscar Produto..."
           value={searchQuery}
