@@ -13,8 +13,17 @@ const ratelimit = new Ratelimit({
   limiter: Ratelimit.slidingWindow(15, '10 s'),
 });
 
-// 🟢 MUDANÇA AQUI: A função agora se chama "proxy" em vez de "middleware"
 export async function proxy(request: NextRequest) {
+  
+  const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1';
+  const { success } = await ratelimit.limit(ip);
+
+  // Se o utilizador fez mais de 15 pedidos em 10 segundos, bloqueia!
+  if (!success) {
+    return new NextResponse('Muitas requisições. Tente novamente em instantes.', { status: 429 });
+  }
+
+  // 🟢 2. CONFIGURAÇÃO DO SUPABASE
   let supabaseResponse = NextResponse.next({
     request: { headers: request.headers },
   });
@@ -36,28 +45,34 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Pega o usuário REAL do Supabase
+  // Pega o utilizador REAL do Supabase
   const { data: { user } } = await supabase.auth.getUser();
   const pathname = request.nextUrl.pathname;
 
-  // 1. VERIFICAÇÃO BÁSICA (Está logado?)
+  // 🟢 3. VERIFICAÇÃO BÁSICA (Está logado?)
   const rotasProtegidas = ['/caixa', '/extratos', '/admin', '/meu-historico'];
   const isRotaProtegida = rotasProtegidas.some(rota => pathname.startsWith(rota));
-  
 
   if (isRotaProtegida && !user) {
-    // Não tem usuário? Manda pro login.
+    // Não tem utilizador? Manda para o login.
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // 🟢 2. TRAVA ESPECÍFICA PARA ADMIN
+  // 🟢 4. TRAVA ESPECÍFICA PARA ADMIN
   if (pathname.startsWith('/admin') && user) {
-    // Pegamos o perfil exatamente como ele vem do banco (ex: "Admin" ou "OPERADOR")
-    const userRole = user.user_metadata?.profile; 
+    // O proxy vai à tabela 'User' confirmar o cargo!
+    const { data: dbUser } = await supabase
+      .from('User')
+      .select('profile')
+      .eq('user_id', user.id)
+      .single();
+
+    // Pegamos o perfil retornado do banco
+    const userRole = dbUser?.profile; 
 
     // Verificamos exatamente a palavra "Admin"
     if (userRole !== 'Admin') {
-      // Se for diferente de "Admin", chuta pro caixa
+      // Se for diferente de "Admin", expulsa para o caixa
       return NextResponse.redirect(new URL('/caixa?error=acesso-negado', request.url));
     }
   }
