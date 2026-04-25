@@ -23,7 +23,7 @@ export const updateTeam = async ({data,id} ) => {
         throw new Error("Time não cadastrado")
     }
     const memberNameexisting= await TeamModel.findByName(data.name);
-    if(memberNameexisting){
+    if(memberNameexisting && String(memberNameexisting.id) !== String(id)){
         throw new Error("Time já cadastrado")
     } 
     try{
