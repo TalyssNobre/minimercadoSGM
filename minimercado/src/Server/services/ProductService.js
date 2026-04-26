@@ -8,6 +8,21 @@ export const createProduct = async({data, image}) => {
         const product = new Product(data)
 
         if (data.combo && typeof data.combo === 'string') data.combo = JSON.parse(data.combo);
+        if (data.combo && Array.isArray(data.combo) && data.combo.length > 0) {
+        let valueItens = 0;
+
+        for (const itens of data.combo) {
+                if (!itens.product_id || !itens.quantity) {
+                    throw new Error ( "Faltando ID ou quantidade.");
+                }
+                const results = await ProductModel.getProductById(itens.product_id); 
+                valueItens += Number(results.price) * Number(itens.quantity);
+            }
+        if (data.price > valueItens) {
+            throw new Error ("O valor do combo não pode ser maior que a soma os itens avulsos");
+        }
+    }
+
 
         const productexisting = await ProductModel.findByName(data.name)
         if(productexisting){
@@ -60,6 +75,22 @@ export const createProduct = async({data, image}) => {
 export const updateProduct = async ({ id, data, image }) => {
     const supabase = await getSupabaseServer();
     try {
+        if (data.combo && typeof data.combo === 'string') data.combo = JSON.parse(data.combo);
+        if (data.combo && Array.isArray(data.combo) && data.combo.length > 0) {
+        let valueItens = 0;
+
+        for (const itens of data.combo) {
+                if (!itens.product_id || !itens.quantity) {
+                    throw new Error ( "Faltando ID ou quantidade.");
+                }
+                const results = await ProductModel.getProductById(itens.product_id); 
+                valueItens += Number(results.price) * Number(itens.quantity);
+            }
+        if (data.price > valueItens) {
+            throw new Error ("O valor do combo não pode ser maior que a soma os itens avulsos");
+        }
+    }
+
         const productexisting = await ProductModel.getProductById(id);
         if (!productexisting) {
             return { error: "O Produto não existe" };
@@ -109,6 +140,7 @@ export const updateProduct = async ({ id, data, image }) => {
         return { error: error.message };
     }
 };
+
 
 export const getAllProducts = async()=> {
     try{
