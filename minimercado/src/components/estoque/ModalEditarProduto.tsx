@@ -1,21 +1,20 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
 import { Produto, Categoria } from './types';
-import { useImageUpload } from '@/src/components/produtos/hooks/useImageUpload'; // 🟢 Importando seu hook
+import { useImageUpload } from '@/src/components/produtos/hooks/useImageUpload';
 
 interface Props {
   isOpen: boolean;
   produtoOriginal: Produto | null;
   categorias: Categoria[];
   onClose: () => void;
-  // 🟢 Função onSave agora espera a imagem opcional
   onSave: (produto: Produto, imageFile?: File | null) => Promise<boolean>; 
 }
 
 export default function ModalEditarProduto({ isOpen, produtoOriginal, categorias, onClose, onSave }: Props) {
-  const [produtoEditando, setProdutoEditando] = useState<Produto | null>(null);
-  
-  // 🟢 Preparando o terreno para as imagens
+  // Usamos 'any' aqui para que o estado aceite temporariamente "" (string vazia) nos campos numéricos
+  const [produtoEditando, setProdutoEditando] = useState<any>(null);
   const imagemHook = useImageUpload();
   const [imagemAtualUrl, setImagemAtualUrl] = useState<string | null>(null);
 
@@ -24,8 +23,8 @@ export default function ModalEditarProduto({ isOpen, produtoOriginal, categorias
   useEffect(() => {
     if (produtoOriginal) {
       setProdutoEditando({ ...produtoOriginal });
-      setImagemAtualUrl(produtoOriginal.image || null); // Salva a foto que já veio do banco
-      imagemHook.handleRemoveImage(); // Limpa qualquer upload pendente anterior
+      setImagemAtualUrl(produtoOriginal.image || null);
+      imagemHook.handleRemoveImage();
     }
   }, [produtoOriginal]);
 
@@ -33,7 +32,7 @@ export default function ModalEditarProduto({ isOpen, produtoOriginal, categorias
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 🟢 Passando o produto e a possível nova imagem
+    // No envio, o Hook useEstoque cuidará de transformar o "" em 0 se necessário
     const sucesso = await onSave(produtoEditando, imagemHook.image);
     if (sucesso) onClose();
   };
@@ -92,17 +91,39 @@ export default function ModalEditarProduto({ isOpen, produtoOriginal, categorias
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Preço Unit.</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">R$</span>
-                    <input type="number" step="0.01" min="0" required value={produtoEditando.price ?? ''} onChange={(e) => { if(Number(e.target.value) >= 0 || e.target.value === '') setProdutoEditando({...produtoEditando, price: Number(e.target.value)}) }} className={`${inputClasses} pl-9`} />
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      min="0" 
+                      required 
+                      // 🟢 MÁGICA: Se o valor for 0, mostra 0. Se o usuário apagar tudo, mostra vazio.
+                      value={produtoEditando.price === 0 || produtoEditando.price ? produtoEditando.price : ''} 
+                      onChange={(e) => setProdutoEditando({
+                        ...produtoEditando, 
+                        price: e.target.value === '' ? '' : Number(e.target.value)
+                      })} 
+                      className={`${inputClasses} pl-9`} 
+                    />
                   </div>
                 </div>
                 
                 <div className="flex-1">
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Estoque</label>
-                  <input type="number" min="0" required value={produtoEditando.stock ?? ''} onChange={(e) => { if(Number(e.target.value) >= 0 || e.target.value === '') setProdutoEditando({...produtoEditando, stock: Number(e.target.value)}) }} className={inputClasses} />
+                  <input 
+                    type="number" 
+                    min="0" 
+                    required 
+                    // 🟢 MÁGICA: Permite que o campo fique vazio ao apagar o zero
+                    value={produtoEditando.stock === 0 || produtoEditando.stock ? produtoEditando.stock : ''} 
+                    onChange={(e) => setProdutoEditando({
+                      ...produtoEditando, 
+                      stock: e.target.value === '' ? '' : Number(e.target.value)
+                    })} 
+                    className={inputClasses} 
+                  />
                 </div>
               </div>
             </div>
-
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t">

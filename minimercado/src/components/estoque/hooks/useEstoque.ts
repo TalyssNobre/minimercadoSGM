@@ -73,20 +73,21 @@ export function useEstoque(exibirAlerta: (msg: string, tipo: 'success' | 'error'
     }
   }, []);
 
-  const salvarEdicao = async (produtoEditado: Produto, imageFile?: File | null) => {
-    try {
-      const formData = new FormData();
-      formData.append('id', String(produtoEditado.id));
-      formData.append('name', produtoEditado.name);
-      formData.append('category_id', String(produtoEditado.category_id || ''));
-      formData.append('price', String(produtoEditado.price || 0));
-      formData.append('stock', String(produtoEditado.stock || 0));
-      
-      if (imageFile) {
-        formData.append('image', imageFile);
-      }
+  // Dentro da função salvarEdicao no useEstoque.ts
+const salvarEdicao = async (produtoEditado: Produto, imageFile?: File | null) => {
+  try {
+    const formData = new FormData();
+    formData.append('id', String(produtoEditado.id));
+    formData.append('name', produtoEditado.name);
+    formData.append('category_id', String(produtoEditado.category_id || ''));
 
-      const response = await updateProduct(formData) as any;
+    formData.append('price', String(Number(produtoEditado.price) || 0));
+    formData.append('stock', String(Number(produtoEditado.stock) || 0));
+    
+    if (imageFile) formData.append('image', imageFile);
+
+    const response = await updateProduct(formData) as any;
+    // ... resto do seu código (alerta, carregarDados, etc)
 
       if (!response?.success && !(response as any)?.sucess) {
         alertaRef.current("Erro ao atualizar: " + (response?.message || "Desconhecido"), 'error');

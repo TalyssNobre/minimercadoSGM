@@ -21,7 +21,7 @@ export function usePromocoes() {
   const [categoriaId, setCategoriaId] = useState('');
   const [itensDoCombo, setItensDoCombo] = useState<any[]>([]);
   const [produtoSelecionadoId, setProdutoSelecionadoId] = useState<string>('');
-  const [quantidadeSelecionada, setQuantidadeSelecionada] = useState<number>(1);
+  const [quantidadeSelecionada, setQuantidadeSelecionada] = useState<number | string>(1);
 
   const [ofertaProdutoId, setOfertaProdutoId] = useState<string>('');
   const [ofertaPreco, setOfertaPreco] = useState<number | string>('');
@@ -146,19 +146,24 @@ export function usePromocoes() {
 
   const handleAdicionarProdutoNoCombo = () => {
     const produtoEncontrado = produtosDisponiveis.find(p => p.id === Number(produtoSelecionadoId));
+    
     if (produtoEncontrado) {
+      // 🟢 ALTERAÇÃO 2: Se o campo estiver vazio na hora de clicar em ADD, ele assume 1 unidade
+      const qtdFinal = quantidadeSelecionada === '' ? 1 : Number(quantidadeSelecionada);
+
       setItensDoCombo([...itensDoCombo, {
         produto_id: produtoEncontrado.id,
         nome: produtoEncontrado.name,
         preco_unitario: Number(produtoEncontrado.price),
-        quantidade: quantidadeSelecionada,
-        subtotal: Number(produtoEncontrado.price) * quantidadeSelecionada
+        quantidade: qtdFinal, // Usa o valor tratado
+        subtotal: Number(produtoEncontrado.price) * qtdFinal
       }]);
+
       setProdutoSelecionadoId('');
       setBuscaTexto(''); 
-      setQuantidadeSelecionada(1);
+      setQuantidadeSelecionada(1); // Reseta para 1 para o próximo item
     }
-  };
+};
 
   const handleEditarCombo = (combo: any) => {
     setIdEditando(combo.id);

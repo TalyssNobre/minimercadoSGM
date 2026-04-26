@@ -86,8 +86,20 @@ export default function ModalCombo({ promocoes }: { promocoes: any }) {
                   </div>
                 )}
               </div>
-              <input type="number" value={comboForm.quantidadeSelecionada} onChange={(e) => comboForm.setQuantidadeSelecionada(Number(e.target.value))} className="w-20 border rounded-md text-center font-bold" />
-              <button type="button" onClick={comboForm.handleAdicionarProdutoNoCombo} className="bg-gray-800 text-white px-4 py-2 rounded-md font-bold text-xs uppercase">ADD</button>
+              
+              {/* 🟢 INPUT DE QUANTIDADE MODIFICADO */}
+              <input 
+                type="number" 
+                min="1"
+                value={comboForm.quantidadeSelecionada === 0 || comboForm.quantidadeSelecionada ? comboForm.quantidadeSelecionada : ''} 
+                onChange={(e) => {
+                    const val = e.target.value;
+                    comboForm.setQuantidadeSelecionada(val === '' ? '' : Number(val));
+                }} 
+                className="w-20 border rounded-md text-center font-bold outline-none focus:ring-2 focus:ring-[#0D9488]" 
+              />
+              
+              <button type="button" onClick={comboForm.handleAdicionarProdutoNoCombo} className="bg-gray-800 text-white px-4 py-2 rounded-md font-bold text-xs uppercase">Adicionar</button>
             </div>
           </div>
 
