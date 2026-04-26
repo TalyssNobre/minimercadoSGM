@@ -154,3 +154,12 @@ export const getMemberStatement = async(member_id) => {
         return { success: false, error: error.message };
     }
 };
+
+export const getProductSalesStats = async (productId) => {
+    try {
+        const stats = await SaleModel.getProductSalesStats(productId);
+        return stats;
+    } catch (error) {
+        throw new Error(error.message);
+    }
+}

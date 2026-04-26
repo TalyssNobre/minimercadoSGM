@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getAllCategory } from '@/src/Server/controllers/CategoryController';
 import { getAllProducts } from '@/src/Server/controllers/ProductController';
-import { getAllSales } from '@/src/Server/controllers/SaleController';
+// 🟢 Adicionado getStatsForProduct na importação
+import { getAllSales, getStatsForProduct } from '@/src/Server/controllers/SaleController'; 
 import { Category, Product, Sale, HistoricoLinha } from '../types';
 
 export function useDashboardData() {
@@ -39,7 +40,7 @@ export function useDashboardData() {
             client_name: venda.member?.name || venda.Member?.name || venda.client_name || 'Avulso', 
             status: 'ATIVA', 
             payment_status: venda.status ? 'PAGO' : 'FIADO',
-            discount: Number(venda.discount) || 0, // 🟢 Pega o desconto da venda
+            discount: Number(venda.discount) || 0,
             items: (venda.Item_sale || venda.item_sale || venda.items || []).map((item: any) => ({
               product_id: item.product_id,
               qty: item.quantity || item.qty,
@@ -69,7 +70,6 @@ export function useDashboardData() {
     const vendasValidas = sales.filter(s => s.status !== 'CANCELADA');
 
     vendasValidas.forEach(venda => {
-      // 🟢 1. Calcula o total bruto da venda para sabermos o "peso" de cada item
       const valorBrutoVenda = venda.items.reduce((acc, item) => acc + (item.qty * item.price), 0);
       const descontoVenda = venda.discount || 0;
 
@@ -78,7 +78,6 @@ export function useDashboardData() {
         const produto = products.find(p => p.id === item.product_id);
         
         if (produto) {
-          // 🟢 2. Calcula a proporção. Ex: O item representou 30% da venda? Ele leva 30% do desconto.
           let valorItemLiquido = valorItemBruto;
           if (valorBrutoVenda > 0 && descontoVenda > 0) {
             const proporcaoDoItem = valorItemBruto / valorBrutoVenda;
@@ -86,7 +85,6 @@ export function useDashboardData() {
             valorItemLiquido = Math.max(0, valorItemBruto - descontoDoItem);
           }
 
-          // 🟢 3. Somas globais e de categoria usando o valor LÍQUIDO
           totalVendido += valorItemLiquido;
           if (venda.payment_status === 'PAGO') totalRecebido += valorItemLiquido;
           if (venda.payment_status === 'FIADO') totalAReceber += valorItemLiquido;
@@ -105,7 +103,7 @@ export function useDashboardData() {
             qty: item.qty,
             pagamento: venda.payment_status,
             valor_total: valorItemBruto,
-            valor_liquido: valorItemLiquido // Enviamos pro visual
+            valor_liquido: valorItemLiquido
           });
         }
       });
@@ -118,5 +116,26 @@ export function useDashboardData() {
     };
   }, [categories, products, sales]);
 
-  return { categories, isLoading, ...metricas };
+  // 🟢 Nova função para buscar os dados de 1 produto só no Backend
+  const fetchProductStats = async (productId: number | string) => {
+    if (!productId) return null;
+    try {
+      const response = await getStatsForProduct(productId) as any;
+      if (response?.success) {
+        return response.data; // Retorna { quantidadeSold: X, totalArrecadado: Y }
+      }
+    } catch (error) {
+      console.error("Erro ao buscar estatísticas do produto:", error);
+    }
+    return null;
+  };
+
+  // 🟢 Retornamos os dados, incluindo os produtos e a nova função de busca
+  return { 
+    categories, 
+    products, 
+    isLoading, 
+    fetchProductStats, 
+    ...metricas 
+  };
 }

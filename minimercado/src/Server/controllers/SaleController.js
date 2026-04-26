@@ -88,3 +88,19 @@ export const settleMultipleSales = async (id) => {
     }
 };
 
+export const getStatsForProduct = async (productId) => {
+    try {
+        await authUser();
+        
+        if (!productId) {
+            return { success: false, message: "ID do produto é obrigatório." };
+        }
+
+        // 🟢 OLHA AQUI: Ele chama o SERVICE, mantendo o seu padrão de arquitetura intacto!
+        const stats = await SaleService.getProductSalesStats(productId);
+        
+        return { success: true, data: stats };
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+};

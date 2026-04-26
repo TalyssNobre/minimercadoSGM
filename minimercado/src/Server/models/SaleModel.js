@@ -49,3 +49,37 @@ export const getSalesByMember = async(member_id) => {
     if (error) throw new Error(error.message);
     return data;
 };
+
+export const getProductSalesStats = async (productId) => {
+    const supabase = await getSupabaseServer();
+    const { data, error } = await supabase.from("Item_sale").select(`
+        quantity, unit_price, 
+        Sale (discount, Item_sale (quantity, unit_price))
+    `).eq("product_id", productId);
+
+    if (error) throw new Error(error.message);
+
+    let totalQuantity = 0, totalLiquid = 0, totalDiscount = 0;
+
+    data?.forEach(item => {
+        const itemGross = item.quantity * item.unit_price;
+        const saleDiscount = item.Sale?.discount || 0;
+        const saleGross = item.Sale?.Item_sale?.reduce((acc, i) => acc + (i.quantity * i.unit_price), 0) || 0;
+        
+        let itemNet = itemGross;
+        if (saleGross > 0 && saleDiscount > 0) {
+            const itemDiscountPortion = saleDiscount * (itemGross / saleGross);
+            itemNet = Math.max(0, itemGross - itemDiscountPortion);
+        }
+
+        totalQuantity += item.quantity;
+        totalLiquid += itemNet;
+        totalDiscount += (itemGross - itemNet);
+    });
+
+    return { 
+        quantidadeSold: totalQuantity, 
+        totalArrecadado: totalLiquid, 
+        totalDesconto: totalDiscount 
+    };
+};
