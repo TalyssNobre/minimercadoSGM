@@ -67,7 +67,7 @@ export async function deleteCategory (id) {
     try{
         await authAdmin();
         const results = await categoryService.deleteCategory(id)
-         if(results.error) { return{sucess: false, message: results.error}
+         if(results.error) { return{success: false, message: results.error}
         }
         revalidatePath("/categoria");
     

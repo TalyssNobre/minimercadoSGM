@@ -4,9 +4,11 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
 import { ModalAlerta } from '@/src/components/ui/ModalAlerta';
+// 🟢 1. IMPORTANDO O NOVO MODAL
+import { ModalConfirmacao } from '@/src/components/ui/ModalConfirmacao'; 
 
 // Hooks Modulares
-import { useCategorias } from '@/src/components/produtos/hooks/useCategorias';
+import { useCategorias, Categoria } from '@/src/components/produtos/hooks/useCategorias'; // Garanta que exportou 'Categoria' do hook
 import { useImageUpload } from '@/src/components/produtos/hooks/useImageUpload';
 
 // Controllers
@@ -29,6 +31,9 @@ export default function CadastroProdutoPage() {
   const [preco, setPreco] = useState('');
   const [estoque, setEstoque] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // 🟢 2. NOVO STATE PARA O MODAL DE CONFIRMAÇÃO
+  const [categoriaParaExcluir, setCategoriaParaExcluir] = useState<Categoria | null>(null);
 
   const inputClasses = "w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] focus:border-[#0D9488] outline-none transition-all placeholder-gray-400 text-gray-800";
 
@@ -90,7 +95,6 @@ export default function CadastroProdutoPage() {
                   <option value="" disabled>{categoriasHook.categorias.length === 0 ? "Carregando..." : "Selecione..."}</option>
                   {categoriasHook.categorias.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                 </select>
-                {/* 🟢 Botão alterado para Gerenciar */}
                 <ButtonSistema type="button" onClick={() => categoriasHook.setIsModalCategoriaOpen(true)} className="px-4 py-2.5 text-xs h-[46px] whitespace-nowrap">Gerenciar</ButtonSistema>
               </div>
             </div>
@@ -137,7 +141,7 @@ export default function CadastroProdutoPage() {
         </form>
       </div>
 
-      {/* 🟢 Modal de Gerenciamento de Categorias Atualizado */}
+      {/* Modal de Gerenciamento de Categorias Atualizado */}
       {categoriasHook.isModalCategoriaOpen && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[85vh]">
@@ -164,7 +168,9 @@ export default function CadastroProdutoPage() {
                       <span className="font-semibold text-gray-700 text-sm">{cat.name}</span>
                       <div className="flex gap-3">
                         <button onClick={() => categoriasHook.iniciarEdicao(cat)} className="text-blue-500 hover:scale-110 transition-transform" title="Editar">✏️</button>
-                        <button onClick={() => categoriasHook.handleExcluirCategoria(cat.id)} className="text-red-500 hover:scale-110 transition-transform" title="Excluir">🗑️</button>
+                        
+                        {/* 🟢 3. MUDANÇA NA LIXEIRA: Ao invés de deletar direto, abre o modal! */}
+                        <button onClick={() => setCategoriaParaExcluir(cat)} className="text-red-500 hover:scale-110 transition-transform" title="Excluir">🗑️</button>
                       </div>
                     </>
                   )}
@@ -184,6 +190,24 @@ export default function CadastroProdutoPage() {
 
       {/* Modal Alerta Global */}
       <ModalAlerta isOpen={modalAlerta.isOpen} mensagem={modalAlerta.mensagem} tipo={modalAlerta.tipo} onClose={() => setModalAlerta({ ...modalAlerta, isOpen: false })} />
+
+      {/* 🟢 4. RENDERIZAÇÃO DO MODAL DE CONFIRMAÇÃO */}
+      <ModalConfirmacao 
+        isOpen={categoriaParaExcluir !== null}
+        titulo="Excluir Categoria?"
+        mensagem={`Tem certeza que deseja excluir a categoria "${categoriaParaExcluir?.name}"?`}
+        textoConfirmar="Sim, Excluir"
+        textoCancelar="Cancelar"
+        tipo="danger"
+        onConfirm={() => {
+          if (categoriaParaExcluir) {
+            categoriasHook.handleExcluirCategoria(categoriaParaExcluir.id);
+            setCategoriaParaExcluir(null); // Fecha o modal
+          }
+        }}
+        onCancel={() => setCategoriaParaExcluir(null)}
+      />
+
     </div>
   );
 }

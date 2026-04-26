@@ -45,7 +45,7 @@ export const updateCategory = async ({data}) => {
         throw new Error("Categoria não existe");
     }
     const memberNameexisting= await CategoryModel.findByName(data.name);
-        if(memberNameexisting){
+        if(memberNameexisting && String(memberNameexisting.id) !== String(data.id)){ //talys mudou essa linha evita o erro de salvar sem mudar nome
             throw new Error("Categoria já cadastrada")
         }
     try {
@@ -66,6 +66,9 @@ export const deleteCategory = async (id) => {
         const results = await CategoryModel.deleteCategory(id);
         return { success: true, category: results };
     } catch (error) {
+        if (error.message.includes("foreign key") || error.message.includes("violates")) {
+            return { error: "Categoria não pode ser excluída pois há produtos cadastrados." };
+        }
         return { error: error.message };
     }
 }

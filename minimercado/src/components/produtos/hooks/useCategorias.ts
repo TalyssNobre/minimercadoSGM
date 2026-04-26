@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-// 🟢 IMPORTANTE: Agora importamos update e delete do Controller!
 import { getAllCategory, createCategory, updateCategory, deleteCategory } from '@/src/Server/controllers/CategoryController';
 
 export interface Categoria {
@@ -12,7 +11,6 @@ export function useCategorias(exibirAlerta: (msg: string, tipo: 'success' | 'err
   const [isModalCategoriaOpen, setIsModalCategoriaOpen] = useState(false);
   const [novaCategoriaNome, setNovaCategoriaNome] = useState('');
 
-  // 🟢 Novos states para controlar a Edição
   const [editandoId, setEditandoId] = useState<string | number | null>(null);
   const [editandoNome, setEditandoNome] = useState('');
 
@@ -46,18 +44,16 @@ export function useCategorias(exibirAlerta: (msg: string, tipo: 'success' | 'err
         exibirAlerta(response.message || "Erro ao criar categoria", 'error');
       }
     } catch (error) {
-      console.error("Erro ao criar categoria:", error);
       exibirAlerta("Erro de conexão ao criar categoria.", 'error');
     }
   };
 
-  // 🟢 Nova Função: Excluir
   const handleExcluirCategoria = async (id: string | number) => {
-    if (!confirm("Tem certeza que deseja excluir esta categoria? Os produtos atrelados a ela podem perder a referência.")) return;
     try {
       const response = await deleteCategory(id) as any;
-      if (response?.success || response?.sucess) { // Lidando com o typo do backend 'sucess'
-        setCategorias(prev => prev.filter(c => c.id !== id));
+      if (response?.success || response?.sucess) { 
+        // 🟢 CORREÇÃO: Forçamos conversão para String! Agora a lixeira funciona na tela na mesma hora.
+        setCategorias(prev => prev.filter(c => String(c.id) !== String(id)));
         exibirAlerta("Categoria excluída com sucesso!", 'success');
       } else {
         exibirAlerta(response.message || "Erro ao excluir categoria.", 'error');
@@ -67,7 +63,6 @@ export function useCategorias(exibirAlerta: (msg: string, tipo: 'success' | 'err
     }
   };
 
-  // 🟢 Nova Função: Atualizar
   const handleAtualizarCategoria = async (id: string | number) => {
     if (!editandoNome.trim()) return exibirAlerta("O nome não pode ser vazio.", 'error');
     try {
@@ -77,7 +72,8 @@ export function useCategorias(exibirAlerta: (msg: string, tipo: 'success' | 'err
 
       const response = await updateCategory(formData) as any;
       if (response?.success) {
-        setCategorias(prev => prev.map(c => c.id === id ? { ...c, name: editandoNome } : c));
+        // 🟢 CORREÇÃO: Conversão para String no ID para que a tela mude a palavra digitada na hora!
+        setCategorias(prev => prev.map(c => String(c.id) === String(id) ? { ...c, name: editandoNome } : c));
         setEditandoId(null);
         setEditandoNome('');
         exibirAlerta("Categoria atualizada com sucesso!", 'success');

@@ -11,9 +11,12 @@ export const createCategory = async(categoryEntity) => {
 
 export const updateCategory = async(id, categoryEntity) => {
    const supabase = await getSupabaseServer();
-   const{data,error} = await supabase.from("Category").update(categoryEntity).eq("id", id).select().single();
-   if(error){ throw new Error(error.message);
-    } return data;
+   const payload = { name: categoryEntity.name };
+   const{data,error} = await supabase.from("Category").update(payload).eq("id", id).select().maybeSingle();
+   if(error){ throw new Error(error.message); }
+   if(!data){ throw new Error("Ação bloqueada pelo banco de dados."); 
+
+   } return data;
 }
 
 export const getAllCategory = async() => {
@@ -40,6 +43,8 @@ export const findByName = async(name) => {
 export const deleteCategory = async(id) =>{
     const supabase = await getSupabaseServer();
     const{data,error} = await supabase.from("Category").delete().eq("id", id).select().maybeSingle()
-       if(error){ throw new Error(error.message);
+    if(error){ throw new Error(error.message); }
+    if(!data){ throw new Error("Ação bloqueada pelo banco de dados."); 
+
     } return data;
 }
