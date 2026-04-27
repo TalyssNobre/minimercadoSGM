@@ -1,6 +1,6 @@
 import { getSupabaseServer } from "../../lib/supabaseServer";
 
-// 🟢 Voltou a ser simples! Só insere a Sale.
+
 export const createSale = async(SaleEntity) =>{
     const supabase = await getSupabaseServer();
     const {data, error} = await supabase.from("Sale").insert(SaleEntity).select().single();
@@ -50,7 +50,7 @@ export const getSalesByMember = async(member_id) => {
     return data;
 };
 
-// 🟢 A MÁGICA CONTINUA AQUI: Estatísticas precisas lendo direto da coluna nova!
+
 export const getProductSalesStats = async (productId) => {
     const supabase = await getSupabaseServer();
     

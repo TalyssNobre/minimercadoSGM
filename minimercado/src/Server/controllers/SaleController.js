@@ -7,18 +7,13 @@ export const createSale = async(dataFront) =>{
     try{
         await authUser();
         const data = Object.fromEntries(dataFront.entries());
-        
-        // 🟢 Pega o carrinho de forma segura
-        const cartItems = data.cart ? JSON.parse(data.cart) : [];
-        delete data.cart; 
-
+         const cartItems = data.cart ? JSON.parse(data.cart) : [];
+         delete data.cart; 
         const results = await SaleService.createSale({
             data: data,
             items: cartItems // 🟢 Envia com o nome oficial 'items'
         });
-        
-        if (results.error) return { success: false, sale: results, message: results.error };
-        
+         if (results.error) return { success: false, sale: results, message: results.error };
         revalidatePath("/caixa");
         return{ success: true, message: "Venda Criada!"}
     }catch(error){
