@@ -39,7 +39,6 @@ export function useExtratos(exibirAlerta: (msg: string, tipo: 'success' | 'error
         if (teamsResp?.success) setEquipes(teamsResp.data || teamsResp.team || []);
         if (membersResp?.success) setMembros(membersResp.data || membersResp.member || []);
         
-        // 🟢 CÓDIGO BLINDADO: Procura o 'profile' em todas as camadas possíveis e limpa espaços!
         if (userResp) {
           const profileExtraido = userResp.user?.profile || userResp.data?.user?.profile || 'Desconhecido';
           setUserRole(String(profileExtraido).trim().toUpperCase());
@@ -65,11 +64,17 @@ export function useExtratos(exibirAlerta: (msg: string, tipo: 'success' | 'error
           const todasVendas = [...(res.pending || []), ...(res.paid || [])];
           
           const formatado: ItemAgrupado[] = todasVendas.map((venda: any) => {
-            const desconto = Number(venda.discount) || 0;
             const bruto = Number(venda.total_value) || 0;
-            const liquido = Math.max(0, bruto - desconto);
             
-            const itensString = venda.Item_sale?.map((i: any) => `${i.quantity}x ${i.Product?.name}`).join(', ') || 'Produtos Diversos';
+            // 🟢 MÁGICA DO EXTRATO: Somando os descontos individuais!
+            const itensVenda = venda.Item_sale || venda.item_sale || [];
+            const totalDescontoItens = itensVenda.reduce((acc: number, item: any) => acc + (Number(item.item_discount) || 0), 0);
+            const descontoGeral = Number(venda.discount) || 0;
+            
+            const descontoFinal = totalDescontoItens + descontoGeral;
+            const liquido = Math.max(0, bruto - descontoFinal);
+            
+            const itensString = itensVenda.map((i: any) => `${i.quantity}x ${i.Product?.name || i.product?.name || 'Item'}`).join(', ') || 'Produtos Diversos';
 
             return {
               id_agrupado: venda.id.toString(), 
@@ -77,7 +82,7 @@ export function useExtratos(exibirAlerta: (msg: string, tipo: 'success' | 'error
               date: formatDate(venda.date),
               items_resumo: itensString,
               valor_bruto: bruto,
-              desconto: desconto,
+              desconto: descontoFinal, // 🟢 O desconto exato calculado vai pra tela!
               valor_liquido: liquido,
               status: venda.status ? 'PAGO' : 'PENDENTE'
             };

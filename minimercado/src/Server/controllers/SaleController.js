@@ -7,15 +7,22 @@ export const createSale = async(dataFront) =>{
     try{
         await authUser();
         const data = Object.fromEntries(dataFront.entries());
-        const itensCarrinho = JSON.parse(data.cart);
+        
+        // 🟢 Pega o carrinho de forma segura
+        const cartItems = data.cart ? JSON.parse(data.cart) : [];
+        delete data.cart; 
+
         const results = await SaleService.createSale({
             data: data,
-            itensCarrinho: itensCarrinho
+            items: cartItems // 🟢 Envia com o nome oficial 'items'
         });
-        if (results.error) return { success: false,sale: results,  message: results.error };
+        
+        if (results.error) return { success: false, sale: results, message: results.error };
+        
         revalidatePath("/caixa");
         return{ success: true, message: "Venda Criada!"}
     }catch(error){
+        console.error("Erro no SaleController:", error);
         return{sucess: false , message: error.message}
     }
 }
@@ -30,7 +37,7 @@ export const getAllSales = async() =>{
         return { success: true, data: results.sale };
     }catch(error){
         return { success: false, message: error.message };
-}
+    }
 }
 
 export const updateSaleStatus = async (sale_id) => {
@@ -91,14 +98,10 @@ export const settleMultipleSales = async (id) => {
 export const getStatsForProduct = async (productId) => {
     try {
         await authUser();
-        
         if (!productId) {
             return { success: false, message: "ID do produto é obrigatório." };
         }
-
-        // 🟢 OLHA AQUI: Ele chama o SERVICE, mantendo o seu padrão de arquitetura intacto!
         const stats = await SaleService.getProductSalesStats(productId);
-        
         return { success: true, data: stats };
     } catch (error) {
         return { success: false, message: error.message };

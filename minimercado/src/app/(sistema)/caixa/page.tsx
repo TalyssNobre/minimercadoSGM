@@ -18,11 +18,9 @@ import { createSale } from '@/src/Server/controllers/SaleController';
 import { getLoggedUserController } from '@/src/Server/controllers/UserController';
 
 export default function CaixaPage() {
-  // 🟢 Puxando a função com o nome novo
   const { equipes, membros, produtos, categorias, isLoading, atualizarDados, atualizarProdutoAoVivo } = usePDVDados();
   const carrinho = useCarrinho();
 
-  // 🟢 O Realtime agora aciona a função que atualiza estoque, preço e etiqueta de promoção
   useRealtimeSync('Product', atualizarProdutoAoVivo);
 
   const [selectedTeam, setSelectedTeam] = useState<Equipe | null>(null);
@@ -51,23 +49,24 @@ export default function CaixaPage() {
       formData.append('user_id', vendedorId.toString());
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
       
-      let descontoDasPromocoes = 0;
-
+      // 🟢 MUDANÇA AQUI: Criamos o array de itens passando o desconto de cada um individualmente
       const itensCarrinho = carrinho.cart.map(item => {
         const precoBase = item.product.base_price || item.product.price;
         const precoEfetivo = item.product.price;
         
-        descontoDasPromocoes += (precoBase - precoEfetivo) * item.quantity;
+        // Calcula quanto de desconto esse item específico teve no total (ex: 2 pipocas com R$ 1 de desconto = R$ 2)
+        const descontoDesteItem = (precoBase - precoEfetivo) * item.quantity;
 
         return {
           product_id: item.product.id,
           quantity: item.quantity,
-          unit_price: precoBase
+          unit_price: precoBase,
+          item_discount: descontoDesteItem // 🟢 NOVA COLUNA ENVIADA PARA O BANCO
         };
       });
 
-      const descontoFinalTotal = carrinho.valorDescontoCalculado + descontoDasPromocoes;
-      formData.append('discount', descontoFinalTotal.toString());
+      // 🟢 MUDANÇA AQUI: O desconto geral da venda agora é APENAS o desconto extra dado manualmente no input do carrinho
+      formData.append('discount', carrinho.valorDescontoCalculado.toString());
 
       const agora = new Date();
       const timezoneOffset = agora.getTimezoneOffset() * 60000;
@@ -88,8 +87,6 @@ export default function CaixaPage() {
         setSelectedMember(null);
         setSelectedTeam(null);
         
-        // Mantemos o atualizarDados aqui porque quando VOCÊ faz a venda, 
-        // é bom garantir que a base toda recarregue com segurança para sua próxima venda.
         atualizarDados(); 
         
       } else {

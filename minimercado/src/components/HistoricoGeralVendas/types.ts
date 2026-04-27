@@ -2,6 +2,7 @@ export interface ItemVenda {
   id_item_sale: number; 
   name: string; 
   quantity: number; 
+  item_discount?: number; // 🟢 Novo: Reconhecendo o desconto do item
 }
 
 export interface Venda {

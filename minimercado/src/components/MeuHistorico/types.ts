@@ -19,6 +19,7 @@ export interface Product {
 
 export interface ItemSale {
   quantity: number; 
+  item_discount?: number; // 🟢 Novo: Desconto individual do item
   Product?: Product; 
 }
 
@@ -30,9 +31,5 @@ export interface Sale {
   payment_date?: string | null; 
   member?: Member; 
   Item_sale?: ItemSale[]; 
-  
-  // 🟢 Adicionamos o desconto aqui!
-  // A interrogação (?) significa que ele é opcional, 
-  // caso alguma venda antiga no banco não tenha esse campo ainda.
   discount?: number; 
 }

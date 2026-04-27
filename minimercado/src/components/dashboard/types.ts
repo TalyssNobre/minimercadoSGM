@@ -13,6 +13,7 @@ export interface ItemSale {
   product_id: number; 
   qty: number;
   price: number; 
+  item_discount?: number;
 }
 
 export interface Sale {
@@ -36,5 +37,6 @@ export interface HistoricoLinha {
   qty: number;
   pagamento: string;
   valor_total: number;
-  valor_liquido?: number; // 🟢 Novo: Valor do item após a proporção do desconto
+  item_discount: number;
+  valor_liquido: number; 
 }

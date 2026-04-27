@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getAllCategory } from '@/src/Server/controllers/CategoryController';
 import { getAllProducts } from '@/src/Server/controllers/ProductController';
-// 🟢 Adicionado getStatsForProduct na importação
 import { getAllSales, getStatsForProduct } from '@/src/Server/controllers/SaleController'; 
 import { Category, Product, Sale, HistoricoLinha } from '../types';
 
@@ -41,10 +40,12 @@ export function useDashboardData() {
             status: 'ATIVA', 
             payment_status: venda.status ? 'PAGO' : 'FIADO',
             discount: Number(venda.discount) || 0,
+            // 🟢 MUDANÇA: Mapeamos o novo item_discount que o backend está enviando!
             items: (venda.Item_sale || venda.item_sale || venda.items || []).map((item: any) => ({
               product_id: item.product_id,
               qty: item.quantity || item.qty,
-              price: item.unit_price || item.price
+              price: item.unit_price || item.price,
+              item_discount: Number(item.item_discount) || 0 
             }))
           }));
           setSales(vendasMapeadas);
@@ -70,20 +71,27 @@ export function useDashboardData() {
     const vendasValidas = sales.filter(s => s.status !== 'CANCELADA');
 
     vendasValidas.forEach(venda => {
-      const valorBrutoVenda = venda.items.reduce((acc, item) => acc + (item.qty * item.price), 0);
-      const descontoVenda = venda.discount || 0;
+      // 🟢 O desconto geral da venda (para abater no final se precisar)
+      const descontoExtraVenda = venda.discount || 0;
 
       venda.items.forEach(item => {
-        const valorItemBruto = item.qty * item.price;
         const produto = products.find(p => p.id === item.product_id);
         
         if (produto) {
-          let valorItemLiquido = valorItemBruto;
-          if (valorBrutoVenda > 0 && descontoVenda > 0) {
-            const proporcaoDoItem = valorItemBruto / valorBrutoVenda;
-            const descontoDoItem = descontoVenda * proporcaoDoItem;
-            valorItemLiquido = Math.max(0, valorItemBruto - descontoDoItem);
+          // 🟢 FIM DA REGRA DE TRÊS: Agora o cálculo é direto e exato!
+          const valorItemBruto = item.qty * item.price;
+          const descontoDesteItem = item.item_discount || 0;
+          let valorItemLiquido = valorItemBruto - descontoDesteItem;
+
+          // Se a venda teve um desconto extra genérico no final (além das promoções), a gente divide só ele
+          // (Isso é raro, só acontece se você der desconto manual no carrinho)
+          if (descontoExtraVenda > 0) {
+              const valorBrutoVendaToda = venda.items.reduce((acc, i) => acc + (i.qty * i.price), 0);
+              const proporcao = valorItemBruto / valorBrutoVendaToda;
+              valorItemLiquido -= (descontoExtraVenda * proporcao);
           }
+
+          valorItemLiquido = Math.max(0, valorItemLiquido); // Nunca fica negativo
 
           totalVendido += valorItemLiquido;
           if (venda.payment_status === 'PAGO') totalRecebido += valorItemLiquido;
@@ -103,6 +111,7 @@ export function useDashboardData() {
             qty: item.qty,
             pagamento: venda.payment_status,
             valor_total: valorItemBruto,
+            item_discount: descontoDesteItem, // 🟢 Guardamos o desconto isolado para exibir na tabela
             valor_liquido: valorItemLiquido
           });
         }
@@ -116,13 +125,12 @@ export function useDashboardData() {
     };
   }, [categories, products, sales]);
 
-  // 🟢 Nova função para buscar os dados de 1 produto só no Backend
   const fetchProductStats = async (productId: number | string) => {
     if (!productId) return null;
     try {
       const response = await getStatsForProduct(productId) as any;
       if (response?.success) {
-        return response.data; // Retorna { quantidadeSold: X, totalArrecadado: Y }
+        return response.data; 
       }
     } catch (error) {
       console.error("Erro ao buscar estatísticas do produto:", error);
@@ -130,7 +138,6 @@ export function useDashboardData() {
     return null;
   };
 
-  // 🟢 Retornamos os dados, incluindo os produtos e a nova função de busca
   return { 
     categories, 
     products, 

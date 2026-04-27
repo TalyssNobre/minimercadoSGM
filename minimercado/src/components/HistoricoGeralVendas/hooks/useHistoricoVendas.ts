@@ -30,6 +30,12 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
         
         const vendasFormatadas: Venda[] = dadosBrutos.map((row: any) => {
           const itensBrutos = row.Item_sale || row.item_sale || row.itemSale || [];
+          
+          // 🟢 MÁGICA: Somando os descontos individuais da nova coluna no banco!
+          const totalDescontoItens = itensBrutos.reduce((acc: number, item: any) => acc + (Number(item.item_discount) || 0), 0);
+          const descontoGeral = Number(row.discount) || 0;
+          const descontoRealTotal = totalDescontoItens + descontoGeral;
+
           return {
             sale_id: row.id, 
             date: formatDate(row.date), 
@@ -37,13 +43,13 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
             operator_name: row.User?.name || row.user?.name || 'Desconhecido',
             client_name: row.Member?.name || row.member?.name || 'Cliente Avulso',
             total_value: Number(row.total_value) || 0, 
-            // 🟢 Capturamos o desconto aqui
-            discount: Number(row.discount) || 0,
+            discount: descontoRealTotal, // 🟢 Mandando o desconto exato para a tabela
             status: Boolean(row.status), 
             items: itensBrutos.map((item: any) => ({
               id_item_sale: item.id_item_sale, 
               name: item.Product?.name || item.product?.name || 'Produto',
-              quantity: item.quantity
+              quantity: item.quantity,
+              item_discount: Number(item.item_discount) || 0 // 🟢 Mapeado pro Front
             }))
           };
         });
@@ -66,7 +72,7 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
     return vendas.filter(v => v.operator_id.toString() === filtroVendedor);
   }, [vendas, filtroVendedor]);
 
-  // 🟢 Ajustamos a matemática para subtrair o desconto do valor total
+  // A matemática já está correta, subtraindo o desconto (que agora é exato) do total
   const totalFiltrado = useMemo(() => {
     return vendasFiltradas.filter(v => v.status === true).reduce((acc, curr) => acc + (curr.total_value - (curr.discount || 0)), 0);
   }, [vendasFiltradas]);

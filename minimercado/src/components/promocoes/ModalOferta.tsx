@@ -13,12 +13,18 @@ export default function ModalOferta({ promocoes }: { promocoes: any }) {
           <h2>Criar Oferta Relâmpago</h2>
           <button onClick={modais.fecharModais}>✕</button>
         </div>
+        
         <div className="p-6 space-y-4">
           <div className="relative">
             <label className="block text-xs font-black text-gray-400 uppercase mb-1">Buscar Produto (Apenas S/ Promo)</label>
             <InputPesquisa 
                 value={ofertaForm.buscaTexto} 
-                onChange={ofertaForm.setBuscaTexto} 
+                onChange={(val: string) => {
+                  ofertaForm.setBuscaTexto(val);
+                  // 🟢 MÁGICA 1: Se o usuário voltar a digitar ou apagar, reseta o ID. 
+                  // Isso força ele a clicar na listinha para confirmar a escolha.
+                  ofertaForm.setOfertaProdutoId('');
+                }} 
                 placeholder="Nome do produto..." 
             />
             
@@ -27,6 +33,7 @@ export default function ModalOferta({ promocoes }: { promocoes: any }) {
                 {dados.produtosFiltrados.filter((p: any) => !p.promo_status).map((p: any) => (
                   <button
                     key={p.id}
+                    type="button"
                     onClick={() => {
                       ofertaForm.setOfertaProdutoId(String(p.id));
                       ofertaForm.setBuscaTexto(p.name);
@@ -39,11 +46,25 @@ export default function ModalOferta({ promocoes }: { promocoes: any }) {
               </div>
             )}
           </div>
+          
           <div>
             <label className="block text-xs font-black text-gray-400 uppercase mb-1">Preço Promocional</label>
-            <input type="number" value={ofertaForm.ofertaPreco} onChange={(e) => ofertaForm.setOfertaPreco(e.target.value)} className={inputClasses} placeholder="0.00" />
+            {/* 🟢 MÁGICA 2: Input de preço flexível, permitindo apagar e ficar vazio */}
+            <input 
+              type="number" 
+              step="0.01"
+              min="0"
+              value={ofertaForm.ofertaPreco === 0 || ofertaForm.ofertaPreco ? ofertaForm.ofertaPreco : ''} 
+              onChange={(e) => {
+                const val = e.target.value;
+                ofertaForm.setOfertaPreco(val === '' ? '' : Number(val));
+              }} 
+              className={inputClasses} 
+              placeholder="0.00" 
+            />
           </div>
         </div>
+        
         <div className="bg-gray-50 p-4 flex justify-end gap-3 border-t">
           <ButtonSistema variant="outline" onClick={modais.fecharModais}>Cancelar</ButtonSistema>
           <ButtonSistema variant="primary" className="bg-[#0D9488] disabled:opacity-50" disabled={dados.isSubmitting} onClick={ofertaForm.handleAtivarOferta}>

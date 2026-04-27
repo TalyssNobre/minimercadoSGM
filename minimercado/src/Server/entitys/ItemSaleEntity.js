@@ -1,10 +1,14 @@
 export default class ItemSale {
-    constructor({id_item_sale, quantity, unit_price, product_id,sale_id}) {
+    // 🟢 Adicionamos o item_discount aqui no construtor
+    constructor({id_item_sale, quantity, unit_price, product_id, sale_id, item_discount}) {
         this.id_item_sale = id_item_sale;
         this.quantity = Number(quantity);
         this.unit_price = Number(unit_price);
         this.product_id = product_id;
         this.sale_id = sale_id;
+        
+        // 🟢 Oficializamos a nova coluna na Entidade
+        this.item_discount = Number(item_discount || 0); 
 
         this.validate();
     }

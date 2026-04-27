@@ -5,18 +5,19 @@ import ItemSale from "../entitys/ItemSaleEntity";
 import * as ProductModel from "../models/ProductModel";
 import { ensureArray, safeParseJSON } from "../utils/formatter";
 
-export const createSale = async ({ data, itensCarrinho }) => {
-    if (!itensCarrinho || itensCarrinho.length === 0) {
-            throw new Error("Não é possível finalizar uma venda sem itens no carrinho");
-        }
+export const createSale = async ({ data, items }) => { 
+    // 🟢 Garantindo que recebe a variável correta
+    if (!items || !Array.isArray(items) || items.length === 0) {
+        throw new Error("Não é possível finalizar uma venda sem itens no carrinho");
+    }
+    
     try {
         const saleEntity = new Sale({ 
             ...data, 
-            items: itensCarrinho,
+            items: items,
             discount:  data.discount
         });
 
-    
         const dataSale = {
             date: saleEntity.date,
             total_value: saleEntity.total_value,
@@ -26,10 +27,10 @@ export const createSale = async ({ data, itensCarrinho }) => {
             member_id: saleEntity.member_id,
             discount : saleEntity.discount
         };
-        
 
         const results = await SaleModel.createSale(dataSale);
 
+        // 🟢 O Map que estava reclamando agora está 100% blindado
         const itensComVinculo = saleEntity.items.map(item => {
             const itemEntity = new ItemSale({
                 ...item,      
@@ -40,17 +41,18 @@ export const createSale = async ({ data, itensCarrinho }) => {
                 quantity: itemEntity.quantity,
                 unit_price: itemEntity.unit_price,
                 product_id: itemEntity.product_id,
-                sale_id: itemEntity.sale_id
+                sale_id: itemEntity.sale_id,
+                item_discount: itemEntity.item_discount || 0
             }; 
         });
 
         await ItemSaleModel.createItems(itensComVinculo);
         
-        for (const item of itensCarrinho) {
+        for (const item of items) {
             const newProduct = await ProductModel.getProductById(item.product_id);
 
             if (newProduct && newProduct.combo) {
-                const comboArray = ensureArray(safeParseJSON(newProduct.combo));
+                const comboArray = ensureArray(safeParseJSON(newProduct.combo) || []);
 
                 for (const itemDoCombo of comboArray) {
                     const idDoIngrediente = itemDoCombo.product_id || itemDoCombo.produto_id;
@@ -68,7 +70,8 @@ export const createSale = async ({ data, itensCarrinho }) => {
         return { success: true, sale: results };
 
     } catch (error) {
-        return { success: false, error: "Erro ao criar Venda"}; 
+        console.error("🔴 ERRO CRÍTICO NO SALESERVICE:", error);
+        return { success: false, error: "Falha interna: " + error.message }; 
     }
 };
 
@@ -118,7 +121,7 @@ export const deleteSale = async (id) => {
             const newProduct = await ProductModel.getProductById(item.product_id);
 
             if (newProduct && newProduct.combo) {
-                const comboArray = ensureArray(safeParseJSON(newProduct.combo));
+                const comboArray = ensureArray(safeParseJSON(newProduct.combo) || []);
 
                 for (const ingrediente of comboArray) {
                     const idDoIngrediente = ingrediente.product_id || ingrediente.produto_id;

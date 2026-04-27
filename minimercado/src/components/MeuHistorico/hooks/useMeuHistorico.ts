@@ -39,12 +39,16 @@ export function useMeuHistorico() {
             const itensBrutos = row.Item_sale || row.item_sale || [];
             const membroBruto = row.Member || row.member || null;
 
+            // 🟢 MÁGICA: Somamos os descontos que foram salvos item por item no banco!
+            const totalDescontoDosItens = itensBrutos.reduce((acc: number, item: any) => acc + (Number(item.item_discount) || 0), 0);
+            const descontoGeralDaVenda = Number(row.discount) || 0;
+            const descontoRealTotal = totalDescontoDosItens + descontoGeralDaVenda;
+
             return {
               id: row.id,
               date: row.date, 
               total_value: Number(row.total_value) || 0,
-              // 🟢 Puxamos o discount. Se for nulo ou vazio no banco, vira 0.
-              discount: Number(row.discount) || 0, 
+              discount: descontoRealTotal, // 🟢 Agora enviamos o desconto total EXATO
               status: row.status, 
               payment_date: row.payment_date,
               member: {
@@ -53,6 +57,7 @@ export function useMeuHistorico() {
               },
               Item_sale: itensBrutos.map((item: any) => ({
                 quantity: item.quantity,
+                item_discount: Number(item.item_discount) || 0, // Passamos pro Front ver se precisar
                 Product: { name: item.Product?.name || item.product?.name || 'Produto' }
               }))
             };
@@ -74,8 +79,7 @@ export function useMeuHistorico() {
     carregarDadosDoSupabase();
   }, [carregarDadosDoSupabase]);
 
-  // 🟢 Cálculos automáticos agora consideram o desconto
-  // Subtraímos o desconto do valor total para saber o quanto de dinheiro REAL entrou
+  // Subtraímos o desconto real e exato do valor total
   const totalVendidoPago = vendas.filter(v => v.status === true).reduce((acc, curr) => acc + ((curr.total_value || 0) - (curr.discount || 0)), 0);
   const totalVendidoFiado = vendas.filter(v => v.status === false).reduce((acc, curr) => acc + ((curr.total_value || 0) - (curr.discount || 0)), 0);
 
