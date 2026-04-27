@@ -68,21 +68,20 @@ export function useEquipes(exibirAlerta: (msg: string, tipo: 'success' | 'error'
     }
   };
 
-  const excluirEquipe = async (equipe: Equipe) => {
+const excluirEquipe = async (equipe: Equipe) => {
     try {
       const response = await deleteTeam(equipe.id) as any;
-      
-      if (response?.success === false || response?.sucess === false) {
-         exibirAlerta("Erro ao excluir: " + response.message, 'error');
+      if (!response || response.success === false || response.sucess === false) {
+         const msgErro = response?.message || response?.error || "A equipe não pôde ser excluída. Verifique se há vínculos pendentes.";
+         exibirAlerta("Erro ao excluir: " + msgErro, 'error');
          return false;
       }
-
       await buscarEquipes(); 
       exibirAlerta("Equipe excluída com sucesso!", 'success');
       return true;
 
-    } catch (error) {
-      exibirAlerta("Erro técnico ao tentar excluir.", 'error');
+   } catch (error: any) {
+      exibirAlerta("Erro técnico ao tentar excluir: " + (error.message || "Falha na comunicação"), 'error');
       return false;
     }
   };

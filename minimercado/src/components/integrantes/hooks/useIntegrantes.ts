@@ -72,7 +72,7 @@ export function useIntegrantes(equipeId: number, exibirAlerta: (msg: string, tip
     try {
       const response = await deleteMember(id) as any;
       if (response?.success === false || response?.sucess === false) {
-         exibirAlerta("Erro ao excluir: " + response.message, 'error');
+         exibirAlerta(response.message, 'error');
          return false;
       }
       await fetchDados();
