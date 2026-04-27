@@ -5,7 +5,6 @@ import * as ProductModel from "@/src/Server/models/ProductModel";
 
 export const createProduct = async({data, image}) => {
         const supabase = await getSupabaseServer();
-        const product = new Product(data)
 
         if (data.combo && typeof data.combo === 'string') data.combo = JSON.parse(data.combo);
         if (data.combo && Array.isArray(data.combo) && data.combo.length > 0) {
@@ -133,7 +132,8 @@ export const updateProduct = async ({ id, data, image }) => {
             image: imageUrl
         };
 
-        const results = await ProductModel.updateProduct(id, finalData);
+        const productEntity = new Product(finalData); 
+        const results = await ProductModel.updateProduct(id, productEntity);
         return { success: true, product: results, message: "Produto atualizado com sucesso!" };
         
     } catch (error) {

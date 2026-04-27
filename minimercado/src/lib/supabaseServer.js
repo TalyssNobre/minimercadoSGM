@@ -20,7 +20,6 @@ export async function getSupabaseServer() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Ignora se for chamado em Server Component
           }
         },
       },
@@ -31,6 +30,6 @@ export async function getSupabaseServer() {
 export function getSupabaseAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY // 👈 A chave secreta sem NEXT_PUBLIC
+    process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 }

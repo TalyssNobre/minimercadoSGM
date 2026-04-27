@@ -14,7 +14,7 @@ export default class Product{
     }
    
     get PromoPrice() {
-        if (this.promo_status === true && this.promo_price !== null && this.promo_price < this.price) {
+        if (this.promo_status === true && this.promo_price !== null) {
             return this.promo_price;
         }
         return this.price;
@@ -31,6 +31,9 @@ export default class Product{
 
         if (this.price < 0 || this.stock < 0 || this.promo_price < 0) {
             throw new Error("Valores não podem ser negativos");
+        }
+        if (this.promo_price !== null && this.promo_price >= this.price) {
+            throw new Error("O valor da promoção não pode ser maior ou igual ao preço original");
         }
     }
   };
