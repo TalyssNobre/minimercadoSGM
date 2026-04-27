@@ -12,7 +12,7 @@ export const createCategory = async ({data}) => {
         const results = await CategoryModel.createCategory(categoryEntity);
         return {success: true, category : results}
     }catch(error){
-        return { error: error.message };
+        return { error: "Erro ao criar categoria" };
     }
 }
 
@@ -21,7 +21,7 @@ export const getAllCategory = async() => {
         const results = await CategoryModel.getAllCategory();
         return{success : true, category : results}
     } catch(error){
-        return{error: error.message}
+        return{error: "Erro ao buscar categorias"}
     }
 }
 
@@ -34,7 +34,7 @@ export const getCategoryById = async ({id}) => {
         const results = await CategoryModel.getCategoryById(id);
         return{success : true, category : results}
     }catch(error){
-        return{error: error.message}
+        return{error: "Erro ao buscar categoria"}
     }
 }
 
@@ -53,7 +53,7 @@ export const updateCategory = async ({data}) => {
         const results = await CategoryModel.updateCategory(data.id, categoryEntity);
         return { success: true, category: results };
     } catch (error) {
-        return { error: error.message };
+        return { error: "Erro ao atualizar a Categoria" };
     }
 }
 
@@ -69,6 +69,6 @@ export const deleteCategory = async (id) => {
         if (error.message.includes("foreign key") || error.message.includes("violates")) {
             return { error: "Categoria não pode ser excluída pois há produtos cadastrados." };
         }
-        return { error: error.message };
+        return { error:"Erro ao deletar categoria" };
     }
 }

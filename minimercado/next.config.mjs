@@ -4,7 +4,7 @@ const nextConfig = {
     serverActions: {
       allowedOrigins: [
         'localhost:3000', 
-        'x7js9kvl-3000.brs.devtunnels.ms', // 🟢 O seu link exato que o VS Code gerou
+        'w0820tnw-3000.brs.devtunnels.ms', // 🟢 O seu link exato que o VS Code gerou
         '*.devtunnels.ms'                  // 🟢 O curinga (caso o link mude amanhã)
       ],
     },
