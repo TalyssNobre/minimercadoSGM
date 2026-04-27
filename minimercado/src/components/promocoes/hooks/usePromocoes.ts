@@ -201,7 +201,7 @@ export function usePromocoes() {
         carregarDados();
         fecharModais();
       } else {
-        exibirAlerta("Erro: " + (resp?.message || "Ocorreu um erro ao salvar"), 'error');
+        exibirAlerta("" + (resp?.message || "Ocorreu um erro ao salvar"), 'error');
       }
     } catch(e) {
       exibirAlerta("Erro ao conectar com o servidor.", 'error');
