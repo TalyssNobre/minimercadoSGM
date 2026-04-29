@@ -53,7 +53,7 @@ export const getMemberById = async(id) => {
         const results = await MemberModel.getMemberById(id);
         return{success : true, member : results}
     }catch(error){
-        return{error: "Erro ao buscar"}
+        return{error: "Membro não encontrado"}
     }
 }
 

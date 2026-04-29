@@ -7,19 +7,9 @@ import { revalidatePath } from "next/cache";
 
 export async function loginController({ email, password }) {
     try {
-        if (!email || !password) {
-            return { success: false, message: "Preencha todos os campos." };
-        }
-
         const result = await UserService.loginUser({ email, password });
-        if (result.error) {
-            return { success: false, message: result.error };
-        }
-
         return { success: true, user: result.user, message: "Login realizado com sucesso!"  };
-
     } catch (error) {
-        console.error("Erro no UserController:", error);
         return { success: false, message: error.message};
     }
 }
@@ -43,12 +33,6 @@ export async function registerUserAction(dataFront) {
         await authAdmin();
         const data = dataFront.data; 
         const result = await UserService.createUser({ data: data });
-
-        const erroReal = result.error || result.erro;
-        if (erroReal) {
-            return { success: false, message: erroReal };
-        }
-
         revalidatePath("/admin/users");
         return { success: true, message: "Usuário criado com sucesso!" };
 
@@ -72,11 +56,6 @@ export async function getLoggedUserController() {
     try {
         await authUser();
         const result = await UserService.getLoggedUserData();
-
-        if (result.error) {
-            return { success: false, message: result.error };
-        }
-
         return { success: true, user: result.user };
     } catch (error) {
         return { success: false, message: "Erro inesperado ao buscar usuário logado." };
@@ -86,13 +65,8 @@ export async function getLoggedUserController() {
 export async function getAllUsersController() {
     try {
         await authAdmin();
-        const result = await UserService.getAllUsers();
-        
-        if (result.erro) {
-            return { success: false, message: result.erro };
-        }
-        
-        return { success: true, users: result.usuarios };
+        const results = await UserService.getAllUsers();
+        return { success: true, users: results.user };
     } catch (error) {
         return { success: false, message: "Erro inesperado ao buscar usuários." };
     }

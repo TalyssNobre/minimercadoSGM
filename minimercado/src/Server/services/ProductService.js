@@ -3,62 +3,62 @@ import { getCategoryById } from '@/src/Server/services/CategoryService';
 import Product from "../entitys/ProductEntity";
 import * as ProductModel from "@/src/Server/models/ProductModel";
 
-export const createProduct = async({data, image}) => {
-        const supabase = await getSupabaseServer();
+export const createProduct = async({data, image}) => {  
+    const supabase = await getSupabaseServer();
 
-        if (data.combo && typeof data.combo === 'string') data.combo = JSON.parse(data.combo);
-        if (data.combo && Array.isArray(data.combo) && data.combo.length > 0) {
+    if (data.combo && typeof data.combo === 'string') data.combo = JSON.parse(data.combo);
+    if (data.combo && Array.isArray(data.combo) && data.combo.length > 0) {
         let valueItens = 0;
 
         for (const itens of data.combo) {
-                if (!itens.product_id || !itens.quantity) {
-                    throw new Error ( "Faltando ID ou quantidade.");
-                }
-                const results = await ProductModel.getProductById(itens.product_id); 
-                valueItens += Number(results.price) * Number(itens.quantity);
+            if (!itens.product_id || !itens.quantity) {
+                throw new Error ( "Faltando ID ou quantidade.");
             }
-        if (data.price > valueItens) {
-            throw new Error ("O valor do combo não pode ser maior que a soma os itens avulsos");
+            const results = await ProductModel.getProductById(itens.product_id); 
+            valueItens += Number(results.price) * Number(itens.quantity);
         }
+    if (data.price > valueItens) {
+        throw new Error ("O valor do combo não pode ser maior que a soma os itens avulsos");
     }
-
-
-        const productexisting = await ProductModel.findByName(data.name)
-        if(productexisting){
-            return{ error : "Produto já cadastrado"}
-        }
-        if (!data.combo) {
-            const searchCategoryProduct = await getCategoryById({id: data.category_id});
-            if (searchCategoryProduct.error) {
-                return { error: "Categoria Inexistente" };
-            }
 }
-        
-        let imageUrl = null;
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-        const MAX_SIZE = 2 * 1024 * 1024;   
 
-        if (!allowedTypes.includes(image.type)) {
-        return { error: "Formato de image inválido.Use JPG, PNG ou WebP" };
+
+    const productexisting = await ProductModel.findByName(data.name)
+    if(productexisting){
+        return{ error : "Produto já cadastrado"}
+    }
+    if (!data.combo) {
+        const searchCategoryProduct = await getCategoryById({id: data.category_id});
+        if (searchCategoryProduct.error) {
+            return { error: "Categoria Inexistente" };
         }
-              
-        if (image && image.size > 0 && image.size <= MAX_SIZE) {
-            const fileExt = image.name.split('.').pop();
-            const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
-            const fileBuffer = await image.arrayBuffer();
+}
+    
+    let imageUrl = null;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    const MAX_SIZE = 2 * 1024 * 1024;   
 
-            const { error: uploadError } = await supabase.storage.from('produtos').upload(fileName, fileBuffer, {contentType: image.type });
-            if (uploadError) return { error: "Erro ao fazer upload da image no Storage." };
+    if (!allowedTypes.includes(image.type)) {
+    return { error: "Formato de image inválido.Use JPG, PNG ou WebP" };
+    }
+        
+    if (image && image.size > 0 && image.size <= MAX_SIZE) {
+        const fileExt = image.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
+        const fileBuffer = await image.arrayBuffer();
 
-        const { data: publicUrlData } = supabase.storage.from('produtos').getPublicUrl(fileName);
+        const { error: uploadError } = await supabase.storage.from('produtos').upload(fileName, fileBuffer, {contentType: image.type });
+        if (uploadError) return { error: "Erro ao fazer upload da image no Storage." };
 
-        imageUrl = publicUrlData.publicUrl;
+    const { data: publicUrlData } = supabase.storage.from('produtos').getPublicUrl(fileName);
+
+    imageUrl = publicUrlData.publicUrl;
     }
 
     const finalData = {
     ...data,
     image: imageUrl
-}
+    }
 
     try {
         const productEntity = new Product(finalData); 
@@ -70,20 +70,19 @@ export const createProduct = async({data, image}) => {
     }
 };
 
-
 export const updateProduct = async ({ id, data, image }) => {
     const supabase = await getSupabaseServer();
-    try {
-        if (data.combo && typeof data.combo === 'string') data.combo = JSON.parse(data.combo);
-        if (data.combo && Array.isArray(data.combo) && data.combo.length > 0) {
+
+    if (data.combo && typeof data.combo === 'string') data.combo = JSON.parse(data.combo);
+    if (data.combo && Array.isArray(data.combo) && data.combo.length > 0) {
         let valueItens = 0;
 
         for (const itens of data.combo) {
-                if (!itens.product_id || !itens.quantity) {
-                    throw new Error ( "Faltando ID ou quantidade.");
+            if (!itens.product_id || !itens.quantity) {
+                throw new Error ( "Faltando ID ou quantidade.");
                 }
-                const results = await ProductModel.getProductById(itens.product_id); 
-                valueItens += Number(results.price) * Number(itens.quantity);
+            const results = await ProductModel.getProductById(itens.product_id); 
+            valueItens += Number(results.price) * Number(itens.quantity);
             }
         if (data.price > valueItens) {
             throw new Error ("O valor do combo não pode ser maior que a soma os itens avulsos");
@@ -132,6 +131,7 @@ export const updateProduct = async ({ id, data, image }) => {
             image: imageUrl
         };
 
+        try{
         const productEntity = new Product(finalData); 
         const results = await ProductModel.updateProduct(id, productEntity);
         return { success: true, product: results, message: "Produto atualizado com sucesso!" };
@@ -160,15 +160,11 @@ export const getAllProducts = async()=> {
 }
 
 export const getProductById = async(id) => {
-    const productexisting = await ProductModel.getProductById(data.id);
-    if(!productexisting){
-        return{error :  "O Produto não encontrado"}
-    }
      try{
         const results = await ProductModel.getProductById(id);
         return{success : true, product : results}
     }catch(error){
-        return{error: "Erro ao buscar produtos"}
+        return{error: "Produto não encontrado"}
     }
 }
 

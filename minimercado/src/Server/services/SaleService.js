@@ -5,9 +5,14 @@ import ItemSale from "../entitys/ItemSaleEntity";
 import * as ProductModel from "../models/ProductModel";
 import { ensureArray, safeParseJSON } from "../utils/formatter";
 
+<<<<<<< HEAD
 export const createSale = async ({ data, items }) => { 
     // 🟢 Garantindo que recebe a variável correta
     if (!items || !Array.isArray(items) || items.length === 0) {
+=======
+export const createSale = async ({ data, itensCarrinho }) => { 
+    if (!itensCarrinho || !Array.isArray(itensCarrinho) || itensCarrinho.length === 0) {
+>>>>>>> dbf4564cf3bd8e8abdd1f433fb863f10ec723cb9
         throw new Error("Não é possível finalizar uma venda sem itens no carrinho");
     }
     
@@ -70,7 +75,10 @@ export const createSale = async ({ data, items }) => {
         return { success: true, sale: results };
 
     } catch (error) {
+<<<<<<< HEAD
         console.error("🔴 ERRO CRÍTICO NO SALESERVICE:", error);
+=======
+>>>>>>> dbf4564cf3bd8e8abdd1f433fb863f10ec723cb9
         return { success: false, error: "Falha interna: " + error.message }; 
     }
 };
@@ -85,15 +93,11 @@ export const getAllSales = async() =>{
 }
 
 export const getSaleById = async(id) => {
-    const saleExisting = await SaleModel.getSaleById(id);
-    if(!saleExisting){
-        throw new Error("Venda não encontrada")
-    }
     try{
     const results = await SaleModel.getSaleById(id);
     return{sucess : true, sale: results}
     }catch(error){
-        return{sucess: false , error :"Erro ao buscar"}
+        return{sucess: false , error :"Venda não encontrada"}
     }
 }
 
