@@ -40,7 +40,6 @@ export function useDashboardData() {
             status: 'ATIVA', 
             payment_status: venda.status ? 'PAGO' : 'FIADO',
             discount: Number(venda.discount) || 0,
-            // 🟢 MUDANÇA: Mapeamos o novo item_discount que o backend está enviando!
             items: (venda.Item_sale || venda.item_sale || venda.items || []).map((item: any) => ({
               product_id: item.product_id,
               qty: item.quantity || item.qty,
@@ -67,31 +66,30 @@ export function useDashboardData() {
     const catTotals: Record<number, number> = {};
     categories.forEach(c => { catTotals[c.id] = 0; });
 
+    // 🟢 NOVO: Objeto para calcular o total vendido de cada produto (Curva ABC)
+    const prodTotals: Record<number, { nome: string; qtd: number; valor: number }> = {};
+
     const historico: HistoricoLinha[] = []; 
     const vendasValidas = sales.filter(s => s.status !== 'CANCELADA');
 
     vendasValidas.forEach(venda => {
-      // 🟢 O desconto geral da venda (para abater no final se precisar)
       const descontoExtraVenda = venda.discount || 0;
 
       venda.items.forEach(item => {
         const produto = products.find(p => p.id === item.product_id);
         
         if (produto) {
-          // 🟢 FIM DA REGRA DE TRÊS: Agora o cálculo é direto e exato!
           const valorItemBruto = item.qty * item.price;
           const descontoDesteItem = item.item_discount || 0;
           let valorItemLiquido = valorItemBruto - descontoDesteItem;
 
-          // Se a venda teve um desconto extra genérico no final (além das promoções), a gente divide só ele
-          // (Isso é raro, só acontece se você der desconto manual no carrinho)
           if (descontoExtraVenda > 0) {
               const valorBrutoVendaToda = venda.items.reduce((acc, i) => acc + (i.qty * i.price), 0);
               const proporcao = valorItemBruto / valorBrutoVendaToda;
               valorItemLiquido -= (descontoExtraVenda * proporcao);
           }
 
-          valorItemLiquido = Math.max(0, valorItemLiquido); // Nunca fica negativo
+          valorItemLiquido = Math.max(0, valorItemLiquido); 
 
           totalVendido += valorItemLiquido;
           if (venda.payment_status === 'PAGO') totalRecebido += valorItemLiquido;
@@ -100,6 +98,13 @@ export function useDashboardData() {
           if (catTotals[produto.category_id] !== undefined) {
             catTotals[produto.category_id] += valorItemLiquido;
           }
+
+          // 🟢 NOVO: Alimentando a Curva ABC
+          if (!prodTotals[produto.id]) {
+            prodTotals[produto.id] = { nome: produto.name, qtd: 0, valor: 0 };
+          }
+          prodTotals[produto.id].qtd += item.qty;
+          prodTotals[produto.id].valor += valorItemLiquido;
 
           historico.push({
             id_unico: `${venda.sale_id}-${produto.id}`,
@@ -111,17 +116,21 @@ export function useDashboardData() {
             qty: item.qty,
             pagamento: venda.payment_status,
             valor_total: valorItemBruto,
-            item_discount: descontoDesteItem, // 🟢 Guardamos o desconto isolado para exibir na tabela
+            item_discount: descontoDesteItem, 
             valor_liquido: valorItemLiquido
           });
         }
       });
     });
 
+    // 🟢 NOVO: Transforma o objeto em um Array e ordena do que mais faturou para o que menos faturou
+    const curvaABC = Object.values(prodTotals).sort((a, b) => b.valor - a.valor);
+
     return {
       totaisGerais: { totalVendido, totalRecebido, totalAReceber },
       totaisPorCategoria: catTotals,
-      historicoDesmembrado: historico.reverse()
+      historicoDesmembrado: historico.reverse(),
+      curvaABC // 🟢 Enviando a Curva ABC para a tela!
     };
   }, [categories, products, sales]);
 
