@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 
-// Componentes UI
+
 import { ModalAlerta } from '@/src/components/ui/ModalAlerta';
 import TabelaVendas from '@/src/components/HistoricoGeralVendas/TabelaVendas';
 import ModalCancelamento from '@/src/components/HistoricoGeralVendas/ModalCancelamento';

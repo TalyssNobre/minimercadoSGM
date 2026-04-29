@@ -7,6 +7,15 @@ export interface Product {
   id: number; 
   name: string;
   category_id: number; 
+  combo?: string | null; // 🟢 NOVO: TypeScript agora sabe que existe combo!
+}
+
+// 🟢 NOVO: Interface do formato do JSON do combo
+export interface ComboItem {
+  product_id?: number;
+  produto_id?: number;
+  quantity?: number;
+  qty?: number;
 }
 
 export interface ItemSale {
@@ -24,7 +33,7 @@ export interface Sale {
   status: 'ATIVA' | 'CANCELADA'; 
   payment_status: 'PAGO' | 'FIADO'; 
   items: ItemSale[]; 
-  discount?: number; // 🟢 Novo
+  discount?: number; 
 }
 
 export interface HistoricoLinha {
