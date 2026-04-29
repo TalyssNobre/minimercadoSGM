@@ -26,15 +26,11 @@ export const getAllCategory = async() => {
 }
 
 export const getCategoryById = async ({id}) => {
-    const  existingCategory = await CategoryModel.getCategoryById(id);
-    if(!existingCategory){
-        throw new Error("Categoria não existe");
-    }
     try{
         const results = await CategoryModel.getCategoryById(id);
         return{success : true, category : results}
     }catch(error){
-        return{error: "Erro ao buscar categoria"}
+        return{error: "Categoria não encontrada"}
     }
 }
 

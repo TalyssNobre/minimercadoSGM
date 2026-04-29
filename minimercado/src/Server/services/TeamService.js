@@ -47,13 +47,9 @@ export const getAllTeams = async() => {
 export const getTeamById = async (id) => {
     try {
         const results = await TeamModel.getTeamById(id);
-        if (!results) {
-            throw new Error("Time não encontrado");
-        }
-
         return { success: true, team: results };
     } catch (error) {
-        return { error: "Erro ao buscar time" };
+        return { error: "Time não encontrado" };
     }
 }
 

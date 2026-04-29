@@ -5,10 +5,11 @@ import ItemSale from "../entitys/ItemSaleEntity";
 import * as ProductModel from "../models/ProductModel";
 import { ensureArray, safeParseJSON } from "../utils/formatter";
 
-export const createSale = async ({ data, itensCarrinho }) => {
-    if (!itensCarrinho || itensCarrinho.length === 0) {
-            throw new Error("Não é possível finalizar uma venda sem itens no carrinho");
-        }
+export const createSale = async ({ data, itensCarrinho }) => { 
+    if (!itensCarrinho || !Array.isArray(itensCarrinho) || itensCarrinho.length === 0) {
+        throw new Error("Não é possível finalizar uma venda sem itens no carrinho");
+    }
+    
     try {
         const saleEntity = new Sale({ 
             ...data, 
@@ -16,7 +17,6 @@ export const createSale = async ({ data, itensCarrinho }) => {
             discount:  data.discount
         });
 
-    
         const dataSale = {
             date: saleEntity.date,
             total_value: saleEntity.total_value,
@@ -26,7 +26,6 @@ export const createSale = async ({ data, itensCarrinho }) => {
             member_id: saleEntity.member_id,
             discount : saleEntity.discount
         };
-        
 
         const results = await SaleModel.createSale(dataSale);
 
@@ -40,7 +39,8 @@ export const createSale = async ({ data, itensCarrinho }) => {
                 quantity: itemEntity.quantity,
                 unit_price: itemEntity.unit_price,
                 product_id: itemEntity.product_id,
-                sale_id: itemEntity.sale_id
+                sale_id: itemEntity.sale_id,
+                item_discount: itemEntity.item_discount || 0
             }; 
         });
 
@@ -50,7 +50,7 @@ export const createSale = async ({ data, itensCarrinho }) => {
             const newProduct = await ProductModel.getProductById(item.product_id);
 
             if (newProduct && newProduct.combo) {
-                const comboArray = ensureArray(safeParseJSON(newProduct.combo));
+                const comboArray = ensureArray(safeParseJSON(newProduct.combo) || []);
 
                 for (const itemDoCombo of comboArray) {
                     const idDoIngrediente = itemDoCombo.product_id || itemDoCombo.produto_id;
@@ -68,7 +68,7 @@ export const createSale = async ({ data, itensCarrinho }) => {
         return { success: true, sale: results };
 
     } catch (error) {
-        return { success: false, error: "Erro ao criar Venda"}; 
+        return { success: false, error: "Falha interna: " + error.message }; 
     }
 };
 
@@ -82,15 +82,11 @@ export const getAllSales = async() =>{
 }
 
 export const getSaleById = async(id) => {
-    const saleExisting = await SaleModel.getSaleById(id);
-    if(!saleExisting){
-        throw new Error("Venda não encontrada")
-    }
     try{
     const results = await SaleModel.getSaleById(id);
     return{sucess : true, sale: results}
     }catch(error){
-        return{sucess: false , error :"Erro ao buscar"}
+        return{sucess: false , error :"Venda não encontrada"}
     }
 }
 
@@ -118,7 +114,7 @@ export const deleteSale = async (id) => {
             const newProduct = await ProductModel.getProductById(item.product_id);
 
             if (newProduct && newProduct.combo) {
-                const comboArray = ensureArray(safeParseJSON(newProduct.combo));
+                const comboArray = ensureArray(safeParseJSON(newProduct.combo) || []);
 
                 for (const ingrediente of comboArray) {
                     const idDoIngrediente = ingrediente.product_id || ingrediente.produto_id;

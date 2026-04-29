@@ -37,8 +37,8 @@ export const loginUser = async ({email , password}) => {
         throw new Error("Email ou senha invalido")
     }
     try {
-        const userProfile = await UserModel.getUserById(authData.user.id);
-        return { success: true, user: userProfile };
+        const results = await UserModel.getUserById(authData.user.id);
+        return { success: true, user: results };
     } catch (error) {
         return { error: "Erro ao logar" };
     }
@@ -54,25 +54,20 @@ export const logoutUser = async () => {
 }
 
 export const getAllUsers = async() => {
-    const supabase = await getSupabaseServer();
-    const {data, error} = await supabase.from("User").select("*")
-    if(error){
-        return{erro : error.message};
-    } 
-    return{sucesso : true, usuarios: data};
+   try{
+    const results = await UserModel.getAllUsers();
+    return{success: true, user: results}
+   }catch(error){
+    return{error: "Erro ao buscar usuarios"}
+   }
 }
 
 export const getIdByUser = async({id}) => {
-    const supabase = await getSupabaseServer();
-    const {data: userId} = await supabase.from("User").select("*").eq("id", id).single()
-    if(!userId){
-    throw new Error("Usuario não encontrado");
-    }
     try{
         const results = await UserModel.getUserById(id);
-        return{success : true, team : results}
+        return{success : true, user : results}
     }catch(error){
-        return{error: "Erro ao buscar"}
+        return{error: " Usuario não encontrado"}
     }
 }
 
