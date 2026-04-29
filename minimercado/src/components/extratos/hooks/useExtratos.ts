@@ -66,7 +66,6 @@ export function useExtratos(exibirAlerta: (msg: string, tipo: 'success' | 'error
           const formatado: ItemAgrupado[] = todasVendas.map((venda: any) => {
             const bruto = Number(venda.total_value) || 0;
             
-            // 🟢 MÁGICA DO EXTRATO: Somando os descontos individuais!
             const itensVenda = venda.Item_sale || venda.item_sale || [];
             const totalDescontoItens = itensVenda.reduce((acc: number, item: any) => acc + (Number(item.item_discount) || 0), 0);
             const descontoGeral = Number(venda.discount) || 0;
@@ -74,15 +73,20 @@ export function useExtratos(exibirAlerta: (msg: string, tipo: 'success' | 'error
             const descontoFinal = totalDescontoItens + descontoGeral;
             const liquido = Math.max(0, bruto - descontoFinal);
             
-            const itensString = itensVenda.map((i: any) => `${i.quantity}x ${i.Product?.name || i.product?.name || 'Item'}`).join(', ') || 'Produtos Diversos';
+            // 🟢 MUDANÇA AQUI: Criamos um array de objetos ao invés de uma string
+            const itensArrayObj = itensVenda.map((i: any) => ({
+              quantity: i.quantity,
+              name: i.Product?.name || i.product?.name || 'Item',
+              item_discount: Number(i.item_discount) || 0
+            }));
 
             return {
               id_agrupado: venda.id.toString(), 
               sale_id: venda.id,
               date: formatDate(venda.date),
-              items_resumo: itensString,
+              items_resumo: itensArrayObj, // 🟢 Passando o Array puro
               valor_bruto: bruto,
-              desconto: descontoFinal, // 🟢 O desconto exato calculado vai pra tela!
+              desconto: descontoFinal,
               valor_liquido: liquido,
               status: venda.status ? 'PAGO' : 'PENDENTE'
             };

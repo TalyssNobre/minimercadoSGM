@@ -70,13 +70,31 @@ export default function TabelaExtrato({ activeTab, setActiveTab, comprasVisiveis
                 <td className="py-3 px-4 text-sm text-gray-800">{item.date}</td>
                 
                 <td className="py-3 px-4 text-sm text-gray-600">
-                  <div className="flex flex-wrap gap-1">
-                    {/* 🟢 Corta a string pelo vírgula e gera as etiquetas bonitinhas */}
-                    {item.items_resumo.split(', ').map((str, idx) => (
-                      <span key={idx} className="px-2 py-0.5 rounded text-xs border border-gray-200 bg-gray-50">
-                        {str}
-                      </span>
-                    ))}
+                  <div className="flex flex-wrap gap-1.5">
+                    {/* 🟢 Mapeando agora a lista de objetos igual nos outros lugares */}
+                    {item.items_resumo.map((produtoItem, idx) => {
+                      const descontoDoItem = produtoItem.item_discount || 0;
+                      const teveDesconto = descontoDoItem > 0;
+
+                      return (
+                        <span 
+                          key={idx} 
+                          className={`px-2 py-1 rounded text-xs border inline-flex items-center gap-1 ${
+                            teveDesconto 
+                              ? 'bg-orange-50 border-orange-200 text-orange-800 font-medium shadow-sm' 
+                              : 'bg-gray-50 border-gray-200 text-gray-600' 
+                          }`}
+                        >
+                          {produtoItem.quantity}x {produtoItem.name}
+                          
+                          {teveDesconto && (
+                            <span className="ml-1 text-orange-600 font-bold">
+                            -{formatCurrency(descontoDoItem)}
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })}
                   </div>
                 </td>
                 
@@ -87,7 +105,6 @@ export default function TabelaExtrato({ activeTab, setActiveTab, comprasVisiveis
                 </td>
                 
                 <td className="py-3 px-4 text-sm font-medium text-right flex flex-col items-end">
-                  {/* 🟢 Lógica idêntica ao Meu Histórico */}
                   <span className="font-bold text-base text-gray-800">
                     {formatCurrency(item.valor_liquido)}
                   </span>

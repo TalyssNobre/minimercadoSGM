@@ -1,8 +1,6 @@
 import React from 'react';
 import { Sale } from './types';
 
-// 🟢 Atualizei a interface Sale aqui localmente só para o typescript não chiar
-// (No seu sistema real, certifique-se de adicionar `discount?: number` no seu arquivo global types.ts)
 interface Props {
   vendas: (Sale & { discount?: number })[];
   isLoading: boolean;
@@ -40,7 +38,6 @@ export default function TabelaMinhasVendas({ vendas, isLoading, formatDate }: Pr
             </tr>
           ) : (
             vendas.map((venda) => {
-              // 🟢 A MÁGICA ACONTECE AQUI
               const desconto = venda.discount || 0;
               const valorBruto = venda.total_value || 0;
               const valorLiquido = valorBruto - desconto;
@@ -48,6 +45,7 @@ export default function TabelaMinhasVendas({ vendas, isLoading, formatDate }: Pr
               return (
                 <tr key={venda.id} className="hover:bg-gray-50 transition-colors">
                   <td className="py-3 px-4 text-sm text-gray-800">{formatDate(venda.date)}</td>
+                  
                   <td className="py-3 px-4 text-sm text-gray-600">
                     <div className="flex flex-col">
                       <span>{venda.member?.name || 'Cliente Avulso'}</span>
@@ -56,22 +54,44 @@ export default function TabelaMinhasVendas({ vendas, isLoading, formatDate }: Pr
                       )}
                     </div>
                   </td>
+                  
                   <td className="py-3 px-4 text-sm text-gray-600">
-                    <div className="flex flex-wrap gap-1">
-                      {venda.Item_sale?.map((item, idx) => (
-                        <span key={idx} className="px-2 py-0.5 rounded text-xs border border-gray-200 bg-gray-50">
-                          {item.quantity}x {item.Product?.name || 'Produto'}
-                        </span>
-                      ))}
+                    <div className="flex flex-wrap gap-1.5">
+                      {venda.Item_sale?.map((item, idx) => {
+                        // 🟢 VERIFICADOR DE DESCONTO INDIVIDUAL
+                        const descontoDoItem = item.item_discount || 0;
+                        const teveDesconto = descontoDoItem > 0;
+
+                        return (
+                          <span 
+                            key={idx} 
+                            className={`px-2 py-1 rounded text-xs border inline-flex items-center gap-1 ${
+                              teveDesconto 
+                                ? 'bg-orange-50 border-orange-200 text-orange-800 font-medium shadow-sm' // 🟠 Com Desconto
+                                : 'bg-gray-50 border-gray-200 text-gray-600' // ⚪ Sem Desconto
+                            }`}
+                          >
+                            {item.quantity}x {item.Product?.name || 'Produto'}
+                            
+                            {/* 🟢 SE TEVE DESCONTO, MOSTRA A QUEDA AQUI DENTRO! */}
+                            {teveDesconto && (
+                              <span className="ml-1 text-orange-600 font-bold">
+                              -{formatCurrency(descontoDoItem)}
+                              </span>
+                            )}
+                          </span>
+                        );
+                      })}
                     </div>
                   </td>
+                  
                   <td className="py-3 px-4 text-center">
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${venda.status ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                       {venda.status ? 'Pago' : 'Fiado'}
                     </span>
                   </td>
+                  
                   <td className="py-3 px-4 text-sm font-medium text-right flex flex-col items-end">
-                    {/* 🟢 SE TEVE DESCONTO, MOSTRA O VALOR FINAL E UMA ETIQUETA COM O BRUTO RISCADO */}
                     <span className="text-gray-900 font-bold text-base">
                       {formatCurrency(valorLiquido)}
                     </span>

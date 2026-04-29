@@ -39,7 +39,6 @@ export default function TabelaVendas({ isLoading, vendas, onCancelar }: Props) {
             </tr>
           ) : (
             vendas.map((venda) => {
-              // 🟢 A MÁGICA ACONTECE AQUI TAMBÉM
               const desconto = venda.discount || 0;
               const valorBruto = venda.total_value || 0;
               const valorLiquido = valorBruto - desconto;
@@ -49,22 +48,43 @@ export default function TabelaVendas({ isLoading, vendas, onCancelar }: Props) {
                   <td className="py-3 px-4 text-sm text-gray-800">{venda.date}</td>
                   <td className="py-3 px-4 text-sm text-gray-800 font-medium">{venda.operator_name}</td>
                   <td className="py-3 px-4 text-sm text-gray-600">{venda.client_name}</td>
+                  
                   <td className="py-3 px-4 text-sm text-gray-600">
-                    <div className="flex flex-wrap gap-1">
-                      {venda.items.map((item) => (
-                        <span key={item.id_item_sale || Math.random()} className="px-2 py-0.5 rounded text-xs border">
-                          {item.quantity}x {item.name}
-                        </span>
-                      ))}
+                    <div className="flex flex-wrap gap-1.5">
+                      {venda.items.map((item) => {
+                        // 🟢 VERIFICADOR DE DESCONTO INDIVIDUAL
+                        const descontoDoItem = item.item_discount || 0;
+                        const teveDesconto = descontoDoItem > 0;
+
+                        return (
+                          <span 
+                            key={item.id_item_sale || Math.random()} 
+                            className={`px-2 py-1 rounded text-xs border inline-flex items-center gap-1 ${
+                              teveDesconto 
+                                ? 'bg-orange-50 border-orange-200 text-orange-800 font-medium shadow-sm' // 🟠 Com Desconto
+                                : 'bg-gray-50 border-gray-200 text-gray-600' // ⚪ Sem Desconto
+                            }`}
+                          >
+                            {item.quantity}x {item.name}
+                            
+                            {/* 🟢 SE TEVE DESCONTO, MOSTRA A QUEDA AQUI DENTRO! */}
+                            {teveDesconto && (
+                              <span className="ml-1 text-orange-600 font-bold">
+                              -{formatCurrency(descontoDoItem)}
+                              </span>
+                            )}
+                          </span>
+                        );
+                      })}
                     </div>
                   </td>
+                  
                   <td className="py-3 px-4 text-center">
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${venda.status ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                       {venda.status ? 'Pago' : 'Fiado'}
                     </span>
                   </td>
                   <td className={`py-3 px-4 text-sm font-medium text-right flex flex-col items-end ${!venda.status ? 'text-gray-400' : 'text-gray-800'}`}>
-                    {/* 🟢 SE TEVE DESCONTO, MOSTRA O VALOR FINAL E A ETIQUETA */}
                     <span className="font-bold text-base">
                       {formatCurrency(valorLiquido)}
                     </span>
