@@ -66,7 +66,6 @@ export function useDashboardData() {
     const catTotals: Record<number, number> = {};
     categories.forEach(c => { catTotals[c.id] = 0; });
 
-    // 🟢 NOVO: Objeto para calcular o total vendido de cada produto (Curva ABC)
     const prodTotals: Record<number, { nome: string; qtd: number; valor: number }> = {};
 
     const historico: HistoricoLinha[] = []; 
@@ -99,7 +98,6 @@ export function useDashboardData() {
             catTotals[produto.category_id] += valorItemLiquido;
           }
 
-          // 🟢 NOVO: Alimentando a Curva ABC
           if (!prodTotals[produto.id]) {
             prodTotals[produto.id] = { nome: produto.name, qtd: 0, valor: 0 };
           }
@@ -123,14 +121,13 @@ export function useDashboardData() {
       });
     });
 
-    // 🟢 NOVO: Transforma o objeto em um Array e ordena do que mais faturou para o que menos faturou
     const curvaABC = Object.values(prodTotals).sort((a, b) => b.valor - a.valor);
 
     return {
       totaisGerais: { totalVendido, totalRecebido, totalAReceber },
       totaisPorCategoria: catTotals,
       historicoDesmembrado: historico.reverse(),
-      curvaABC // 🟢 Enviando a Curva ABC para a tela!
+      curvaABC
     };
   }, [categories, products, sales]);
 

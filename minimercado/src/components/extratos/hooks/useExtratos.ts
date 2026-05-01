@@ -64,28 +64,44 @@ export function useExtratos(exibirAlerta: (msg: string, tipo: 'success' | 'error
           const todasVendas = [...(res.pending || []), ...(res.paid || [])];
           
           const formatado: ItemAgrupado[] = todasVendas.map((venda: any) => {
-            const bruto = Number(venda.total_value) || 0;
-            
             const itensVenda = venda.Item_sale || venda.item_sale || [];
-            const totalDescontoItens = itensVenda.reduce((acc: number, item: any) => acc + (Number(item.item_discount) || 0), 0);
+            
+            // 🟢 MATEMÁTICA BLINDADA: Recalculando do zero a partir dos itens
+            let calculoBruto = 0;
+            let totalDescontoItens = 0;
+
+            const itensArrayObj = itensVenda.map((i: any) => {
+              // Puxa o preço de onde ele estiver salvo
+              const unitPrice = Number(i.unit_price) || Number(i.price) || Number(i.Product?.price) || Number(i.product?.price) || 0;
+              const quantity = Number(i.quantity) || 1;
+              const itemDiscount = Number(i.item_discount) || 0;
+              const totalBrutoItem = unitPrice * quantity;
+
+              calculoBruto += totalBrutoItem;
+              totalDescontoItens += itemDiscount;
+
+              return {
+                quantity: quantity,
+                name: i.Product?.name || i.product?.name || 'Item',
+                item_discount: itemDiscount,
+                unit_price: unitPrice,
+                total_bruto: totalBrutoItem
+              };
+            });
+
             const descontoGeral = Number(venda.discount) || 0;
-            
             const descontoFinal = totalDescontoItens + descontoGeral;
-            const liquido = Math.max(0, bruto - descontoFinal);
             
-            // 🟢 MUDANÇA AQUI: Criamos um array de objetos ao invés de uma string
-            const itensArrayObj = itensVenda.map((i: any) => ({
-              quantity: i.quantity,
-              name: i.Product?.name || i.product?.name || 'Item',
-              item_discount: Number(i.item_discount) || 0
-            }));
+            // Usamos o calculoBruto por segurança para garantir que a nota bata os centavos
+            const valorBrutoFinal = calculoBruto > 0 ? calculoBruto : (Number(venda.total_value) || 0);
+            const liquido = Math.max(0, valorBrutoFinal - descontoFinal);
 
             return {
               id_agrupado: venda.id.toString(), 
               sale_id: venda.id,
               date: formatDate(venda.date),
-              items_resumo: itensArrayObj, // 🟢 Passando o Array puro
-              valor_bruto: bruto,
+              items_resumo: itensArrayObj, 
+              valor_bruto: valorBrutoFinal,
               desconto: descontoFinal,
               valor_liquido: liquido,
               status: venda.status ? 'PAGO' : 'PENDENTE'
@@ -114,7 +130,9 @@ export function useExtratos(exibirAlerta: (msg: string, tipo: 'success' | 'error
     const pago = historicoBruto.filter(i => i.status === 'PAGO').reduce((a, c) => a + c.valor_liquido, 0);
     const pendente = historicoBruto.filter(i => i.status === 'PENDENTE').reduce((a, c) => a + c.valor_liquido, 0);
     const selecionado = comprasVisiveisAgrupadas.filter(i => selectedItems.includes(i.id_agrupado)).reduce((a, c) => a + c.valor_liquido, 0);
-    const descontos = historicoBruto.filter(i => i.status === 'PENDENTE').reduce((a, c) => a + c.desconto, 0);
+    
+    // 🟢 BUG CORRIGIDO: Agora o Front-end calcula os descontos apenas dos itens visíveis na aba atual
+    const descontos = comprasVisiveisAgrupadas.reduce((a, c) => a + c.desconto, 0);
 
     return { pago, pendente, selecionado, descontos };
   }, [selectedMember, comprasVisiveisAgrupadas, selectedItems, historicoBruto]);
@@ -141,7 +159,7 @@ export function useExtratos(exibirAlerta: (msg: string, tipo: 'success' | 'error
     }
   };
 
-  return {
+ return {
     equipes, membros,
     selectedTeam, setSelectedTeam,
     selectedMember, setSelectedMember,
@@ -150,6 +168,7 @@ export function useExtratos(exibirAlerta: (msg: string, tipo: 'success' | 'error
     isLoadingHistorico, isSubmitting,
     comprasVisiveisAgrupadas, totais,
     handleQuitarPendencia,
-    userRole
+    userRole,
+    historicoBruto
   };
 }
