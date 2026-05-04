@@ -11,6 +11,34 @@ export function useCarrinho() {
     setModalAlerta({ isOpen: true, mensagem, tipo });
   };
 
+  // 🟢 MÁGICA: O Carrinho agora sabe interpretar o Realtime!
+  const atualizarItemPeloRealtime = (payload: any) => {
+    if (payload.eventType === 'UPDATE' && payload.new) {
+      setCart((prevCart) => prevCart.map(item => {
+        // Se o produto que mudou no banco estiver no carrinho...
+        if (item.product.id === payload.new.id) {
+          const precoOriginal = Number(payload.new.price) || 0;
+          const emPromo = Boolean(payload.new.promo_status);
+          const precoPromo = Number(payload.new.promo_price) || 0;
+          const precoEfetivo = (emPromo && precoPromo > 0) ? precoPromo : precoOriginal;
+
+          // Atualizamos a "foto" dele dentro do carrinho
+          return {
+            ...item,
+            product: {
+              ...item.product,
+              stock: Number(payload.new.stock) || 0,
+              promo_status: emPromo,
+              base_price: precoOriginal,
+              price: precoEfetivo
+            }
+          };
+        }
+        return item;
+      }));
+    }
+  };
+
   const cartSubtotal = useMemo(() => {
     return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   }, [cart]);
@@ -71,6 +99,7 @@ export function useCarrinho() {
     valorDescontoInput, setValorDescontoInput,
     cartSubtotal, valorDescontoCalculado, cartTotalFinal,
     addToCart, updateQuantity, removeFromCart, limparCarrinho,
-    modalAlerta, setModalAlerta, exibirAlerta
+    modalAlerta, setModalAlerta, exibirAlerta,
+    atualizarItemPeloRealtime // 🟢 Exportamos a função para a página
   };
 }

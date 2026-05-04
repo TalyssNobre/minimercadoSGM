@@ -1,17 +1,24 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getAllCategory } from '@/src/Server/controllers/CategoryController';
 import { getAllProducts } from '@/src/Server/controllers/ProductController';
-import { getAllSales, getStatsForProduct } from '@/src/Server/controllers/SaleController'; 
-import { Category, Product, Sale } from '../types'; // Removido o HistoricoLinha daqui
+import { getAllSales } from '@/src/Server/controllers/SaleController'; 
+import { Category, Product, Sale, HistoricoLinha } from '../types';
 
-export function useDashboardData() {
+export function useHistoricoCategoria() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const apenasData = dateString.split('T')[0];
+    const [ano, mes, dia] = apenasData.split('-');
+    return `${dia}/${mes}/${ano}`;
+  };
+
   useEffect(() => {
-    async function carregarDashboard() {
+    async function carregarDados() {
       setIsLoading(true);
       try {
         const [catRes, prodRes, salesRes] = await Promise.all([
@@ -27,8 +34,14 @@ export function useDashboardData() {
           const rawSales = Array.isArray(salesRes.data) ? salesRes.data : [];
           const vendasMapeadas: Sale[] = rawSales.map((venda: any) => ({
             sale_id: venda.id || venda.sale_id,
+            date: formatDate(venda.date),
+            operator_name: venda.user?.name || venda.User?.name || venda.operator_name || 'Sistema', 
+            client_name: venda.member?.name || venda.Member?.name || venda.client_name || 'Avulso', 
+            
+            // 🟢 CORREÇÃO AQUI: Venda entra como ATIVA. O "venda.status" serve apenas para PAGO/FIADO!
             status: 'ATIVA', 
             payment_status: venda.status ? 'PAGO' : 'FIADO',
+            
             discount: Number(venda.discount) || 0,
             items: (venda.Item_sale || venda.item_sale || venda.items || []).map((item: any) => ({
               product_id: item.product_id,
@@ -40,24 +53,16 @@ export function useDashboardData() {
           setSales(vendasMapeadas);
         }
       } catch (error) {
-        console.error("Erro ao carregar dados do Dashboard:", error);
+        console.error("Erro ao carregar histórico:", error);
       } finally {
         setIsLoading(false);
       }
     }
-    carregarDashboard();
+    carregarDados();
   }, []);
 
-  const metricas = useMemo(() => {
-    let totalVendido = 0;
-    let totalRecebido = 0;
-    let totalAReceber = 0;
-    
-    const catTotals: Record<number, number> = {};
-    categories.forEach(c => { catTotals[c.id] = 0; });
-
-    const prodTotals: Record<number, { nome: string; qtd: number; valor: number }> = {};
-
+  const historicoDesmembrado = useMemo(() => {
+    const historico: HistoricoLinha[] = []; 
     const vendasValidas = sales.filter(s => s.status !== 'CANCELADA');
 
     vendasValidas.forEach(venda => {
@@ -79,48 +84,25 @@ export function useDashboardData() {
 
           valorItemLiquido = Math.max(0, valorItemLiquido); 
 
-          totalVendido += valorItemLiquido;
-          if (venda.payment_status === 'PAGO') totalRecebido += valorItemLiquido;
-          if (venda.payment_status === 'FIADO') totalAReceber += valorItemLiquido;
-
-          if (catTotals[produto.category_id] !== undefined) {
-            catTotals[produto.category_id] += valorItemLiquido;
-          }
-
-          if (!prodTotals[produto.id]) {
-            prodTotals[produto.id] = { nome: produto.name, qtd: 0, valor: 0 };
-          }
-          prodTotals[produto.id].qtd += item.qty;
-          prodTotals[produto.id].valor += valorItemLiquido;
+          historico.push({
+            id_unico: `${venda.sale_id}-${produto.id}`,
+            data: venda.date,
+            operador: venda.operator_name,
+            cliente: venda.client_name,
+            produto_nome: produto.name,
+            categoria_id: produto.category_id,
+            qty: item.qty,
+            pagamento: venda.payment_status, // 🟢 FIADO e PAGO aparecerão corretos agora!
+            valor_total: valorItemBruto,
+            item_discount: descontoDesteItem, 
+            valor_liquido: valorItemLiquido
+          });
         }
       });
     });
 
-    const curvaABC = Object.values(prodTotals).sort((a, b) => b.valor - a.valor);
+    return historico.reverse();
+  }, [products, sales]);
 
-    return {
-      totaisGerais: { totalVendido, totalRecebido, totalAReceber },
-      totaisPorCategoria: catTotals,
-      curvaABC
-    };
-  }, [categories, products, sales]);
-
-  const fetchProductStats = async (productId: number | string) => {
-    if (!productId) return null;
-    try {
-      const response = await getStatsForProduct(productId) as any;
-      if (response?.success) return response.data; 
-    } catch (error) {
-      console.error("Erro ao buscar estatísticas do produto:", error);
-    }
-    return null;
-  };
-
-  return { 
-    categories, 
-    products, 
-    isLoading, 
-    fetchProductStats, 
-    ...metricas 
-  };
+  return { categories, historicoDesmembrado, isLoading };
 }

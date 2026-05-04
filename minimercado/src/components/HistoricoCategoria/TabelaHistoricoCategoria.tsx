@@ -8,7 +8,7 @@ interface Props {
   setActiveTab: (tab: string | number) => void;
 }
 
-export default function TabelaHistorico({ categories, historico, activeTab, setActiveTab }: Props) {
+export default function TabelaHistoricoCategoria({ categories, historico, activeTab, setActiveTab }: Props) {
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   const historicoFiltrado = useMemo(() => {
@@ -19,7 +19,7 @@ export default function TabelaHistorico({ categories, historico, activeTab, setA
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-8">
       <div className="p-6 border-b border-gray-100">
-        <h2 className="text-lg font-bold text-gray-800 mb-4">Histórico de Vendas - Setores</h2>
+        <h2 className="text-lg font-bold text-gray-800 mb-4">Histórico de Vendas</h2>
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           <button
             onClick={() => setActiveTab('Todos')}
@@ -43,7 +43,7 @@ export default function TabelaHistorico({ categories, historico, activeTab, setA
         </div>
       </div>
 
-      <div className="overflow-x-auto overflow-y-auto max-h-[400px] relative">
+      <div className="overflow-x-auto overflow-y-auto max-h-[600px] relative">
         <table className="w-full text-left border-collapse min-w-[800px]">
           <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
             <tr>
@@ -58,7 +58,6 @@ export default function TabelaHistorico({ categories, historico, activeTab, setA
           </thead>
           <tbody className="divide-y divide-gray-100 bg-white">
             {historicoFiltrado.map((linha) => {
-              // 🟢 A MÁGICA VISUAL AQUI
               const liquido = linha.valor_liquido ?? linha.valor_total;
               const temDesconto = liquido < linha.valor_total;
 

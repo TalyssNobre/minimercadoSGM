@@ -7,7 +7,10 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
   const [vendas, setVendas] = useState<Venda[]>([]);
   const [operadores, setOperadores] = useState<Operador[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // 🟢 Novos Estados de Filtro
   const [filtroVendedor, setFiltroVendedor] = useState<string>('Todos');
+  const [filtroData, setFiltroData] = useState<string>(''); // YYYY-MM-DD
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
@@ -28,10 +31,8 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
       if (response?.success && response?.data) {
         const dadosBrutos = Array.isArray(response.data) ? response.data : (response.data.sale || []);
         
-        const vendasFormatadas: Venda[] = dadosBrutos.map((row: any) => {
+        let vendasFormatadas: Venda[] = dadosBrutos.map((row: any) => {
           const itensBrutos = row.Item_sale || row.item_sale || row.itemSale || [];
-          
-          // 🟢 MÁGICA: Somando os descontos individuais da nova coluna no banco!
           const totalDescontoItens = itensBrutos.reduce((acc: number, item: any) => acc + (Number(item.item_discount) || 0), 0);
           const descontoGeral = Number(row.discount) || 0;
           const descontoRealTotal = totalDescontoItens + descontoGeral;
@@ -43,16 +44,20 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
             operator_name: row.User?.name || row.user?.name || 'Desconhecido',
             client_name: row.Member?.name || row.member?.name || 'Cliente Avulso',
             total_value: Number(row.total_value) || 0, 
-            discount: descontoRealTotal, // 🟢 Mandando o desconto exato para a tabela
+            discount: descontoRealTotal, 
             status: Boolean(row.status), 
             items: itensBrutos.map((item: any) => ({
               id_item_sale: item.id_item_sale, 
               name: item.Product?.name || item.product?.name || 'Produto',
               quantity: item.quantity,
-              item_discount: Number(item.item_discount) || 0 // 🟢 Mapeado pro Front
+              item_discount: Number(item.item_discount) || 0
             }))
           };
         });
+
+        // 🟢 ORDENAÇÃO: Mais novas no topo (Maior ID primeiro)
+        vendasFormatadas.sort((a, b) => b.sale_id - a.sale_id);
+
         setVendas(vendasFormatadas);
       }
     } catch (error) {
@@ -67,12 +72,24 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
     fetchDados();
   }, []);
 
+  // 🟢 FILTRAGEM COMBINADA (Vendedor + Data)
   const vendasFiltradas = useMemo(() => {
-    if (filtroVendedor === 'Todos') return vendas;
-    return vendas.filter(v => v.operator_id.toString() === filtroVendedor);
-  }, [vendas, filtroVendedor]);
+    let filtrado = vendas;
 
-  // A matemática já está correta, subtraindo o desconto (que agora é exato) do total
+    if (filtroVendedor !== 'Todos') {
+      filtrado = filtrado.filter(v => v.operator_id.toString() === filtroVendedor);
+    }
+
+    if (filtroData) {
+      // Converte YYYY-MM-DD do input date para DD/MM/YYYY do nosso sistema
+      const [ano, mes, dia] = filtroData.split('-');
+      const dataBuscada = `${dia}/${mes}/${ano}`;
+      filtrado = filtrado.filter(v => v.date === dataBuscada);
+    }
+
+    return filtrado;
+  }, [vendas, filtroVendedor, filtroData]);
+
   const totalFiltrado = useMemo(() => {
     return vendasFiltradas.filter(v => v.status === true).reduce((acc, curr) => acc + (curr.total_value - (curr.discount || 0)), 0);
   }, [vendasFiltradas]);
@@ -97,6 +114,7 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
     operadores,
     isLoading,
     filtroVendedor, setFiltroVendedor,
+    filtroData, setFiltroData, // 🟢 Exportando para a página
     vendasFiltradas,
     totalFiltrado,
     cancelarVenda

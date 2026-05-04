@@ -21,7 +21,11 @@ export default function CaixaPage() {
   const { equipes, membros, produtos, categorias, isLoading, atualizarDados, atualizarProdutoAoVivo } = usePDVDados();
   const carrinho = useCarrinho();
 
-  useRealtimeSync('Product', atualizarProdutoAoVivo);
+  // 🟢 MUDANÇA AQUI: O Realtime agora avisa a prateleira E o carrinho ao mesmo tempo!
+  useRealtimeSync('Product', (payload) => {
+    atualizarProdutoAoVivo(payload); // Atualiza os cards na grade
+    carrinho.atualizarItemPeloRealtime(payload); // Atualiza os preços dentro do carrinho
+  });
 
   const [selectedTeam, setSelectedTeam] = useState<Equipe | null>(null);
   const [selectedMember, setSelectedMember] = useState<Membro | null>(null);
@@ -49,23 +53,19 @@ export default function CaixaPage() {
       formData.append('user_id', vendedorId.toString());
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
       
-      // 🟢 MUDANÇA AQUI: Criamos o array de itens passando o desconto de cada um individualmente
       const itensCarrinho = carrinho.cart.map(item => {
         const precoBase = item.product.base_price || item.product.price;
         const precoEfetivo = item.product.price;
-        
-        // Calcula quanto de desconto esse item específico teve no total (ex: 2 pipocas com R$ 1 de desconto = R$ 2)
         const descontoDesteItem = (precoBase - precoEfetivo) * item.quantity;
 
         return {
           product_id: item.product.id,
           quantity: item.quantity,
           unit_price: precoBase,
-          item_discount: descontoDesteItem // 🟢 NOVA COLUNA ENVIADA PARA O BANCO
+          item_discount: descontoDesteItem 
         };
       });
 
-      // 🟢 MUDANÇA AQUI: O desconto geral da venda agora é APENAS o desconto extra dado manualmente no input do carrinho
       formData.append('discount', carrinho.valorDescontoCalculado.toString());
 
       const agora = new Date();

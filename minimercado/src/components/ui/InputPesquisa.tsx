@@ -33,7 +33,7 @@ export function InputPesquisa({ placeholder = "Pesquisar produto...", value, onC
 
       <input
         type="text"
-        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0D9488] focus:border-[#0D9488] sm:text-sm transition-all shadow-sm"
+        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0D9488] focus:border-[#0D9488] text-base md:text-sm transition-all shadow-sm"
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}

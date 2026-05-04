@@ -7,28 +7,20 @@ export default function SistemaLayout({ children }: { children: React.ReactNode 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       
-      {/* Menu Lateral */}
+      {/* Menu Lateral (Onde fica o Header Mobile agora) */}
       <Sidebar />
 
-      {/* 🟢 Área Direita: Tiramos o pt-36 daqui, pois ele travava o buraco na tela */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         <Topbar tipoUsuario="admin" />
         
-        {/* O main é a caixa que realmente tem o scroll (overflow-y-auto) */}
         <main className="flex-1 overflow-y-auto">
-          
-          {/* 🟢 O SEGREDO ESTÁ AQUI: 
-              Colocamos "pt-40" (espaço exato das duas barras + um respiro) DENTRO do conteúdo.
-              Como ele está aqui dentro, ao rolar a página para baixo, esse espaço rola junto e some,
-              fazendo o seu sistema usar a tela inteira do celular!
-              No PC (md:p-8), ele volta a ter a margem padrão.
-          */}
-          <div className="p-4 pt-40 md:p-8 max-w-7xl mx-auto">
+          {/* 🟢 ESPAÇO AJUSTADO: pt-24 no celular por causa do header novo, p-8 no PC */}
+          <div className="p-4 pt-24 md:p-8 md:pt-8 max-w-7xl mx-auto">
             {children}
           </div>
-
         </main>
+
       </div>
     </div>
   );

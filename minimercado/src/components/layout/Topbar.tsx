@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { logoutController, getLoggedUserController } from '@/src/Server/controllers/UserController';  
 
@@ -11,30 +11,8 @@ interface TopbarProps {
 export default function Topbar({ tipoUsuario }: TopbarProps) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  
   const [nomeUsuario, setNomeUsuario] = useState<string>('Carregando...');
   const [cargoUsuario, setCargoUsuario] = useState<string>(tipoUsuario);
-
-  // 🟢 CONTROLE DE SCROLL SUAVE PARA O MOBILE (Em sincronia com a Sidebar)
-  const [showTopbar, setShowTopbar] = useState(true);
-  const lastScrollY = useRef(0);
-
-  useEffect(() => {
-    const handleScroll = (e: any) => {
-      const currentScrollY = e.target.scrollTop || window.scrollY;
-      if (currentScrollY === undefined) return;
-
-      if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
-        setShowTopbar(false); 
-      } else {
-        setShowTopbar(true);  
-      }
-      lastScrollY.current = currentScrollY;
-    };
-
-    window.addEventListener('scroll', handleScroll, true);
-    return () => window.removeEventListener('scroll', handleScroll, true);
-  }, []);
 
   useEffect(() => {
     async function fetchUser() {
@@ -53,12 +31,13 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
           setNomeUsuario('Usuário');
         }
       } catch (error) {
-        setNomeUsuario('Usuário');
+          setNomeUsuario('Usuário');
       }
     }
     fetchUser();
   }, []);
 
+  // 🟢 FUNÇÃO DE LOGOUT DE VOLTA À TOPBAR
   const handleLogout = async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
@@ -79,26 +58,22 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
   };
 
   return (
-    // 🟢 MAGIA AQUI: No mobile ela é fixed abaixo da outra barra. No PC é sticky normal.
-    // O translate puxa ela totalmente pra fora da tela no mobile sem dar pulos.
-    <nav 
-      className={`w-full bg-verde-principal h-20 text-white shadow-lg px-6 flex justify-between items-center transition-transform duration-300 ease-in-out z-[50]
-      fixed top-16 left-0 md:static md:sticky md:top-0 md:left-auto
-      ${showTopbar ? 'translate-y-0' : '-translate-y-36 md:translate-y-0'}`}
-    >
+    // 🟢 Barra visível apenas no PC (hidden md:flex)
+    <nav className="hidden md:flex w-full bg-[#0D9488] h-20 text-white shadow-lg px-6 justify-between items-center z-[50] sticky top-0">
+      
       <div className="flex items-center">
         <div className="w-10"></div>
       </div>
 
       <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-3">
-        <div className="w-12 h-12 md:w-14 md:h-14 bg-white rounded-full shadow-sm flex items-center justify-center overflow-hidden">
+        <div className="w-14 h-14 bg-white rounded-full shadow-sm flex items-center justify-center overflow-hidden">
           <img src="/logo.svg" alt="Logo" className="w-full h-full object-cover scale-125" />
         </div>
-        <span className="text-xl md:text-2xl font-medium tracking-wide">Segue-me</span>
+        <span className="text-2xl font-medium tracking-wide">Segue-me</span>
       </div>
 
       <div className="flex items-center space-x-3">
-        <div className="hidden sm:flex flex-col text-right leading-none mr-2">
+        <div className="flex flex-col text-right leading-none mr-2">
           <span className="text-sm font-bold tracking-wide">
             {nomeUsuario}
           </span>
@@ -107,6 +82,7 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
           </span>
         </div>
         
+        {/* 🟢 BOTÃO DE SAIR RECOLOCADO */}
         <button 
           onClick={handleLogout}
           disabled={isLoggingOut}
@@ -123,6 +99,7 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
             </svg>
           )}
         </button>
+
       </div>
     </nav>
   );

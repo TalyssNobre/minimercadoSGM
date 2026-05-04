@@ -7,14 +7,6 @@ export interface Product {
   id: number; 
   name: string;
   category_id: number; 
-  combo?: string | null; 
-}
-
-export interface ComboItem {
-  product_id?: number;
-  produto_id?: number;
-  quantity?: number;
-  qty?: number;
 }
 
 export interface ItemSale {
@@ -35,3 +27,16 @@ export interface Sale {
   discount?: number; 
 }
 
+export interface HistoricoLinha {
+  id_unico: string;
+  data: string;
+  operador: string;
+  cliente: string;
+  produto_nome: string;
+  categoria_id: number;
+  qty: number;
+  pagamento: string;
+  valor_total: number;
+  item_discount: number;
+  valor_liquido: number; 
+}

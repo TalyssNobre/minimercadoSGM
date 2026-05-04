@@ -38,9 +38,9 @@ export const RelatorioExtrato = forwardRef<HTMLDivElement, RelatorioExtratoProps
 
         {/* INFO DO CLIENTE */}
         <div className="border-b border-dashed border-black pb-2 mb-2 text-[11px] leading-tight">
-          <p><strong>CLI:</strong> {membro.name.toUpperCase()}</p>
-          <p><strong>EQP:</strong> {equipe.name.toUpperCase()}</p>
-          <p><strong>SIT:</strong> CONTA FECHADA</p>
+          <p><strong>iNTEGRANTE:</strong> {membro.name.toUpperCase()}</p>
+          <p><strong>EQUIPE:</strong> {equipe.name.toUpperCase()}</p>
+          <p><strong>SITUAÇÃO:</strong> CONTA FECHADA</p>
         </div>
 
         {/* LISTA DE PRODUTOS */}
