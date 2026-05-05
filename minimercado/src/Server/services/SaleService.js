@@ -54,8 +54,8 @@ export const createSale = async ({ data, items }) => {
                 const comboArray = ensureArray(safeParseJSON(newProduct.combo) || []);
 
                 for (const itemDoCombo of comboArray) {
-                    const idDoIngrediente = itemDoCombo.product_id || itemDoCombo.produto_id;
-                    const qtdDoIngrediente = itemDoCombo.quantity || itemDoCombo.qty;
+                    const idDoIngrediente = itemDoCombo.product_id;
+                    const qtdDoIngrediente = itemDoCombo.quantity;
 
                     if (!idDoIngrediente) continue; 
 
@@ -69,8 +69,7 @@ export const createSale = async ({ data, items }) => {
         return { success: true, sale: results };
 
     } catch (error) {
-        console.error("🔴 ERRO CRÍTICO NO SALESERVICE:", error);
-        return { success: false, error: "Falha interna: " + error.message }; 
+        return { success: false, error: error.message }; 
     }
 };
 
@@ -123,8 +122,8 @@ export const deleteSale = async (id) => {
                 const comboArray = ensureArray(safeParseJSON(newProduct.combo) || []);
 
                 for (const ingrediente of comboArray) {
-                    const idDoIngrediente = ingrediente.product_id || ingrediente.produto_id;
-                    const qtdDoIngrediente = ingrediente.quantity || ingrediente.qty;
+                    const idDoIngrediente = ingrediente.product_id;
+                    const qtdDoIngrediente = ingrediente.quantity;
 
                     if (!idDoIngrediente) continue;
 
