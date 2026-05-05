@@ -5,7 +5,8 @@ interface RelatorioProps {
   totaisGerais: { totalVendido: number; totalRecebido: number; totalAReceber: number };
   totaisPorCategoria: Record<number, number>;
   categories: Category[];
-  curvaABC: { nome: string; qtd: number; valor: number }[];
+  // 🟢 Garantimos que o TypeScript sabe que existe o desconto vindo do backend
+  curvaABC: { nome: string; qtd: number; valor: number; desconto?: number }[]; 
 }
 
 export const RelatorioFechamento = forwardRef<HTMLDivElement, RelatorioProps>(
@@ -80,10 +81,14 @@ export const RelatorioFechamento = forwardRef<HTMLDivElement, RelatorioProps>(
             <thead>
               <tr className="bg-gray-100">
                 <th className="border border-gray-300 px-3 py-2 font-bold text-xs">Produto</th>
-                <th className="border border-gray-300 px-3 py-2 font-bold text-xs text-center w-28 text-gray-600">Qtd. Adquirida<br/><span className="text-[9px] font-normal">(Preencher)</span></th>
-                <th className="border border-gray-300 px-3 py-2 font-bold text-xs text-center w-24">Qtd. Vendida</th>
-                <th className="border border-gray-300 px-3 py-2 font-bold text-xs text-center w-28 text-gray-600">Sobras<br/><span className="text-[9px] font-normal">(Preencher)</span></th>
-                <th className="border border-gray-300 px-3 py-2 font-bold text-xs text-right w-28">Faturamento</th>
+                <th className="border border-gray-300 px-3 py-2 font-bold text-xs text-center w-24 text-gray-600">Qtd. Adquirida<br/><span className="text-[9px] font-normal">(Preencher)</span></th>
+                <th className="border border-gray-300 px-3 py-2 font-bold text-xs text-center w-20">Qtd. Vendida</th>
+                <th className="border border-gray-300 px-3 py-2 font-bold text-xs text-center w-24 text-gray-600">Sobras<br/><span className="text-[9px] font-normal">(Preencher)</span></th>
+                
+                {/* 🟢 Coluna de Desconto - AGORA O SISTEMA IMPRIME O VALOR */}
+                <th className="border border-gray-300 px-3 py-2 font-bold text-xs text-right w-24 text-rose-600">Desconto<br/>Aplicado</th>
+                
+                <th className="border border-gray-300 px-3 py-2 font-bold text-xs text-right w-28">Faturamento<br/>Líquido</th>
               </tr>
             </thead>
             <tbody>
@@ -93,6 +98,11 @@ export const RelatorioFechamento = forwardRef<HTMLDivElement, RelatorioProps>(
                   <td className="border border-gray-300 px-3 py-2 text-sm bg-white"></td>
                   <td className="border border-gray-300 px-3 py-2 text-sm text-center font-bold bg-gray-50">{prod.qtd} un</td>
                   <td className="border border-gray-300 px-3 py-2 text-sm bg-white"></td>
+                  
+                <td className="border border-gray-300 px-3 py-2 text-sm text-right font-bold text-rose-600">
+                {prod.desconto && prod.desconto > 0 ? formatCurrency(prod.desconto) : '-'}
+                </td>
+
                   <td className="border border-gray-300 px-3 py-2 text-sm text-right font-bold text-gray-700">{formatCurrency(prod.valor)}</td>
                 </tr>
               ))}
