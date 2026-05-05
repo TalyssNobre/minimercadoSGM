@@ -78,7 +78,6 @@ export default function Sidebar() {
     { section: 'Operação', name: 'Frente de Caixa (PDV)', href: '/caixa', icon: (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121 0 2.1-.716 2.454-1.777l1.527-4.577a1.125 1.125 0 00-1.07-1.465H5.437m0 0L7.25 14.25z" /></svg>) },
     { section: 'Operação', name: 'Receber Fiado (Extratos)', href: '/extratos', icon: (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>) },
     { section: 'Auditoria & Relatórios', name: 'Histórico Usuarios', href: '/admin/historico-vendas', icon: (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>) },
-    // 🟢 ROTA DO NOVO HISTÓRICO ADICIONADA AQUI!
     { section: 'Auditoria & Relatórios', name: 'Histórico por Categoria', href: '/admin/historico-categoria', icon: (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" /></svg>) },
     { section: 'Auditoria & Relatórios', name: 'Meu Histórico', href: '/meu-historico', icon: (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>) },
     { section: 'Gestão de Produtos', name: 'Gerenciar Estoque', href: '/admin/estoque', icon: (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>) },
@@ -149,7 +148,12 @@ export default function Sidebar() {
                     </div>
                   </>
                 )}
-                <Link href={item.href} className={`flex items-center px-6 py-3 transition-all hover:bg-white/10 group ${isActive ? 'bg-white/20 border-r-4 border-white' : ''}`}>
+                {/* 🟢 ADICIONADO prefetch={false} AQUI! */}
+                <Link 
+                  href={item.href} 
+                  prefetch={false} 
+                  className={`flex items-center px-6 py-3 transition-all hover:bg-white/10 group ${isActive ? 'bg-white/20 border-r-4 border-white' : ''}`}
+                >
                   <div className="flex-shrink-0">{item.icon}</div>
                   <span className={`ml-4 font-medium text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? 'md:opacity-0 md:w-0 md:ml-0' : 'opacity-100'}`}>
                     {item.name}
@@ -160,7 +164,7 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* 🟢 O BOTÃO DE SAIR NO FINAL DA SIDEBAR (APENAS PARA CELULAR - md:hidden) */}
+        {/* O BOTÃO DE SAIR NO FINAL DA SIDEBAR */}
         <div className="md:hidden mt-auto border-t border-white/10 p-4">
           <button 
             onClick={handleLogout}
