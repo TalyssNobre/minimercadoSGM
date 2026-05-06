@@ -8,9 +8,14 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const ratelimit = new Ratelimit({
+const operatorLimiter = new Ratelimit({
   redis: redis,
   limiter: Ratelimit.slidingWindow(40, '10 s'),
+});
+
+const adminLimiter = new Ratelimit({
+  redis: redis,
+  limiter: Ratelimit.slidingWindow(100, '10 s'),
 });
 
 export async function proxy(request: NextRequest) {
@@ -36,17 +41,22 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+ const { data: { user } } = await supabase.auth.getUser();
+  let userRole = 'public';
 
+  if (user) {
+    const { data: dbUser } = await supabase.from('User').select('profile').eq('user_id', user.id).single();
+  }
+
+  const limiter = (userRole === 'Admin') ? adminLimiter : operatorLimiter;
   const identifier = user ? user.id : (request.headers.get('x-forwarded-for') ?? '127.0.0.1');
-  const { success } = await ratelimit.limit(identifier);
+  const { success } = await limiter.limit(identifier);
 
   if (!success) {
-    return new NextResponse('Muitas requisições. Espere um pouco!', { status: 429 });
+    return new NextResponse("Muitas requisições . Espere um pouco", { status: 429 });
   }
 
   const pathname = request.nextUrl.pathname;
-
 
   const rotasProtegidas = ['/caixa', '/extratos', '/admin', '/meu-historico'];
   const isRotaProtegida = rotasProtegidas.some(rota => pathname.startsWith(rota));
