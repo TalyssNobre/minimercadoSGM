@@ -2,7 +2,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation'; 
-import { getLoggedUserController, logoutController } from '@/src/Server/controllers/UserController'; 
+import { logoutController } from '@/src/Server/controllers/UserController'; 
+
+// 🟢 IMPORTAMOS O NOSSO NOVO HOOK CENTRAL!
+import { useUsuario } from '@/src/hooks/useUsuario';
 
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false); 
@@ -10,8 +13,10 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter(); 
 
-  const [cargoUsuario, setCargoUsuario] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false); 
+
+  // 🟢 MAGIA ACONTECENDO: Puxamos o cargo com apenas uma linha, sem useEffect!
+  const { cargoUsuario } = useUsuario();
 
   // CONTROLE DE SCROLL SUAVE PARA O MOBILE 
   const [showMobileHeader, setShowMobileHeader] = useState(true);
@@ -32,22 +37,6 @@ export default function Sidebar() {
 
     window.addEventListener('scroll', handleScroll, true);
     return () => window.removeEventListener('scroll', handleScroll, true);
-  }, []);
-
-  useEffect(() => {
-    async function fetchUserRole() {
-      try {
-        const resposta = await getLoggedUserController();
-        if (resposta.success && resposta.user?.profile) {
-          setCargoUsuario(resposta.user.profile);
-        } else {
-          setCargoUsuario('Operador');
-        }
-      } catch (error) {
-        setCargoUsuario('Operador');
-      }
-    }
-    fetchUserRole();
   }, []);
 
   useEffect(() => {

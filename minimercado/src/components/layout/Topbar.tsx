@@ -1,8 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { logoutController, getLoggedUserController } from '@/src/Server/controllers/UserController';  
+import { logoutController } from '@/src/Server/controllers/UserController'; 
+
+// 🟢 1. IMPORTAMOS O NOSSO HOOK CENTRAL
+import { useUsuario } from '@/src/hooks/useUsuario';
 
 interface TopbarProps {
   tipoUsuario: 'admin' | 'operador';
@@ -11,33 +14,20 @@ interface TopbarProps {
 export default function Topbar({ tipoUsuario }: TopbarProps) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [nomeUsuario, setNomeUsuario] = useState<string>('Carregando...');
-  const [cargoUsuario, setCargoUsuario] = useState<string>(tipoUsuario);
 
-  useEffect(() => {
-    async function fetchUser() {
-      try {
-        const resposta = await getLoggedUserController();
-        if (resposta.success && resposta.user) {
-          const nomeParaSplit = resposta.user.name || 'Usuário';
-          const primeiroNome = nomeParaSplit.split(' ')[0];
-          
-          setNomeUsuario(primeiroNome);
-          
-          if (resposta.user.profile) {
-            setCargoUsuario(resposta.user.profile);
-          }
-        } else {
-          setNomeUsuario('Usuário');
-        }
-      } catch (error) {
-          setNomeUsuario('Usuário');
-      }
-    }
-    fetchUser();
-  }, []);
+  // 🟢 2. PUXAMOS OS DADOS INSTANTANEAMENTE DA MEMÓRIA DO SWR
+  const { user, cargoUsuario, isLoading } = useUsuario();
 
-  // 🟢 FUNÇÃO DE LOGOUT DE VOLTA À TOPBAR
+  // 🟢 3. LÓGICA DE NOME E CARGO SIMPLIFICADA (Sem precisar de useEffect)
+  const nomeUsuario = isLoading 
+    ? 'Carregando...' 
+    : (user?.name ? user.name.split(' ')[0] : 'Usuário');
+    
+  const cargoExibicao = isLoading 
+    ? '...' 
+    : (cargoUsuario || tipoUsuario);
+
+  // FUNÇÃO DE LOGOUT 
   const handleLogout = async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
@@ -58,7 +48,7 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
   };
 
   return (
-    // 🟢 Barra visível apenas no PC (hidden md:flex)
+    // Barra visível apenas no PC (hidden md:flex)
     <nav className="hidden md:flex w-full bg-[#0D9488] h-20 text-white shadow-lg px-6 justify-between items-center z-[50] sticky top-0">
       
       <div className="flex items-center">
@@ -78,11 +68,11 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
             {nomeUsuario}
           </span>
           <span className="text-[10px] uppercase font-medium opacity-80 mt-1">
-            {cargoUsuario}
+            {cargoExibicao}
           </span>
         </div>
         
-        {/* 🟢 BOTÃO DE SAIR RECOLOCADO */}
+        {/* BOTÃO DE SAIR */}
         <button 
           onClick={handleLogout}
           disabled={isLoggingOut}

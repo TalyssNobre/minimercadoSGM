@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { getLoggedUserController } from '@/src/Server/controllers/UserController';
 import { getAllSales } from '@/src/Server/controllers/SaleController'; 
-import { User, Sale } from '../types';
+import { Sale } from '../types';
+
+
+import { useUsuario } from '@/src/hooks/useUsuario';
 
 export function useMeuHistorico() {
-  const [operadorAtual, setOperadorAtual] = useState<User | null>(null);
-  const [vendas, setVendas] = useState<Sale[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // 🟢 2. PEGAMOS O USUÁRIO INSTANTANEAMENTE DA MEMÓRIA
+  const { user, isLoading: isUserLoading } = useUsuario();
   
-  // 🟢 NOVO: Estado para o filtro de data
+  const [vendas, setVendas] = useState<Sale[]>([]);
+  const [isLoadingSales, setIsLoadingSales] = useState(true);
   const [filtroData, setFiltroData] = useState<string>('');
 
   const formatDate = (dateString: string) => {
@@ -19,90 +21,93 @@ export function useMeuHistorico() {
   };
 
   const carregarDadosDoSupabase = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const userResp = await getLoggedUserController();
-      const userLogado = (userResp as any)?.user || (userResp as any)?.data?.user;
+    // 🟢 3. Se ainda não temos o ID do usuário, não fazemos nada.
+    if (!user?.id) return;
 
-      if (userLogado && userLogado.id) {
-        setOperadorAtual({ 
-          id: userLogado.id, 
-          name: userLogado.name || 'Operador', 
-          user_id: userLogado.id.toString() 
+    setIsLoadingSales(true);
+    try {
+      const salesResp = await getAllSales() as any;
+      
+      if (salesResp?.success && salesResp?.data) {
+        const todasVendas = Array.isArray(salesResp.data) ? salesResp.data : (salesResp.data.sale || []);
+        
+        // 🟢 4. Usamos o ID que veio direto do nosso Hook do SWR!
+        const minhasVendas = todasVendas.filter((v: any) => v.user_id === user.id);
+
+        const vendasFormatadas: Sale[] = minhasVendas.map((row: any) => {
+          const itensBrutos = row.Item_sale || row.item_sale || [];
+          const membroBruto = row.Member || row.member || null;
+
+          const totalDescontoDosItens = itensBrutos.reduce((acc: number, item: any) => acc + (Number(item.item_discount) || 0), 0);
+          const descontoGeralDaVenda = Number(row.discount) || 0;
+          const descontoRealTotal = totalDescontoDosItens + descontoGeralDaVenda;
+
+          return {
+            id: row.id,
+            date: row.date, 
+            total_value: Number(row.total_value) || 0,
+            discount: descontoRealTotal, 
+            status: row.status, 
+            payment_date: row.payment_date,
+            member: {
+              name: membroBruto?.name || 'Cliente Avulso',
+              Team: { name: membroBruto?.Team?.name || membroBruto?.team?.name || '' }
+            },
+            Item_sale: itensBrutos.map((item: any) => ({
+              quantity: item.quantity,
+              item_discount: Number(item.item_discount) || 0, 
+              Product: { name: item.Product?.name || item.product?.name || 'Produto' }
+            }))
+          };
         });
 
-        const salesResp = await getAllSales() as any;
-        
-        if (salesResp?.success && salesResp?.data) {
-          const todasVendas = Array.isArray(salesResp.data) ? salesResp.data : (salesResp.data.sale || []);
-          
-          const minhasVendas = todasVendas.filter((v: any) => v.user_id === userLogado.id);
-
-          const vendasFormatadas: Sale[] = minhasVendas.map((row: any) => {
-            const itensBrutos = row.Item_sale || row.item_sale || [];
-            const membroBruto = row.Member || row.member || null;
-
-            const totalDescontoDosItens = itensBrutos.reduce((acc: number, item: any) => acc + (Number(item.item_discount) || 0), 0);
-            const descontoGeralDaVenda = Number(row.discount) || 0;
-            const descontoRealTotal = totalDescontoDosItens + descontoGeralDaVenda;
-
-            return {
-              id: row.id,
-              date: row.date, 
-              total_value: Number(row.total_value) || 0,
-              discount: descontoRealTotal, 
-              status: row.status, 
-              payment_date: row.payment_date,
-              member: {
-                name: membroBruto?.name || 'Cliente Avulso',
-                Team: { name: membroBruto?.Team?.name || membroBruto?.team?.name || '' }
-              },
-              Item_sale: itensBrutos.map((item: any) => ({
-                quantity: item.quantity,
-                item_discount: Number(item.item_discount) || 0, 
-                Product: { name: item.Product?.name || item.product?.name || 'Produto' }
-              }))
-            };
-          });
-
-          // 🟢 ORDENAÇÃO: Mais novas no topo
-          vendasFormatadas.sort((a, b) => b.id - a.id);
-
-          setVendas(vendasFormatadas);
-        }
-      } else {
-        setOperadorAtual({ id: 0, name: 'Sessão Expirada', user_id: '' });
+        // ORDENAÇÃO: Mais novas no topo
+        vendasFormatadas.sort((a, b) => b.id - a.id);
+        setVendas(vendasFormatadas);
       }
     } catch (error) {
       console.error("Erro ao buscar histórico:", error);
     } finally {
-      setIsLoading(false);
+      setIsLoadingSales(false);
     }
-  }, []);
+  }, [user?.id]); // 🟢 A função agora depende exclusivamente do ID do usuário
 
+  // 🟢 5. "Escutamos" o usuário. Assim que o SWR entregar o usuário, buscamos as vendas dele.
   useEffect(() => {
-    carregarDadosDoSupabase();
-  }, [carregarDadosDoSupabase]);
+    if (user?.id) {
+      carregarDadosDoSupabase();
+    } else if (!isUserLoading && !user) {
+      // Se não está carregando e não tem usuário, para de girar o loading
+      setIsLoadingSales(false);
+    }
+  }, [user?.id, isUserLoading, carregarDadosDoSupabase]);
 
-  // 🟢 FILTRAGEM POR DATA
+  // 🟢 6. Montamos o objeto "operadorAtual" dinamicamente para não quebrar a sua página .tsx
+  const operadorAtual = user 
+    ? { id: user.id, name: user.name || 'Operador', user_id: user.id.toString() } 
+    : { id: 0, name: 'Sessão Expirada', user_id: '' };
+
+  // FILTRAGEM POR DATA
   const vendasFiltradas = useMemo(() => {
     if (!filtroData) return vendas;
-    // O banco costuma retornar data no formato ISO (YYYY-MM-DD...), então startsWith funciona perfeitamente
     return vendas.filter(v => v.date.startsWith(filtroData));
   }, [vendas, filtroData]);
 
-  // 🟢 TOTAIS RECALCULADOS (Baseados nas vendas já filtradas!)
+  // TOTAIS RECALCULADOS 
   const totalVendidoPago = vendasFiltradas.filter(v => v.status === true).reduce((acc, curr) => acc + ((curr.total_value || 0) - (curr.discount || 0)), 0);
   const totalVendidoFiado = vendasFiltradas.filter(v => v.status === false).reduce((acc, curr) => acc + ((curr.total_value || 0) - (curr.discount || 0)), 0);
 
+  // 🟢 7. O tempo de loading total é a soma de descobrir quem é o usuário + baixar as vendas
+  const isLoadingFinal = isUserLoading || isLoadingSales;
+
   return { 
     operadorAtual, 
-    vendasFiltradas, // 🟢 Exportamos a filtrada no lugar da normal
-    isLoading, 
+    vendasFiltradas, 
+    isLoading: isLoadingFinal, 
     totalVendidoPago, 
     totalVendidoFiado,
     formatDate,
-    filtroData, setFiltroData, // 🟢 Exportamos o controle do input
+    filtroData, setFiltroData, 
     atualizarDados: carregarDadosDoSupabase 
   };
 }
