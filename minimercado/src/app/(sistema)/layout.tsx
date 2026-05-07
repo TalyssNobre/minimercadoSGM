@@ -15,8 +15,7 @@ export default function SistemaLayout({ children }: { children: React.ReactNode 
         <Topbar tipoUsuario="admin" />
         
         <main className="flex-1 overflow-y-auto">
-          {/* 🟢 ESPAÇO AJUSTADO: pt-24 no celular por causa do header novo, p-8 no PC */}
-          <div className="p-4 pt-24 md:p-8 md:pt-8 max-w-7xl mx-auto">
+          <div className="p-4 pt-24 md:px-8 md:pb-8 lg:p-8 lg:pt-8 max-w-7xl mx-auto">
             {children}
           </div>
         </main>

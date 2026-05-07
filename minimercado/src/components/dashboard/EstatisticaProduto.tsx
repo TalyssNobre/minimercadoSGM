@@ -1,16 +1,14 @@
 import React, { useState, useMemo } from 'react';
-// 🟢 Importamos o ComboItem oficial direto do types
 import { Product, ComboItem } from './types'; 
 import { InputPesquisa } from '@/src/components/ui/InputPesquisa';
 
 interface Props {
-  produtos: Product[]; // 🟢 Voltou a ser simples, pois o Product já tem o combo no types
+  produtos: Product[]; 
   fetchStats: (id: number | string) => Promise<{ quantidadeSold: number; totalArrecadado: number; totalDesconto: number } | null>;
 }
 
 export default function EstatisticaProduto({ produtos, fetchStats }: Props) {
   const [termoPesquisa, setTermoPesquisa] = useState('');
-  // 🟢 Tipagem simplificada
   const [produtoSelecionado, setProdutoSelecionado] = useState<Product | null>(null);
   const [stats, setStats] = useState({ quantidadeSold: 0, totalArrecadado: 0, totalDesconto: 0 });
   const [isLoading, setIsLoading] = useState(false);
@@ -91,36 +89,54 @@ export default function EstatisticaProduto({ produtos, fetchStats }: Props) {
       {produtoSelecionado ? (
         <div className="animate-in fade-in slide-in-from-top-2 duration-300">
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-blue-50 border border-blue-100 p-5 rounded-xl flex items-center gap-4">
-               <div className="w-10 h-10 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 flex-shrink-0">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4" /></svg>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
+            
+            {/* CARD UNIDADES */}
+            <div className="bg-blue-50 border border-blue-100 p-4 lg:p-5 rounded-xl flex items-center justify-start gap-3 lg:gap-4">
+               <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 flex-shrink-0">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 lg:w-6 lg:h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4" /></svg>
                </div>
-               <div>
-                 <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Unidades</p>
-                 <p className="text-2xl font-black text-blue-900">{isLoading ? "..." : `${stats.quantidadeSold} un`}</p>
-               </div>
-            </div>
-
-            <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-xl flex items-center gap-4">
-               <div className="w-10 h-10 rounded-full bg-emerald-200 flex items-center justify-center text-emerald-700 flex-shrink-0">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0" /></svg>
-               </div>
-               <div>
-                 <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Faturamento Líquido</p>
-                 <p className="text-2xl font-black text-emerald-900">{isLoading ? "..." : formatCurrency(stats.totalArrecadado)}</p>
+               <div className="flex flex-col justify-center flex-1 min-w-0">
+                 <p className="text-[11px] lg:text-sm font-semibold text-blue-600 uppercase tracking-wide leading-normal">
+                   Unidades
+                 </p>
+                 {/* 🟢 Adicionado leading-normal para evitar o corte no topo das fontes pesadas */}
+                 <p className="text-base md:text-base lg:text-xl xl:text-2xl font-black text-blue-900 leading-normal">
+                   {isLoading ? "..." : `${stats.quantidadeSold} un`}
+                 </p>
                </div>
             </div>
 
-            <div className="bg-rose-50 border border-rose-100 p-5 rounded-xl flex items-center gap-4">
-               <div className="w-10 h-10 rounded-full bg-rose-200 flex items-center justify-center text-rose-700 flex-shrink-0">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a1.125 1.125 0 001.591 0l7.181-7.181a1.125 1.125 0 000-1.591l-9.581-9.581c-.422-.422-.994-.659-1.591-.659zM6 7.125a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>
+            {/* CARD FATURAMENTO */}
+            <div className="bg-emerald-50 border border-emerald-100 p-4 lg:p-5 rounded-xl flex items-center justify-start gap-3 lg:gap-4">
+               <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-emerald-200 flex items-center justify-center text-emerald-700 flex-shrink-0">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 lg:w-6 lg:h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0" /></svg>
                </div>
-               <div>
-                 <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Desconto Aplicado</p>
-                 <p className="text-2xl font-black text-rose-900">{isLoading ? "..." : formatCurrency(stats.totalDesconto)}</p>
+               <div className="flex flex-col justify-center flex-1 min-w-0">
+                 <p className="text-[11px] lg:text-sm font-semibold text-emerald-600 uppercase tracking-wide leading-normal">
+                   Fat. Líquido
+                 </p>
+                 <p className="text-base md:text-base lg:text-xl xl:text-2xl font-black text-emerald-900 leading-normal">
+                   {isLoading ? "..." : formatCurrency(stats.totalArrecadado)}
+                 </p>
                </div>
             </div>
+
+            {/* CARD DESCONTOS */}
+            <div className="bg-rose-50 border border-rose-100 p-4 lg:p-5 rounded-xl flex items-center justify-start gap-3 lg:gap-4">
+               <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-rose-200 flex items-center justify-center text-rose-700 flex-shrink-0">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 lg:w-6 lg:h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a1.125 1.125 0 001.591 0l7.181-7.181a1.125 1.125 0 000-1.591l-9.581-9.581c-.422-.422-.994-.659-1.591-.659zM6 7.125a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>
+               </div>
+               <div className="flex flex-col justify-center flex-1 min-w-0">
+                 <p className="text-[11px] lg:text-sm font-semibold text-rose-600 uppercase tracking-wide leading-normal">
+                   Descontos
+                 </p>
+                 <p className="text-base md:text-base lg:text-xl xl:text-2xl font-black text-rose-900 leading-normal">
+                   {isLoading ? "..." : formatCurrency(stats.totalDesconto)}
+                 </p>
+               </div>
+            </div>
+            
           </div>
 
           {!isLoading && impactoEstoque.length > 0 && (

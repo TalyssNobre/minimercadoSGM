@@ -86,7 +86,7 @@ export default function Sidebar() {
     <>
       {/* HEADER MOBILE */}
       <div 
-        className={`md:hidden bg-[#0D9488] text-white px-4 flex justify-between items-center shadow-md fixed left-0 w-full z-[60] top-0 h-16 transition-transform duration-300 ease-in-out ${showMobileHeader ? 'translate-y-0' : '-translate-y-full'}`}
+        className={`lg:hidden bg-[#0D9488] text-white px-4 flex justify-between items-center shadow-md fixed left-0 w-full z-[60] top-0 h-16 transition-transform duration-300 ease-in-out ${showMobileHeader ? 'translate-y-0' : '-translate-y-full'}`}
       >
         <h1 className="font-bold text-lg tracking-wide">MiniMercado SGM</h1>
         <button onClick={() => setIsMobileOpen(true)} className="p-2 bg-white/10 rounded-md">
@@ -97,22 +97,22 @@ export default function Sidebar() {
       </div>
 
       {isMobileOpen && (
-        <div className="md:hidden fixed inset-0 bg-black/50 z-[70] backdrop-blur-sm" onClick={() => setIsMobileOpen(false)} />
+        <div className="lg:hidden fixed inset-0 bg-black/50 z-[70] backdrop-blur-sm" onClick={() => setIsMobileOpen(false)} />
       )}
 
-      <aside className={`bg-[#0F766E] text-white min-h-screen transition-all duration-300 flex flex-col fixed top-0 z-[80] shadow-2xl h-full ${isMobileOpen ? 'left-0 w-64' : '-left-full md:left-0'} md:relative md:flex ${isCollapsed ? 'md:w-20' : 'md:w-64'}`}>
+      <aside className={`bg-[#0F766E] text-white min-h-screen transition-all duration-300 flex flex-col fixed top-0 z-[80] shadow-2xl h-full ${isMobileOpen ? 'left-0 w-64' : '-left-full lg:left-0'} lg:relative lg:flex ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}`}>
         
         {/* LOGO / BOTÃO RECOLHER MENU */}
         <div className="p-4 flex justify-between items-center border-b border-white/10">
-          <span className={`font-bold text-lg tracking-wide whitespace-nowrap overflow-hidden transition-opacity ${isCollapsed ? 'md:opacity-0 md:w-0' : 'opacity-100'}`}>
+          <span className={`font-bold text-lg tracking-wide whitespace-nowrap overflow-hidden transition-opacity ${isCollapsed ? 'lg:opacity-0 lg:w-0' : 'opacity-100'}`}>
             Menu
           </span>
-          <button onClick={() => setIsMobileOpen(false)} className="md:hidden p-2 hover:bg-white/10 rounded-md">
+          <button onClick={() => setIsMobileOpen(false)} className="lg:hidden p-2 hover:bg-white/10 rounded-md">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden md:block p-2 hover:bg-white/10 rounded-md transition-colors">
+          <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden lg:block p-2 hover:bg-white/10 rounded-md transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
@@ -132,7 +132,7 @@ export default function Sidebar() {
                     <div className={`px-6 pt-6 pb-2 text-[0.65rem] font-bold text-[#5EEAD4] uppercase tracking-wider transition-all duration-300 ${isCollapsed ? 'hidden' : 'block'}`}>
                       {item.section}
                     </div>
-                    <div className={`hidden ${isCollapsed ? 'md:block' : 'hidden'} w-full px-4 pt-4 pb-2`}>
+                    <div className={`hidden ${isCollapsed ? 'lg:block' : 'hidden'} w-full px-4 pt-4 pb-2`}>
                       <div className="border-t border-white/20 w-full"></div>
                     </div>
                   </>
@@ -144,7 +144,7 @@ export default function Sidebar() {
                   className={`flex items-center px-6 py-3 transition-all hover:bg-white/10 group ${isActive ? 'bg-white/20 border-r-4 border-white' : ''}`}
                 >
                   <div className="flex-shrink-0">{item.icon}</div>
-                  <span className={`ml-4 font-medium text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? 'md:opacity-0 md:w-0 md:ml-0' : 'opacity-100'}`}>
+                  <span className={`ml-4 font-medium text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? 'lg:opacity-0 lg:w-0 lg:ml-0' : 'opacity-100'}`}>
                     {item.name}
                   </span>
                 </Link>
@@ -154,7 +154,7 @@ export default function Sidebar() {
         </nav>
 
         {/* O BOTÃO DE SAIR NO FINAL DA SIDEBAR */}
-        <div className="md:hidden mt-auto border-t border-white/10 p-4">
+        <div className="lg:hidden mt-auto border-t border-white/10 p-4">
           <button 
             onClick={handleLogout}
             disabled={isLoggingOut}
@@ -169,7 +169,7 @@ export default function Sidebar() {
                 </svg>
               )}
             </div>
-            <span className={`ml-4 font-bold text-sm whitespace-nowrap overflow-hidden transition-all duration-300 text-white ${isCollapsed ? 'md:opacity-0 md:w-0 md:ml-0' : 'opacity-100'}`}>
+            <span className={`ml-4 font-bold text-sm whitespace-nowrap overflow-hidden transition-all duration-300 text-white ${isCollapsed ? 'lg:opacity-0 lg:w-0 lg:ml-0' : 'opacity-100'}`}>
               {isLoggingOut ? 'Saindo...' : 'Sair do Sistema'}
             </span>
           </button>

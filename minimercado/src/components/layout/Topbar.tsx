@@ -48,8 +48,9 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
   };
 
   return (
-    // Barra visível apenas no PC (hidden md:flex)
-    <nav className="hidden md:flex w-full bg-[#0D9488] h-20 text-white shadow-lg px-6 justify-between items-center z-[50] sticky top-0">
+    // 🟢 Trocado "hidden md:flex" por "hidden lg:flex" 
+    // Agora a Topbar some no iPad e só aparece em PC (>= 1024px)
+    <nav className="hidden lg:flex w-full bg-[#0D9488] h-20 text-white shadow-lg px-6 justify-between items-center z-[50] sticky top-0">
       
       <div className="flex items-center">
         <div className="w-10"></div>
