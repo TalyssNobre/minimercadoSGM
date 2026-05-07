@@ -21,10 +21,9 @@ export default function CaixaPage() {
   const { equipes, membros, produtos, categorias, isLoading, atualizarDados, atualizarProdutoAoVivo } = usePDVDados();
   const carrinho = useCarrinho();
 
-  // 🟢 MUDANÇA AQUI: O Realtime agora avisa a prateleira E o carrinho ao mesmo tempo!
   useRealtimeSync('Product', (payload) => {
-    atualizarProdutoAoVivo(payload); // Atualiza os cards na grade
-    carrinho.atualizarItemPeloRealtime(payload); // Atualiza os preços dentro do carrinho
+    atualizarProdutoAoVivo(payload); 
+    carrinho.atualizarItemPeloRealtime(payload); 
   });
 
   const [selectedTeam, setSelectedTeam] = useState<Equipe | null>(null);
@@ -103,8 +102,8 @@ export default function CaixaPage() {
     <div className="max-w-7xl mx-auto py-4 text-left">
       <div className="flex flex-col lg:flex-row gap-6 relative">
         
-        {/* Lado Esquerdo */}
-        <div className="flex-1 space-y-6">
+        {/* 🟢 Lado Esquerdo - min-w-0 ADICIONADO AQUI! */}
+        <div className="flex-1 min-w-0 space-y-6">
           <SelecaoCliente 
             equipes={equipes} membros={membros}
             selectedTeam={selectedTeam} setSelectedTeam={setSelectedTeam}

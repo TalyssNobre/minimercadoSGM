@@ -66,12 +66,17 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
           placeholder="Buscar Produto..."
           value={searchQuery}
           onChange={setSearchQuery}
-          className="w-full md:w-64"
+          className="w-full md:w-64 flex-shrink-0"
         />
 
-        <div className="flex-1 flex gap-2 overflow-x-auto pb-2 scrollbar-hide md:justify-end">
+        {/* 🟢 SCROLL FINO E OPACO AQUI: Trocado scrollbar-hide pelo scrollbar-thin cinza claro */}
+        <div className="flex-1 min-w-0 flex gap-2 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-gray-200 hover:scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {categorias.map(cat => (
-            <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap active:scale-95 ${selectedCategory === cat ? 'bg-[#0D9488] text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'}`}>
+            <button 
+              key={cat} 
+              onClick={() => setSelectedCategory(cat)} 
+              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap active:scale-95 ${selectedCategory === cat ? 'bg-[#0D9488] text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'}`}
+            >
               {cat}
             </button>
           ))}
@@ -82,7 +87,6 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
         <div className="text-center py-10 text-gray-500 animate-pulse font-medium">Carregando estoque...</div>
       ) : (
         <>
-          {/* 🟢 BLINDAGEM 1: overflowAnchor: 'none' e altura fixa para impedir que a tela dance */}
           <div 
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-4 content-start"
             style={{ minHeight: '850px', overflowAnchor: 'none' }}
@@ -158,7 +162,7 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
-                  e.currentTarget.blur(); // 🟢 BLINDAGEM 2: Tira o foco do botão para o navegador não tentar ancorar nele
+                  e.currentTarget.blur(); 
                   setCurrentPage(p => Math.max(1, p - 1));
                 }}
                 disabled={currentPage === 1}
@@ -177,7 +181,7 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
-                  e.currentTarget.blur(); // 🟢 BLINDAGEM 2: Tira o foco do botão para o navegador não tentar ancorar nele
+                  e.currentTarget.blur(); 
                   setCurrentPage(p => Math.min(totalPages, p + 1));
                 }}
                 disabled={currentPage === totalPages}
