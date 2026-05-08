@@ -30,7 +30,7 @@ export default class Sale {
         if (this.status === false && !this.member_id) {
             throw new Error("Venda fiada precisa obrigatoriamente de um Cliente.");
         }
-        if(this.total_value < this.discount ){
+        if(this.total_value <= this.discount ){
             throw new Error("O desconto não pode ser maior que o preço original")
         }
     }
