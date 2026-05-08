@@ -1,7 +1,8 @@
-import * as SaleModel from "../models/SaleModel";
-import * as ItemSaleModel from "../models/ItemSaleModel";
 import Sale from "../entitys/SaleEntity";
+import * as SaleModel from "../models/SaleModel";
 import ItemSale from "../entitys/ItemSaleEntity";
+import * as ItemSaleModel from "../models/ItemSaleModel";
+import Product from "../entitys/ProductEntity";
 import * as ProductModel from "../models/ProductModel";
 import { ensureArray, safeParseJSON } from "../utils/formatter";
 
@@ -12,9 +13,28 @@ export const createSale = async ({ data, items }) => {
     }
     
     try {
+        const dataFrontVerify = [];
+
+        for (const item of items) {
+            const newProduct = await ProductModel.getProductById(item.product_id);
+            if (!newProduct) throw new Error("Produto não encontrado.");
+
+            const produtoEntity = new Product(newProduct);
+            
+            const newPrice = produtoEntity.PromoPrice; 
+            const newDiscount = Number(item.item_discount) || 0;
+
+            dataFrontVerify.push({
+                ...item,
+                unit_price: newPrice,
+                price: newPrice,
+                item_discount: newDiscount
+            });
+        }
+
         const saleEntity = new Sale({ 
             ...data, 
-            items: items,
+            items: dataFrontVerify,
             discount:  data.discount
         });
 
@@ -38,7 +58,7 @@ export const createSale = async ({ data, items }) => {
 
             return {
                 quantity: itemEntity.quantity,
-                unit_price: itemEntity.unit_price,
+                unit_price: itemEntity.unit_price, 
                 product_id: itemEntity.product_id,
                 sale_id: itemEntity.sale_id,
                 item_discount: itemEntity.item_discount || 0
@@ -67,7 +87,6 @@ export const createSale = async ({ data, items }) => {
             }
         }
         return { success: true, sale: results };
-
     } catch (error) {
         return { success: false, error: error.message }; 
     }
