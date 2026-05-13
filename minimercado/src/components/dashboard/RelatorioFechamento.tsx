@@ -26,7 +26,7 @@ export const RelatorioFechamento = forwardRef<HTMLDivElement, RelatorioProps>(
             <span>Cidade/UF: ____________</span>
           </div>
           <div className="text-center mt-6">
-            <h2 className="text-lg font-black uppercase tracking-widest">Encontro de Jovens com Cristo - SEGUE-ME</h2>
+            <h2 className="text-lg font-black uppercase tracking-widest">Encontro de Jovens com Cristo XXXVI - SEGUE-ME</h2>
             <h1 className="text-xl font-bold mt-2 text-gray-800">Demonstrativo Financeiro do Minimercado</h1>
             <p className="text-xs text-gray-500 mt-2">Gerado pelo sistema em: {dataAtual}</p>
           </div>
@@ -88,7 +88,7 @@ export const RelatorioFechamento = forwardRef<HTMLDivElement, RelatorioProps>(
                 {/* 🟢 Coluna de Desconto - AGORA O SISTEMA IMPRIME O VALOR */}
                 <th className="border border-gray-300 px-3 py-2 font-bold text-xs text-right w-24 text-rose-600">Desconto<br/>Aplicado</th>
                 
-                <th className="border border-gray-300 px-3 py-2 font-bold text-xs text-right w-28">Faturamento<br/>Líquido</th>
+                <th className="border border-gray-300 px-3 py-2 font-bold text-xs text-right w-28">Faturamento<br/></th>
               </tr>
             </thead>
             <tbody>

@@ -6,23 +6,23 @@ export function useCarrinho() {
   const [tipoDesconto, setTipoDesconto] = useState<'R$' | '%'>('R$');
   const [valorDescontoInput, setValorDescontoInput] = useState<string>('');
   const [modalAlerta, setModalAlerta] = useState({ isOpen: false, mensagem: '', tipo: 'success' as 'success' | 'error' });
+  
+  // 🟢 NOVO: Estado para a notificação rápida (Toast)
+  const [toastAviso, setToastAviso] = useState({ show: false, msg: '' });
 
   const exibirAlerta = (mensagem: string, tipo: 'success' | 'error' = 'success') => {
     setModalAlerta({ isOpen: true, mensagem, tipo });
   };
 
-  // 🟢 MÁGICA: O Carrinho agora sabe interpretar o Realtime!
   const atualizarItemPeloRealtime = (payload: any) => {
     if (payload.eventType === 'UPDATE' && payload.new) {
       setCart((prevCart) => prevCart.map(item => {
-        // Se o produto que mudou no banco estiver no carrinho...
         if (item.product.id === payload.new.id) {
           const precoOriginal = Number(payload.new.price) || 0;
           const emPromo = Boolean(payload.new.promo_status);
           const precoPromo = Number(payload.new.promo_price) || 0;
           const precoEfetivo = (emPromo && precoPromo > 0) ? precoPromo : precoOriginal;
 
-          // Atualizamos a "foto" dele dentro do carrinho
           return {
             ...item,
             product: {
@@ -70,6 +70,12 @@ export function useCarrinho() {
       }
       return [...prev, { product: produto, quantity: 1 }];
     });
+
+    // 🟢 MÁGICA: Dispara a notificação de sucesso e some após 2 segundos!
+    setToastAviso({ show: true, msg: `${produto.name} adicionado!` });
+    setTimeout(() => {
+      setToastAviso(prev => ({ ...prev, show: false }));
+    }, 2000);
   };
 
   const updateQuantity = (productId: number, delta: number) => {
@@ -100,6 +106,7 @@ export function useCarrinho() {
     cartSubtotal, valorDescontoCalculado, cartTotalFinal,
     addToCart, updateQuantity, removeFromCart, limparCarrinho,
     modalAlerta, setModalAlerta, exibirAlerta,
-    atualizarItemPeloRealtime // 🟢 Exportamos a função para a página
+    atualizarItemPeloRealtime,
+    toastAviso // 🟢 Exportado para a tela principal
   };
 }

@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Produto } from './types';
 import { InputPesquisa } from '@/src/components/ui/InputPesquisa'; 
+// 🟢 IMPORTAMOS O SEU NOVO COMPONENTE SKELETON
+import { SkeletonProduto } from '@/src/components/ui/SkeletonProduto'; 
 
 interface GradeProdutosProps {
   produtos: Produto[];
@@ -13,8 +15,9 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
+  
+  const [addedItemId, setAddedItemId] = useState<number | null>(null);
 
-  // PAGINAÇÃO
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20; 
 
@@ -59,6 +62,14 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
     return 'bg-[#0D9488] hover:bg-[#0f766e] text-white hover:shadow-teal-500/30';
   };
 
+  const handleAddToCartClick = (produto: Produto) => {
+    onAddToCart(produto);
+    if (produto.stock > 0) {
+      setAddedItemId(produto.id);
+      setTimeout(() => setAddedItemId(null), 800); 
+    }
+  };
+
   return (
     <div>
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -69,7 +80,6 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
           className="w-full md:w-64 flex-shrink-0"
         />
 
-        {/* 🟢 SCROLL FINO E OPACO AQUI: Trocado scrollbar-hide pelo scrollbar-thin cinza claro */}
         <div className="flex-1 min-w-0 flex gap-2 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-gray-200 hover:scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {categorias.map(cat => (
             <button 
@@ -83,77 +93,94 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
         </div>
       </div>
 
+      {/* 🟢 AQUI ACONTECE A MÁGICA DA TROCA */}
       {isLoading ? (
-        <div className="text-center py-10 text-gray-500 animate-pulse font-medium">Carregando estoque...</div>
+        <div 
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-4 content-start"
+          style={{ minHeight: '850px', overflowAnchor: 'none' }}
+        >
+          {/* Cria 15 esqueletos para preencher a tela enquanto carrega */}
+          {[...Array(15)].map((_, index) => (
+            <SkeletonProduto key={index} />
+          ))}
+        </div>
       ) : (
         <>
           <div 
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-4 content-start"
             style={{ minHeight: '850px', overflowAnchor: 'none' }}
           >
-            {produtosPaginados.map(produto => (
-              <div 
-                key={produto.id} 
-                className={`group bg-white p-3 rounded-xl border flex flex-col items-center text-center transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl relative ${getCardStyle(produto)}`}
-              >
-                
-                {produto.promo_status && (
-                  <div className="absolute -top-2 -left-2 bg-orange-500 text-white text-[10px] font-black px-2 py-1 rounded shadow-md z-20 animate-pulse">
-                    OFERTA
-                  </div>
-                )}
-
-                {produto.isCombo && (
-                  <div className={`absolute -top-2 ${produto.promo_status ? 'left-16' : '-left-2'} bg-purple-600 text-white text-[10px] font-black px-2 py-1 rounded shadow-md z-20`}>
-                    COMBO
-                  </div>
-                )}
-
-                <div className="w-full aspect-square bg-gray-50 rounded-lg mb-3 overflow-hidden relative">
-                  <span className={`absolute top-1.5 right-1.5 text-[10px] px-1.5 py-0.5 rounded font-bold z-10 shadow-sm transition-colors ${produto.stock <= 0 ? 'bg-red-500 text-white' : 'bg-black/60 text-white'}`}>
-                    {produto.stock} un
-                  </span>
-                  {produto.image ? (
-                    <img 
-                      src={produto.image} 
-                      alt={produto.name} 
-                      className={`w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110 ${produto.stock <= 0 ? 'grayscale opacity-50' : ''}`} 
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300 text-[10px] uppercase font-bold transition-transform duration-500 group-hover:scale-110">Sem imagem</div>
-                  )}
-                </div>
-                
-                <h3 className="text-xs font-bold text-gray-700 mb-1 line-clamp-2 min-h-[2.5rem] leading-tight transition-colors group-hover:text-black">{produto.name}</h3>
-                
-                {produto.isCombo && produto.combo_description && (
-                  <p className="text-[9px] text-gray-400 italic mb-2 line-clamp-2 min-h-[1.5rem]" title={produto.combo_description}>
-                    {produto.combo_description}
-                  </p>
-                )}
-                
-                <div className="min-h-[2.5rem] flex flex-col justify-center items-center mb-2 w-full mt-auto">
-                  {produto.promo_status && produto.base_price ? (
-                    <>
-                      <span className="text-[10px] text-gray-400 line-through">De: {formatCurrency(produto.base_price)}</span>
-                      <span className="text-sm font-black text-orange-500 group-hover:scale-105 transition-transform">Por: {formatCurrency(produto.price)}</span>
-                    </>
-                  ) : (
-                    <span className={`text-sm font-black group-hover:scale-105 transition-transform ${produto.isCombo ? 'text-purple-700' : 'text-[#0D9488]'}`}>
-                      {formatCurrency(produto.price)}
-                    </span>
-                  )}
-                </div>
-
-                <button 
-                  disabled={produto.stock <= 0} 
-                  onClick={() => onAddToCart(produto)} 
-                  className={`w-full font-bold py-2 rounded-lg text-xs transition-all duration-200 active:scale-95 shadow-sm ${getButtonStyle(produto)}`}
+            {produtosPaginados.map(produto => {
+              const isAdded = addedItemId === produto.id; 
+              
+              return (
+                <div 
+                  key={produto.id} 
+                  className={`group bg-white p-3 rounded-xl border flex flex-col items-center text-center transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl relative ${getCardStyle(produto)}`}
                 >
-                  {produto.stock > 0 ? 'Adicionar' : 'Esgotado'}
-                </button>
-              </div>
-            ))}
+                  
+                  {produto.promo_status && (
+                    <div className="absolute -top-2 -left-2 bg-orange-500 text-white text-[10px] font-black px-2 py-1 rounded shadow-md z-20 animate-pulse">
+                      OFERTA
+                    </div>
+                  )}
+
+                  {produto.isCombo && (
+                    <div className={`absolute -top-2 ${produto.promo_status ? 'left-16' : '-left-2'} bg-purple-600 text-white text-[10px] font-black px-2 py-1 rounded shadow-md z-20`}>
+                      COMBO
+                    </div>
+                  )}
+
+                  <div className="w-full aspect-square bg-gray-50 rounded-lg mb-3 overflow-hidden relative">
+                    <span className={`absolute top-1.5 right-1.5 text-[10px] px-1.5 py-0.5 rounded font-bold z-10 shadow-sm transition-colors ${produto.stock <= 0 ? 'bg-red-500 text-white' : 'bg-black/60 text-white'}`}>
+                      {produto.stock} un
+                    </span>
+                    {produto.image ? (
+                      <img 
+                        src={produto.image} 
+                        alt={produto.name} 
+                        className={`w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110 ${produto.stock <= 0 ? 'grayscale opacity-50' : ''}`} 
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300 text-[10px] uppercase font-bold transition-transform duration-500 group-hover:scale-110">Sem imagem</div>
+                    )}
+                  </div>
+                  
+                  <h3 className="text-xs font-bold text-gray-700 mb-1 line-clamp-2 min-h-[2.5rem] leading-tight transition-colors group-hover:text-black">{produto.name}</h3>
+                  
+                  {produto.isCombo && produto.combo_description && (
+                    <p className="text-[9px] text-gray-400 italic mb-2 line-clamp-2 min-h-[1.5rem]" title={produto.combo_description}>
+                      {produto.combo_description}
+                    </p>
+                  )}
+                  
+                  <div className="min-h-[2.5rem] flex flex-col justify-center items-center mb-2 w-full mt-auto">
+                    {produto.promo_status && produto.base_price ? (
+                      <>
+                        <span className="text-[10px] text-gray-400 line-through">De: {formatCurrency(produto.base_price)}</span>
+                        <span className="text-sm font-black text-orange-500 group-hover:scale-105 transition-transform">Por: {formatCurrency(produto.price)}</span>
+                      </>
+                    ) : (
+                      <span className={`text-sm font-black group-hover:scale-105 transition-transform ${produto.isCombo ? 'text-purple-700' : 'text-[#0D9488]'}`}>
+                        {formatCurrency(produto.price)}
+                      </span>
+                    )}
+                  </div>
+
+                  <button 
+                    disabled={produto.stock <= 0} 
+                    onClick={() => handleAddToCartClick(produto)} 
+                    className={`w-full font-bold py-2 rounded-lg text-xs transition-all duration-300 active:scale-95 shadow-sm ${
+                      isAdded 
+                        ? 'bg-green-500 text-white scale-105 shadow-green-500/40' 
+                        : getButtonStyle(produto)
+                    }`}
+                  >
+                    {isAdded ? '✔ Adicionado' : (produto.stock > 0 ? 'Adicionar' : 'Esgotado')}
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
           {totalPages > 1 && (

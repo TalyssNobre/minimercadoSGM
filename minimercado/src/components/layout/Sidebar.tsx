@@ -15,7 +15,6 @@ export default function Sidebar() {
 
   const [isLoggingOut, setIsLoggingOut] = useState(false); 
 
-  // 🟢 MAGIA ACONTECENDO: Puxamos o cargo com apenas uma linha, sem useEffect!
   const { cargoUsuario } = useUsuario();
 
   // CONTROLE DE SCROLL SUAVE PARA O MOBILE 
@@ -100,7 +99,8 @@ export default function Sidebar() {
         <div className="lg:hidden fixed inset-0 bg-black/50 z-[70] backdrop-blur-sm" onClick={() => setIsMobileOpen(false)} />
       )}
 
-      <aside className={`bg-[#0F766E] text-white min-h-screen transition-all duration-300 flex flex-col fixed top-0 z-[80] shadow-2xl h-full ${isMobileOpen ? 'left-0 w-64' : '-left-full lg:left-0'} lg:relative lg:flex ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}`}>
+      {/* 🟢 CORREÇÃO IOS: h-[100dvh] resolve o problema da barra de endereço do Safari engolir o rodapé */}
+      <aside className={`bg-[#0F766E] text-white transition-all duration-300 flex flex-col fixed top-0 z-[80] shadow-2xl h-[100dvh] ${isMobileOpen ? 'left-0 w-64' : '-left-full lg:left-0'} lg:relative lg:flex ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}`}>
         
         {/* LOGO / BOTÃO RECOLHER MENU */}
         <div className="p-4 flex justify-between items-center border-b border-white/10">
@@ -137,7 +137,6 @@ export default function Sidebar() {
                     </div>
                   </>
                 )}
-                {/* 🟢 ADICIONADO prefetch={false} AQUI! */}
                 <Link 
                   href={item.href} 
                   prefetch={false} 
@@ -154,7 +153,8 @@ export default function Sidebar() {
         </nav>
 
         {/* O BOTÃO DE SAIR NO FINAL DA SIDEBAR */}
-        <div className="lg:hidden mt-auto border-t border-white/10 p-4">
+        {/* 🟢 CORREÇÃO IOS: pb-8 garante que não fique escondido atrás do "risquinho" (Home Indicator) do iPhone */}
+        <div className="lg:hidden mt-auto border-t border-white/10 p-4 pb-8 md:pb-6">
           <button 
             onClick={handleLogout}
             disabled={isLoggingOut}
