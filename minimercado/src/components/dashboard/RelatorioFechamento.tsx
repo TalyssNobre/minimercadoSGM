@@ -21,14 +21,14 @@ export const RelatorioFechamento = forwardRef<HTMLDivElement, RelatorioProps>(
         {/* CABEÇALHO INSTITUCIONAL */}
         <div className="border-b-2 border-black pb-6 mb-6">
           <div className="flex justify-between text-sm mb-4 font-bold">
-            <span>(Arqui)diocese: ___________________________</span>
+            <span>Arquidiocese: ___________________________</span>
             <span>Paróquia: ___________________________</span>
             <span>Cidade/UF: ____________</span>
           </div>
           <div className="text-center mt-6">
-            <h2 className="text-lg font-black uppercase tracking-widest">Encontro de Jovens com Cristo XXXVI - SEGUE-ME</h2>
+            <h2 className="text-lg font-black uppercase tracking-widest">Encontro de Jovens com Cristo XXXVI - SEGUE-ME GUARÁ 1</h2>
             <h1 className="text-xl font-bold mt-2 text-gray-800">Demonstrativo Financeiro do Minimercado</h1>
-            <p className="text-xs text-gray-500 mt-2">Gerado pelo sistema em: {dataAtual}</p>
+            <p className="text-xs text-gray-500 mt-2">Gerado em: {dataAtual}</p>
           </div>
         </div>
 

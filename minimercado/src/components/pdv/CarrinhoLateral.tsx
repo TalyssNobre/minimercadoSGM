@@ -94,10 +94,10 @@ export default function CarrinhoLateral({
         </div>
         <div className="space-y-3">
           <button disabled={isFinalizando || cart.length === 0} onClick={() => onFinalizarVenda('PAGO')} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl text-sm shadow-md active:scale-95 transition-all disabled:opacity-50">
-            {isFinalizando ? 'PROCESSANDO...' : 'PAGO NO ATO'}
+            {isFinalizando ? 'PROCESSANDO...' : 'PAGAR AGORA'}
           </button>
           <button disabled={isFinalizando || cart.length === 0} onClick={() => onFinalizarVenda('PENDENTE')} className="w-full bg-[#B89822] hover:bg-[#9B7F1B] text-white font-bold py-3.5 rounded-xl text-sm shadow-md active:scale-95 transition-all disabled:opacity-50">
-            {isFinalizando ? 'PROCESSANDO...' : 'PENDENTE / FIADO'}
+            {isFinalizando ? 'PROCESSANDO...' : 'VENDER NO FIADO'}
           </button>
         </div>
       </div>

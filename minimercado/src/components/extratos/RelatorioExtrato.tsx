@@ -26,7 +26,8 @@ export const RelatorioExtrato = forwardRef<HTMLDivElement, RelatorioExtratoProps
         ref={ref} 
         // 🟢 CONFIGURAÇÃO DA BOBINA: 80mm de largura, altura automática e fonte monoespaçada
         style={{ width: '80mm', margin: '0 auto', fontFamily: 'monospace', color: '#000', backgroundColor: '#fff' }}
-        className="p-4 print:p-0 text-xs"
+        // 🟢 CORREÇÃO: print:pt-8 empurra o conteúdo para baixo na impressão para não cortar
+        className="p-4 print:pt-8 print:px-0 print:pb-4 text-xs"
       >
         
         {/* CABEÇALHO */}
@@ -38,7 +39,7 @@ export const RelatorioExtrato = forwardRef<HTMLDivElement, RelatorioExtratoProps
 
         {/* INFO DO CLIENTE */}
         <div className="border-b border-dashed border-black pb-2 mb-2 text-[11px] leading-tight">
-          <p><strong>iNTEGRANTE:</strong> {membro.name.toUpperCase()}</p>
+          <p><strong>INTEGRANTE:</strong> {membro.name.toUpperCase()}</p>
           <p><strong>EQUIPE:</strong> {equipe.name.toUpperCase()}</p>
           <p><strong>SITUAÇÃO:</strong> CONTA FECHADA</p>
         </div>
@@ -49,9 +50,9 @@ export const RelatorioExtrato = forwardRef<HTMLDivElement, RelatorioExtratoProps
             <thead>
               <tr className="border-b border-black">
                 <th className="text-left font-bold w-6">QTD</th>
-                <th className="text-left font-bold">DESC</th>
+                <th className="text-left font-bold">PRODUTO</th>
                 <th className="text-right font-bold w-10">UN</th>
-                <th className="text-right font-bold w-12">TOT</th>
+                <th className="text-right font-bold w-12">TOTAL</th>
               </tr>
             </thead>
             <tbody>
