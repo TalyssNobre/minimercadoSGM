@@ -114,7 +114,7 @@ export default function EstatisticaProduto({ produtos, fetchStats }: Props) {
                </div>
                <div className="flex flex-col justify-center flex-1 min-w-0">
                  <p className="text-[11px] lg:text-sm font-semibold text-emerald-600 uppercase tracking-wide leading-normal">
-                   Fat. Líquido
+                   Faturamento
                  </p>
                  <p className="text-base md:text-base lg:text-xl xl:text-2xl font-black text-emerald-900 leading-normal">
                    {isLoading ? "..." : formatCurrency(stats.totalArrecadado)}
