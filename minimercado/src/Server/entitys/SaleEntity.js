@@ -14,15 +14,19 @@ export default class Sale {
     
         this.validate();
     }
-     calculateTotal = () => {
-        if(!this.items ||this.items == 0){
-        throw new Error("É necessário pelo menos um item no carrinho");
-    }  
+    
+    calculateTotal = () => {
+        if(!this.items || this.items.length === 0){
+            throw new Error("É necessário pelo menos um item no carrinho");
+        }  
 
         return this.items.reduce((acc, produto) => {
-            return acc + (produto.quantity * produto.unit_price);
-    },0);
+            const totalBrutoDoItem = produto.quantity * produto.unit_price;
+            const descontoDoItem = produto.item_discount || 0;
+            return acc + (totalBrutoDoItem - descontoDoItem);
+        }, 0);
     }
+    
     validate = () => {
         if(this.total_value < 0 && this.discount < 0 ){
            throw new Error("Preço não pode ser negativo")
@@ -35,6 +39,5 @@ export default class Sale {
         }
     }
 
-}
 
-
+ }

@@ -8,7 +8,6 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
   const [operadores, setOperadores] = useState<Operador[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // 🟢 Novos Estados de Filtro
   const [filtroVendedor, setFiltroVendedor] = useState<string>('Todos');
   const [filtroData, setFiltroData] = useState<string>(''); // YYYY-MM-DD
 
@@ -55,9 +54,7 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
           };
         });
 
-        // 🟢 ORDENAÇÃO: Mais novas no topo (Maior ID primeiro)
         vendasFormatadas.sort((a, b) => b.sale_id - a.sale_id);
-
         setVendas(vendasFormatadas);
       }
     } catch (error) {
@@ -72,7 +69,6 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
     fetchDados();
   }, []);
 
-  // 🟢 FILTRAGEM COMBINADA (Vendedor + Data)
   const vendasFiltradas = useMemo(() => {
     let filtrado = vendas;
 
@@ -81,7 +77,6 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
     }
 
     if (filtroData) {
-      // Converte YYYY-MM-DD do input date para DD/MM/YYYY do nosso sistema
       const [ano, mes, dia] = filtroData.split('-');
       const dataBuscada = `${dia}/${mes}/${ano}`;
       filtrado = filtrado.filter(v => v.date === dataBuscada);
@@ -91,7 +86,9 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
   }, [vendas, filtroVendedor, filtroData]);
 
   const totalFiltrado = useMemo(() => {
-    return vendasFiltradas.filter(v => v.status === true).reduce((acc, curr) => acc + (curr.total_value - (curr.discount || 0)), 0);
+    // 🟢 CORREÇÃO: O total_value já é o líquido que o backend nos mandou!
+    // Não subtraímos o desconto de novo para não estragar a soma do caixa.
+    return vendasFiltradas.filter(v => v.status === true).reduce((acc, curr) => acc + curr.total_value, 0);
   }, [vendasFiltradas]);
 
   const cancelarVenda = async (sale_id: number) => {
@@ -114,7 +111,7 @@ export function useHistoricoVendas(exibirAlerta: (msg: string, tipo: 'success' |
     operadores,
     isLoading,
     filtroVendedor, setFiltroVendedor,
-    filtroData, setFiltroData, // 🟢 Exportando para a página
+    filtroData, setFiltroData,
     vendasFiltradas,
     totalFiltrado,
     cancelarVenda

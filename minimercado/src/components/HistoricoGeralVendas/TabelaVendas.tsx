@@ -39,9 +39,11 @@ export default function TabelaVendas({ isLoading, vendas, onCancelar }: Props) {
             </tr>
           ) : (
             vendas.map((venda) => {
+              
+              // 🟢 CORREÇÃO DA MATEMÁTICA: O banco já manda o Líquido!
               const desconto = venda.discount || 0;
-              const valorBruto = venda.total_value || 0;
-              const valorLiquido = valorBruto - desconto;
+              const valorLiquido = venda.total_value || 0; // Ex: 8 reais
+              const valorBruto = valorLiquido + desconto; // Ex: 8 + 4 = 12 reais cortado
 
               return (
                 <tr key={venda.sale_id} className={`transition-colors ${!venda.status ? 'bg-red-50/50 opacity-75' : 'hover:bg-gray-50'}`}>
@@ -52,7 +54,6 @@ export default function TabelaVendas({ isLoading, vendas, onCancelar }: Props) {
                   <td className="py-3 px-4 text-sm text-gray-600">
                     <div className="flex flex-wrap gap-1.5">
                       {venda.items.map((item) => {
-                        // 🟢 VERIFICADOR DE DESCONTO INDIVIDUAL
                         const descontoDoItem = item.item_discount || 0;
                         const teveDesconto = descontoDoItem > 0;
 
@@ -61,13 +62,12 @@ export default function TabelaVendas({ isLoading, vendas, onCancelar }: Props) {
                             key={item.id_item_sale || Math.random()} 
                             className={`px-2 py-1 rounded text-xs border inline-flex items-center gap-1 ${
                               teveDesconto 
-                                ? 'bg-orange-50 border-orange-200 text-orange-800 font-medium shadow-sm' // 🟠 Com Desconto
-                                : 'bg-gray-50 border-gray-200 text-gray-600' // ⚪ Sem Desconto
+                                ? 'bg-orange-50 border-orange-200 text-orange-800 font-medium shadow-sm'
+                                : 'bg-gray-50 border-gray-200 text-gray-600'
                             }`}
                           >
                             {item.quantity}x {item.name}
                             
-                            {/* 🟢 SE TEVE DESCONTO, MOSTRA A QUEDA AQUI DENTRO! */}
                             {teveDesconto && (
                               <span className="ml-1 text-orange-600 font-bold">
                               -{formatCurrency(descontoDoItem)}

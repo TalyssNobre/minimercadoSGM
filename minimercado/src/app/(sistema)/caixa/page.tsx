@@ -53,15 +53,19 @@ export default function CaixaPage() {
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
       
       const itensCarrinho = carrinho.cart.map(item => {
-        const precoBase = item.product.base_price || item.product.price;
+        const precoBase = item.product.base_price ? item.product.base_price : item.product.price;
         const precoEfetivo = item.product.price;
-        const descontoDesteItem = (precoBase - precoEfetivo) * item.quantity;
+        
+        // 🟢 CORREÇÃO DEFINITIVA: 
+        // Mandamos apenas o desconto de 1 UNIDADE (Ex: R$ 2.00).
+        // Removemos o "* item.quantity" porque o Backend já faz isso!
+        const descontoUnitario = precoBase - precoEfetivo;
 
         return {
           product_id: item.product.id,
           quantity: item.quantity,
-          unit_price: precoBase,
-          item_discount: descontoDesteItem 
+          unit_price: precoBase, 
+          item_discount: descontoUnitario 
         };
       });
 
@@ -100,7 +104,7 @@ export default function CaixaPage() {
 
   return (
     <>
-      {/* 🟢 TOAST FLUTUANTE GLOBAL DA PÁGINA */}
+      {/* TOAST FLUTUANTE GLOBAL DA PÁGINA */}
       <div 
         className={`fixed top-8 left-1/2 transform -translate-x-1/2 z-[100] transition-all duration-300 ease-out flex items-center shadow-xl bg-green-600 text-white px-6 py-3 rounded-full font-bold text-sm tracking-wide border border-green-400 ${carrinho.toastAviso.show ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0 pointer-events-none'}`}
       >

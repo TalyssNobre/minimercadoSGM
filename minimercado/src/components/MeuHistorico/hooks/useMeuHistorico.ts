@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAllSales } from '@/src/Server/controllers/SaleController'; 
 import { Sale } from '../types';
 
-
 import { useUsuario } from '@/src/hooks/useUsuario';
 
 export function useMeuHistorico() {
@@ -93,11 +92,11 @@ export function useMeuHistorico() {
     return vendas.filter(v => v.date.startsWith(filtroData));
   }, [vendas, filtroData]);
 
-  // TOTAIS RECALCULADOS 
-  const totalVendidoPago = vendasFiltradas.filter(v => v.status === true).reduce((acc, curr) => acc + ((curr.total_value || 0) - (curr.discount || 0)), 0);
-  const totalVendidoFiado = vendasFiltradas.filter(v => v.status === false).reduce((acc, curr) => acc + ((curr.total_value || 0) - (curr.discount || 0)), 0);
+  // 🟢 7. TOTAIS RECALCULADOS DA FORMA CORRETA! (Usando apenas o total_value que já é o líquido)
+  const totalVendidoPago = vendasFiltradas.filter(v => v.status === true).reduce((acc, curr) => acc + (curr.total_value || 0), 0);
+  const totalVendidoFiado = vendasFiltradas.filter(v => v.status === false).reduce((acc, curr) => acc + (curr.total_value || 0), 0);
 
-  // 🟢 7. O tempo de loading total é a soma de descobrir quem é o usuário + baixar as vendas
+  // O tempo de loading total é a soma de descobrir quem é o usuário + baixar as vendas
   const isLoadingFinal = isUserLoading || isLoadingSales;
 
   return { 

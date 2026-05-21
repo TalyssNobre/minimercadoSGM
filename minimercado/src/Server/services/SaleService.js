@@ -19,16 +19,19 @@ export const createSale = async ({ data, items }) => {
             const newProduct = await ProductModel.getProductById(item.product_id);
             if (!newProduct) throw new Error("Produto não encontrado.");
 
-            const produtoEntity = new Product(newProduct);
+            // 🟢 CORREÇÃO: Pega os valores direto do banco de dados (100% Seguro)
+            const precoBase = newProduct.base_price > 0 ? Number(newProduct.base_price) : Number(newProduct.price);
+            const emPromo = Boolean(newProduct.promo_status);
+            const precoEfetivo = (emPromo && Number(newProduct.promo_price) > 0) ? Number(newProduct.promo_price) : precoBase;
             
-            const newPrice = produtoEntity.PromoPrice; 
-            const newDiscount = Number(item.item_discount) || 0;
+            // 🟢 Calcula o desconto TOTAL desta linha (ex: 2 unidades x R$ 2,00 = R$ 4,00)
+            const descontoDaLinha = (precoBase - precoEfetivo) * item.quantity;
 
             dataFrontVerify.push({
                 ...item,
-                unit_price: newPrice,
-                price: newPrice,
-                item_discount: newDiscount
+                unit_price: precoBase,       // Salva o preço cheio bruto (Ex: 6.00)
+                price: precoEfetivo,         // Referência do preço pago
+                item_discount: descontoDaLinha // Salva o desconto total (Ex: 4.00)
             });
         }
 

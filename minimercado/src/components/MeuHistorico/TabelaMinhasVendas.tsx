@@ -38,9 +38,11 @@ export default function TabelaMinhasVendas({ vendas, isLoading, formatDate }: Pr
             </tr>
           ) : (
             vendas.map((venda) => {
+              
+              // 🟢 CORREÇÃO DA MATEMÁTICA: O banco já manda o Líquido!
               const desconto = venda.discount || 0;
-              const valorBruto = venda.total_value || 0;
-              const valorLiquido = valorBruto - desconto;
+              const valorLiquido = venda.total_value || 0;
+              const valorBruto = valorLiquido + desconto;
 
               return (
                 <tr key={venda.id} className="hover:bg-gray-50 transition-colors">
