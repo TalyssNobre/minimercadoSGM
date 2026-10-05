@@ -60,7 +60,7 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
         <div className="w-14 h-14 bg-white rounded-full shadow-sm flex items-center justify-center overflow-hidden">
           <img src="/logo.svg" alt="Logo" className="w-full h-full object-cover scale-125" />
         </div>
-        <span className="text-2xl font-medium tracking-wide">Segue-me</span>
+        <span className="text-2xl font-medium tracking-wide">Mercadinho</span>
       </div>
 
       <div className="flex items-center space-x-3">

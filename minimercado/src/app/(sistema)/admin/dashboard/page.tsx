@@ -68,7 +68,9 @@ export default function DashboardPage() {
         </div>
 
         <ResumoCards totaisGerais={totaisGerais} />
-        <EstatisticaProduto produtos={products} fetchStats={fetchProductStats} />
+        
+        {/* 🟢 CORREÇÃO AQUI: Passando as categorias corretamente */}
+        <EstatisticaProduto produtos={products} categorias={categories} fetchStats={fetchProductStats} />
         
         <SubtotaisSetores 
           categories={categories} 

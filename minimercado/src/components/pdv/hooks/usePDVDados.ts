@@ -61,17 +61,29 @@ export function usePDVDados() {
               if (!comboItens || comboItens.length === 0) {
                 estoqueFinal = 0;
               } else {
-                // 🟢 CORREÇÃO: Dizendo explicitamente que é uma lista de textos (string)
                 const descricoes: string[] = []; 
                 
                 const possibilidades = comboItens.map((item: any) => {
-                  const idIngrediente = item.product_id || item.produto_id;
                   const qtdNecessaria = item.quantity || item.qty || 1;
-                  const nomeIngrediente = mapaDeNomes.get(idIngrediente) || 'Item';
+                  
+                  // 🟢 CORREÇÃO: Se for categoria, busca o nome no mapa de Categorias
+                  if (item.tipo === 'categoria' || item.is_category_choice) {
+                    const idCategoria = item.category_id || item.product_id;
+                    const nomeCategoria = catMap.get(Number(idCategoria)) || catMap.get(String(idCategoria)) || 'Categoria';
+                    
+                    descricoes.push(`${qtdNecessaria}x Escolha em: ${nomeCategoria}`);
+                    
+                    // Retorna um estoque alto fantasma para não zerar o combo por causa da categoria genérica
+                    return 999999; 
+                  }
+                  
+                  // Se for produto fixo, busca o nome no mapa de Produtos
+                  const idIngrediente = item.product_id || item.produto_id;
+                  const nomeIngrediente = mapaDeNomes.get(Number(idIngrediente)) || 'Item Removido';
                   
                   descricoes.push(`${qtdNecessaria}x ${nomeIngrediente}`);
                   
-                  const estoqueAtualDoIngrediente = mapaDeEstoque.get(idIngrediente) || 0;
+                  const estoqueAtualDoIngrediente = mapaDeEstoque.get(Number(idIngrediente)) || 0;
                   return Math.floor(estoqueAtualDoIngrediente / qtdNecessaria);
                 });
                 
@@ -88,13 +100,15 @@ export function usePDVDados() {
             id: p.id,
             name: p.name,
             category: catMap.get(p.category_id) || p.category_name || 'Sem Categoria',
+            category_id: Number(p.category_id),
             price: precoEfetivo,
             base_price: precoOriginal,
             promo_status: emPromo,
             image: p.image_url || p.image || null,
             stock: estoqueFinal,
             isCombo: isCombo,
-            combo_description: comboDescription 
+            combo_description: comboDescription,
+            combo: p.combo 
           };
         }));
       }
@@ -105,13 +119,11 @@ export function usePDVDados() {
     }
   }, []);
 
-  // 🟢 TURBINADO: Agora atualiza o estoque E recalcula as promoções ao vivo!
   const atualizarProdutoAoVivo = useCallback((payload: any) => {
     if (payload.eventType === 'UPDATE' && payload.new) {
       setProdutos((prevProdutos) => 
         prevProdutos.map(produto => {
           if (produto.id === payload.new.id) {
-            // Recalcula a lógica de preço e promoção usando os dados recém-chegados do banco
             const precoOriginal = Number(payload.new.price) || 0;
             const emPromo = Boolean(payload.new.promo_status);
             const precoPromo = Number(payload.new.promo_price) || 0;
@@ -135,6 +147,5 @@ export function usePDVDados() {
     fetchDados();
   }, [fetchDados]);
 
-  // 🟢 Exportando a nova função
   return { equipes, membros, produtos, categorias, isLoading, atualizarDados: fetchDados, atualizarProdutoAoVivo };
 }

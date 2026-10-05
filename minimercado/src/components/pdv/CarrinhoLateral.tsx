@@ -30,19 +30,30 @@ export default function CarrinhoLateral({
         {cart.length === 0 ? (
           <p className="text-gray-400 text-sm text-center py-10 font-medium">O carrinho está vazio.</p>
         ) : (
-          cart.map(item => (
-            <div key={item.product.id} className="flex items-center gap-3 border-b border-gray-50 pb-3">
+          cart.map((item, index) => (
+            <div key={`${item.product.id}-${index}`} className="flex items-center gap-3 border-b border-gray-50 pb-3">
               <div className="w-10 h-10 bg-gray-100 rounded overflow-hidden flex-shrink-0">
                 {item.product.image && <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />}
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="text-xs font-bold text-gray-800 truncate">{item.product.name}</h4>
                 
-                {/* 🟢 MÁGICA: Adicionada a descrição do combo no carrinho */}
+                {/* Descrição do combo no carrinho */}
                 {item.product.isCombo && item.product.combo_description && (
                   <p className="text-[9px] text-gray-400 italic truncate" title={item.product.combo_description}>
                     {item.product.combo_description}
                   </p>
+                )}
+
+                {/* Exibição das opções escolhidas no Modal (Customização) */}
+                {item.customizacao && item.customizacao.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {item.customizacao.filter(Boolean).map((escolha: any, idx: number) => (
+                      <span key={idx} className="text-[9px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded font-medium border border-teal-100">
+                        {escolha.name}
+                      </span>
+                    ))}
+                  </div>
                 )}
                 
                 <div className="flex items-center gap-2 mt-1">

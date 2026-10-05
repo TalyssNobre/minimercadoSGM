@@ -6,6 +6,7 @@ import { ModalAlerta } from '@/src/components/ui/ModalAlerta';
 import SelecaoCliente from '@/src/components/pdv/SelecaoCliente';
 import GradeProdutos from '@/src/components/pdv/GradeProdutos';
 import CarrinhoLateral from '@/src/components/pdv/CarrinhoLateral';
+import ModalEscolhaCombo from '@/src/components/pdv/ModalEscolhaCombo';
 
 // Hooks
 import { usePDVDados } from '@/src/components/pdv/hooks/usePDVDados';
@@ -149,6 +150,14 @@ export default function CaixaPage() {
             tipo={carrinho.modalAlerta.tipo}
             onClose={() => carrinho.setModalAlerta({ ...carrinho.modalAlerta, isOpen: false })}
           />
+        {carrinho.comboParaConfigurar && (
+        <ModalEscolhaCombo 
+          produto={carrinho.comboParaConfigurar}
+          allProducts={produtos} // Passando todos os produtos pro modal conseguir filtrar
+          onClose={() => carrinho.setComboParaConfigurar(null)}
+          onConfirm={(itens) => carrinho.finalizarAdicaoCombo(carrinho.comboParaConfigurar!, itens)}
+        />
+      )}
         </div>
       </div>
     </>

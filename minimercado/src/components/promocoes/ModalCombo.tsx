@@ -58,9 +58,9 @@ export default function ModalCombo({ promocoes }: { promocoes: any }) {
             </div>
           </div>
 
-          {/* BUSCA E ADD PRODUTOS */}
+          {/* BUSCA E ADD PRODUTOS FIXOS */}
           <div className="space-y-2 bg-gray-50 p-4 rounded-xl border relative">
-            <label className="block text-xs font-black text-gray-400 uppercase">Buscar Produto para Composição</label>
+            <label className="block text-xs font-black text-gray-400 uppercase">Buscar Produto Fixo para Composição</label>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-grow relative">
                 <InputPesquisa 
@@ -87,7 +87,6 @@ export default function ModalCombo({ promocoes }: { promocoes: any }) {
                 )}
               </div>
               
-              {/* 🟢 INPUT DE QUANTIDADE MODIFICADO */}
               <input 
                 type="number" 
                 min="1"
@@ -103,17 +102,51 @@ export default function ModalCombo({ promocoes }: { promocoes: any }) {
             </div>
           </div>
 
+          {/* 🟢 ADICIONAR CATEGORIA DINÂMICA AO COMBO (Ex: Escolher Bebida) */}
+          <div className="space-y-2 bg-teal-50/50 p-4 rounded-xl border border-teal-100">
+            <label className="block text-xs font-black text-teal-700 uppercase">Ou Adicionar Categoria para Escolha no PDV (Ex: Bebidas)</label>
+            <div className="flex gap-2">
+              <select 
+                id="select-categoria-combo" 
+                className={inputClasses}
+              >
+                <option value="" disabled>Selecione a categoria de escolha...</option>
+                {dados.categorias.map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <button 
+                type="button" 
+                onClick={() => {
+                  const selectEl = document.getElementById('select-categoria-combo') as HTMLSelectElement;
+                  const catId = selectEl?.value;
+                  if (!catId) return alert("Selecione uma categoria!");
+                  const catObj = dados.categorias.find((c: any) => String(c.id) === String(catId));
+                  
+                  comboForm.setItensDoCombo((prev: any[]) => [
+                    ...prev, 
+                    { tipo: 'categoria', category_id: Number(catId), nome: `Escolha em: ${catObj?.name || 'Categoria'}`, quantidade: 1, subtotal: 0 }
+                  ]);
+                  selectEl.value = "";
+                }} 
+                className="bg-[#0D9488] text-white px-4 py-2 rounded-md font-bold text-xs uppercase whitespace-nowrap hover:bg-[#0f766e]"
+              >
+                Add Categoria
+              </button>
+            </div>
+          </div>
+
           <div className="max-h-[200px] overflow-y-auto border rounded-lg">
             <table className="w-full text-xs text-left">
               <thead className="bg-gray-50 text-gray-400 sticky top-0">
-                <tr><th className="p-2 px-4">Item</th><th className="p-2 text-center">Qtd</th><th className="p-2 text-right">Subtotal</th><th className="p-2"></th></tr>
+                <tr><th className="p-2 px-4">Item / Regra</th><th className="p-2 text-center">Qtd</th><th className="p-2 text-right">Subtotal</th><th className="p-2"></th></tr>
               </thead>
               <tbody>
                 {comboForm.itensDoCombo.map((it: any, idx: number) => (
                   <tr key={idx} className="border-t">
                     <td className="p-2 px-4 font-medium">{it.nome}</td>
                     <td className="p-2 text-center">{it.quantidade}x</td>
-                    <td className="p-2 text-right">R$ {it.subtotal.toFixed(2)}</td>
+                    <td className="p-2 text-right">R$ {it.subtotal ? it.subtotal.toFixed(2) : '0.00'}</td>
                     <td className="p-2 text-center"><button type="button" onClick={() => comboForm.setItensDoCombo((prev: any[]) => prev.filter((_, i) => i !== idx))} className="text-red-400">✕</button></td>
                   </tr>
                 ))}

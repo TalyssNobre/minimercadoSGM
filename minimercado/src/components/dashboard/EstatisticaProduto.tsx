@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { Product, ComboItem } from './types'; 
+import { Product, ComboItem, Category } from './types'; 
 import { InputPesquisa } from '@/src/components/ui/InputPesquisa';
 
 interface Props {
   produtos: Product[]; 
+  categorias: Category[]; // 🟢 ADICIONADO: Para podermos ler o nome das Categorias
   fetchStats: (id: number | string) => Promise<{ quantidadeSold: number; totalArrecadado: number; totalDesconto: number } | null>;
 }
 
-export default function EstatisticaProduto({ produtos, fetchStats }: Props) {
+export default function EstatisticaProduto({ produtos, categorias, fetchStats }: Props) {
   const [termoPesquisa, setTermoPesquisa] = useState('');
   const [produtoSelecionado, setProdutoSelecionado] = useState<Product | null>(null);
   const [stats, setStats] = useState({ quantidadeSold: 0, totalArrecadado: 0, totalDesconto: 0 });
@@ -31,7 +32,7 @@ export default function EstatisticaProduto({ produtos, fetchStats }: Props) {
     setIsLoading(false);
   };
 
-  const impactoEstoque = useMemo(() => {
+const impactoEstoque = useMemo(() => {
     if (!produtoSelecionado || !produtoSelecionado.combo || stats.quantidadeSold <= 0) return [];
 
     try {
@@ -41,10 +42,22 @@ export default function EstatisticaProduto({ produtos, fetchStats }: Props) {
       
       const comboArray: ComboItem[] = Array.isArray(comboParseado) ? comboParseado : [];
 
-      return comboArray.map(item => {
-        const idIngrediente = item.product_id || item.produto_id;
+      // 🟢 CORREÇÃO AQUI: Adicionado o "any" para o TypeScript não reclamar das propriedades novas
+      return comboArray.map((item: any) => {
         const qtdPorCombo = item.quantity || item.qty || 1;
-        
+
+        if (item.tipo === 'categoria' || item.is_category_choice) {
+          const idCategoria = item.category_id || item.product_id;
+          const categoriaReal = categorias?.find(c => Number(c.id) === Number(idCategoria));
+          
+          return {
+            nome: `Escolha em: ${categoriaReal ? categoriaReal.name : 'Categoria'}`,
+            qtdPorCombo: qtdPorCombo,
+            totalBaixado: null
+          };
+        }
+
+        const idIngrediente = item.product_id || item.produto_id;
         const produtoReal = produtos.find(p => p.id === Number(idIngrediente));
 
         return {
@@ -57,7 +70,7 @@ export default function EstatisticaProduto({ produtos, fetchStats }: Props) {
       console.error("Erro ao ler composição do combo:", error);
       return [];
     }
-  }, [produtoSelecionado, stats.quantidadeSold, produtos]);
+  }, [produtoSelecionado, stats.quantidadeSold, produtos, categorias]);
 
   return (
     <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm mt-8 relative">
@@ -100,7 +113,6 @@ export default function EstatisticaProduto({ produtos, fetchStats }: Props) {
                  <p className="text-[11px] lg:text-sm font-semibold text-blue-600 uppercase tracking-wide leading-normal">
                    Unidades
                  </p>
-                 {/* 🟢 Adicionado leading-normal para evitar o corte no topo das fontes pesadas */}
                  <p className="text-base md:text-base lg:text-xl xl:text-2xl font-black text-blue-900 leading-normal">
                    {isLoading ? "..." : `${stats.quantidadeSold} un`}
                  </p>
@@ -156,9 +168,15 @@ export default function EstatisticaProduto({ produtos, fetchStats }: Props) {
                         <span className="text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded text-xs mr-2">{ingrediente.qtdPorCombo}x</span> 
                         {ingrediente.nome} <span className="text-gray-400 font-normal italic text-xs">(por combo)</span>
                       </span>
-                      <span className="font-bold text-red-500 bg-red-50 px-2 py-1 rounded shadow-sm">
-                        📉 -{ingrediente.totalBaixado} un
-                      </span>
+                      {ingrediente.totalBaixado !== null ? (
+                        <span className="font-bold text-red-500 bg-red-50 px-2 py-1 rounded shadow-sm">
+                          📉 -{ingrediente.totalBaixado} un
+                        </span>
+                      ) : (
+                        <span className="font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded shadow-sm italic text-xs">
+                          Escolha Dinâmica
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
