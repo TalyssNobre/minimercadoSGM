@@ -19,19 +19,17 @@ export const createSale = async ({ data, items }) => {
             const newProduct = await ProductModel.getProductById(item.product_id);
             if (!newProduct) throw new Error("Produto não encontrado.");
 
-            // 🟢 CORREÇÃO: Pega os valores direto do banco de dados (100% Seguro)
             const precoBase = newProduct.base_price > 0 ? Number(newProduct.base_price) : Number(newProduct.price);
             const emPromo = Boolean(newProduct.promo_status);
             const precoEfetivo = (emPromo && Number(newProduct.promo_price) > 0) ? Number(newProduct.promo_price) : precoBase;
             
-            // 🟢 Calcula o desconto TOTAL desta linha (ex: 2 unidades x R$ 2,00 = R$ 4,00)
             const descontoDaLinha = (precoBase - precoEfetivo) * item.quantity;
 
             dataFrontVerify.push({
                 ...item,
-                unit_price: precoBase,       // Salva o preço cheio bruto (Ex: 6.00)
-                price: precoEfetivo,         // Referência do preço pago
-                item_discount: descontoDaLinha // Salva o desconto total (Ex: 4.00)
+                unit_price: precoBase,   
+                price: precoEfetivo, 
+                item_discount: descontoDaLinha 
             });
         }
 
@@ -53,10 +51,12 @@ export const createSale = async ({ data, items }) => {
 
         const results = await SaleModel.createSale(dataSale);
         
+        // 🟢 Salva os itens incluindo a customização serializada para permitir estorno futuro
         const itensComVinculo = saleEntity.items.map(item => {
             const itemEntity = new ItemSale({
                 ...item,      
-                sale_id: results.id 
+                sale_id: results.id,
+                customizacao: item.customizacao ? JSON.stringify(item.customizacao) : null
             });
 
             return {
@@ -64,26 +64,39 @@ export const createSale = async ({ data, items }) => {
                 unit_price: itemEntity.unit_price, 
                 product_id: itemEntity.product_id,
                 sale_id: itemEntity.sale_id,
-                item_discount: itemEntity.item_discount || 0
+                item_discount: itemEntity.item_discount || 0,
+                customizacao: itemEntity.customizacao
             }; 
         });
 
         await ItemSaleModel.createItems(itensComVinculo);
         
+        // Baixa de estoque inteligente (Combo + Escolha Dinâmica)
         for (const item of items) {
             const newProduct = await ProductModel.getProductById(item.product_id);
 
             if (newProduct && newProduct.combo) {
                 const comboArray = ensureArray(safeParseJSON(newProduct.combo) || []);
+                const customizacoes = ensureArray(item.customizacao || []);
+                let customIndex = 0;
 
                 for (const itemDoCombo of comboArray) {
-                    const idDoIngrediente = itemDoCombo.product_id;
-                    const qtdDoIngrediente = itemDoCombo.quantity;
-
-                    if (!idDoIngrediente) continue; 
-
+                    const qtdDoIngrediente = itemDoCombo.quantity || 1;
                     const totalParaBaixar = qtdDoIngrediente * item.quantity;
-                    await ProductModel.updateProductStock(idDoIngrediente, -totalParaBaixar);
+
+                    const idFixo = itemDoCombo.product_id || itemDoCombo.produto_id;
+
+                    if (!idFixo || itemDoCombo.tipo === 'categoria' || itemDoCombo.is_category_choice) {
+                        const escolhaUsuario = customizacoes[customIndex];
+                        customIndex++;
+
+                        const idEscolhido = escolhaUsuario?.id || escolhaUsuario?.product_id || escolhaUsuario?.produto_id;
+                        if (idEscolhido) {
+                            await ProductModel.updateProductStock(Number(idEscolhido), -totalParaBaixar);
+                        }
+                    } else {
+                        await ProductModel.updateProductStock(Number(idFixo), -totalParaBaixar);
+                    }
                 }
             } else {
                 await ProductModel.updateProductStock(item.product_id, -item.quantity);
@@ -135,6 +148,7 @@ export const deleteSale = async (id) => {
 
         const itemsToRestore = ensureArray(await ItemSaleModel.getItemsBySaleId(id));
         
+        // 🟢 Estorno inteligente de estoque ao cancelar/deletar a venda (lendo a customização salva)
         for (const item of itemsToRestore) {
             if (!item || !item.product_id) continue; 
 
@@ -142,20 +156,32 @@ export const deleteSale = async (id) => {
 
             if (newProduct && newProduct.combo) {
                 const comboArray = ensureArray(safeParseJSON(newProduct.combo) || []);
+                const customizacoes = ensureArray(safeParseJSON(item.customizacao) || item.customizacao || []);
+                let customIndex = 0;
 
                 for (const ingrediente of comboArray) {
-                    const idDoIngrediente = ingrediente.product_id;
-                    const qtdDoIngrediente = ingrediente.quantity;
-
-                    if (!idDoIngrediente) continue;
-
+                    const qtdDoIngrediente = ingrediente.quantity || 1;
                     const totalParaDevolver = qtdDoIngrediente * item.quantity;
-                    await ProductModel.updateProductStock(idDoIngrediente, totalParaDevolver);
+
+                    const idFixo = ingrediente.product_id || ingrediente.produto_id;
+
+                    if (!idFixo || ingrediente.tipo === 'categoria' || ingrediente.is_category_choice) {
+                        const escolhaUsuario = customizacoes[customIndex];
+                        customIndex++;
+
+                        const idEscolhido = escolhaUsuario?.id || escolhaUsuario?.product_id || escolhaUsuario?.produto_id;
+                        if (idEscolhido) {
+                            await ProductModel.updateProductStock(Number(idEscolhido), totalParaDevolver);
+                        }
+                    } else {
+                        await ProductModel.updateProductStock(Number(idFixo), totalParaDevolver);
+                    }
                 }
             } else {
                 await ProductModel.updateProductStock(item.product_id, item.quantity);
             }
         }
+
         await ItemSaleModel.deleteItemSaleById(id);
         const results = await SaleModel.deleteSale(id);
 

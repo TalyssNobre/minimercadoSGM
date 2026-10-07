@@ -31,7 +31,7 @@ export default function CaixaPage() {
   const [selectedMember, setSelectedMember] = useState<Membro | null>(null);
   const [isFinalizando, setIsFinalizando] = useState(false);
 
-  const handleFinalizarVenda = async (statusVenda: 'PAGO' | 'PENDENTE') => {
+const handleFinalizarVenda = async (statusVenda: 'PAGO' | 'PENDENTE') => {
     if (carrinho.cart.length === 0) return carrinho.exibirAlerta("O carrinho está vazio!", 'error');
     if (!selectedMember) return carrinho.exibirAlerta("Selecione um cliente!", 'error');
     if (isFinalizando) return;
@@ -53,23 +53,22 @@ export default function CaixaPage() {
       formData.append('user_id', vendedorId.toString());
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
       
+      // 🟢 Mapeia os itens enviando apenas o combo de forma limpa, anexando a customização nos bastidores
       const itensCarrinho = carrinho.cart.map(item => {
         const precoBase = item.product.base_price ? item.product.base_price : item.product.price;
         const precoEfetivo = item.product.price;
-        
-        // 🟢 CORREÇÃO DEFINITIVA: 
-        // Mandamos apenas o desconto de 1 UNIDADE (Ex: R$ 2.00).
-        // Removemos o "* item.quantity" porque o Backend já faz isso!
         const descontoUnitario = precoBase - precoEfetivo;
 
         return {
           product_id: item.product.id,
           quantity: item.quantity,
           unit_price: precoBase, 
-          item_discount: descontoUnitario 
+          item_discount: descontoUnitario,
+          customizacao: item.customizacao || [] // O backend lê isso para baixar o estoque da bebida escolhida
         };
       });
 
+      // Desconto real do caixa, sem gambiarras matemáticas
       formData.append('discount', carrinho.valorDescontoCalculado.toString());
 
       const agora = new Date();
@@ -90,9 +89,7 @@ export default function CaixaPage() {
         carrinho.limparCarrinho();
         setSelectedMember(null);
         setSelectedTeam(null);
-        
         atualizarDados(); 
-        
       } else {
         carrinho.exibirAlerta(resposta.message || "Erro ao salvar.", 'error');
       }
@@ -105,7 +102,6 @@ export default function CaixaPage() {
 
   return (
     <>
-      {/* TOAST FLUTUANTE GLOBAL DA PÁGINA */}
       <div 
         className={`fixed top-8 left-1/2 transform -translate-x-1/2 z-[100] transition-all duration-300 ease-out flex items-center shadow-xl bg-green-600 text-white px-6 py-3 rounded-full font-bold text-sm tracking-wide border border-green-400 ${carrinho.toastAviso.show ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0 pointer-events-none'}`}
       >
@@ -118,7 +114,6 @@ export default function CaixaPage() {
       <div className="max-w-7xl mx-auto py-4 text-left">
         <div className="flex flex-col lg:flex-row gap-6 relative">
           
-          {/* Lado Esquerdo - min-w-0 */}
           <div className="flex-1 min-w-0 space-y-6">
             <SelecaoCliente 
               equipes={equipes} membros={membros}
@@ -131,7 +126,6 @@ export default function CaixaPage() {
             />
           </div>
 
-          {/* Lado Direito */}
           <div className="w-full lg:w-96 flex-shrink-0">
             <CarrinhoLateral 
               cart={carrinho.cart}
@@ -143,21 +137,20 @@ export default function CaixaPage() {
             />
           </div>
 
-          {/* Modais */}
           <ModalAlerta 
             isOpen={carrinho.modalAlerta.isOpen}
             mensagem={carrinho.modalAlerta.mensagem}
             tipo={carrinho.modalAlerta.tipo}
             onClose={() => carrinho.setModalAlerta({ ...carrinho.modalAlerta, isOpen: false })}
           />
-        {carrinho.comboParaConfigurar && (
-        <ModalEscolhaCombo 
-          produto={carrinho.comboParaConfigurar}
-          allProducts={produtos} // Passando todos os produtos pro modal conseguir filtrar
-          onClose={() => carrinho.setComboParaConfigurar(null)}
-          onConfirm={(itens) => carrinho.finalizarAdicaoCombo(carrinho.comboParaConfigurar!, itens)}
-        />
-      )}
+          {carrinho.comboParaConfigurar && (
+            <ModalEscolhaCombo 
+              produto={carrinho.comboParaConfigurar}
+              allProducts={produtos}
+              onClose={() => carrinho.setComboParaConfigurar(null)}
+              onConfirm={(itens) => carrinho.finalizarAdicaoCombo(carrinho.comboParaConfigurar!, itens)}
+            />
+          )}
         </div>
       </div>
     </>
