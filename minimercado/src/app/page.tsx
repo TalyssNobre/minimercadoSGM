@@ -29,7 +29,7 @@ export default function LoginPage() {
         {/* Card do Formulário (Fica por cima do fundo) */}
         <div className="w-full max-w-md flex flex-col items-center relative z-10 bg-white/95 backdrop-blur-md p-8 sm:p-10 rounded-2xl shadow-2xl border border-white/20">
           <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center tracking-tight">
-            Bem-vindo de volta!
+            Bem-vindo ao Mercadinho!
           </h1>
 
           <LoginForm />

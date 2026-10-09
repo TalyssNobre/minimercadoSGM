@@ -7,7 +7,6 @@ export function useCarrinho() {
   const [valorDescontoInput, setValorDescontoInput] = useState<string>('');
   const [modalAlerta, setModalAlerta] = useState({ isOpen: false, mensagem: '', tipo: 'success' as 'success' | 'error' });
   
-  // 🟢 ESTADOS DO COMBO E TOAST
   const [toastAviso, setToastAviso] = useState({ show: false, msg: '' });
   const [comboParaConfigurar, setComboParaConfigurar] = useState<Produto | null>(null);
 
@@ -15,9 +14,7 @@ export function useCarrinho() {
     setModalAlerta({ isOpen: true, mensagem, tipo });
   };
 
-  const atualizarItemPeloRealtime = (payload: any) => {
-    // ... (Mantenha a sua lógica atual do realtime aqui se tiver, ou deixe vazio se não estiver usando)
-  };
+  const atualizarItemPeloRealtime = (payload: any) => {};
 
   const cartSubtotal = useMemo(() => {
     return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
@@ -34,22 +31,29 @@ export function useCarrinho() {
     return Math.max(0, cartSubtotal - valorDescontoCalculado);
   }, [cartSubtotal, valorDescontoCalculado]);
 
+  // 🟢 NOVA FUNÇÃO: Soma a quantidade total de um produto, mesmo que ele esteja dividido em várias linhas do carrinho
+  const getQuantidadeTotalDoProduto = (productId: number) => {
+    return cart.filter(item => item.product.id === productId).reduce((acc, curr) => acc + curr.quantity, 0);
+  };
+
   const addToCart = (produto: Produto) => {
-    // 🟢 INTERCEPTA O CLIQUE: Se for combo, abre o modal e para por aqui
+    if (produto.stock <= 0) {
+      return exibirAlerta(`O produto "${produto.name}" está esgotado!`, 'error');
+    }
+
+    // 🟢 CORREÇÃO: Verifica se a soma de todas as linhas já bateu o teto do estoque
+    const qtdAtualNoCarrinho = getQuantidadeTotalDoProduto(produto.id);
+    if (qtdAtualNoCarrinho + 1 > produto.stock) {
+      return exibirAlerta(`Estoque insuficiente! Restam apenas ${produto.stock} unidades.`, 'error');
+    }
+
     if (produto.isCombo) {
       setComboParaConfigurar(produto);
       return;
     }
 
-    if (produto.stock <= 0) {
-      return exibirAlerta(`O produto "${produto.name}" está esgotado!`, 'error');
-    }
-
     const existingItem = cart.find(item => item.product.id === produto.id && !item.customizacao);
-    if (existingItem && existingItem.quantity + 1 > produto.stock) {
-      return exibirAlerta(`Estoque insuficiente! Restam apenas ${produto.stock} unidades.`, 'error');
-    }
-
+    
     setCart(prev => {
       if (existingItem) {
         return prev.map(item => item.product.id === produto.id && !item.customizacao ? { ...item, quantity: item.quantity + 1 } : item);
@@ -61,7 +65,6 @@ export function useCarrinho() {
     setTimeout(() => setToastAviso(prev => ({ ...prev, show: false })), 2000);
   };
 
-  // 🟢 FUNÇÃO QUE O MODAL CHAMA AO CONFIRMAR AS BEBIDAS
   const finalizarAdicaoCombo = (produto: Produto, itensEscolhidos: any[]) => {
     setCart(prev => [...prev, { product: produto, quantity: 1, customizacao: itensEscolhidos }]);
     setComboParaConfigurar(null);
@@ -73,11 +76,15 @@ export function useCarrinho() {
     const existingItem = cart.find(item => item.product.id === productId);
     if (!existingItem) return;
 
-    const newQuantity = existingItem.quantity + delta;
-    if (delta > 0 && newQuantity > existingItem.product.stock) {
-      return exibirAlerta(`Estoque atingido! Máximo de ${existingItem.product.stock} unidades.`, 'error');
+    // 🟢 CORREÇÃO: Aplica a mesma regra de soma geral do carrinho ao clicar no botão "+"
+    if (delta > 0) {
+      const qtdAtualNoCarrinho = getQuantidadeTotalDoProduto(productId);
+      if (qtdAtualNoCarrinho + delta > existingItem.product.stock) {
+        return exibirAlerta(`Estoque atingido! Máximo de ${existingItem.product.stock} unidades.`, 'error');
+      }
     }
 
+    const newQuantity = existingItem.quantity + delta;
     setCart(prev => prev.map(item => item.product.id === productId ? (newQuantity > 0 ? { ...item, quantity: newQuantity } : item) : item));
   };
 
@@ -95,7 +102,6 @@ export function useCarrinho() {
     cartSubtotal, valorDescontoCalculado, cartTotalFinal,
     addToCart, updateQuantity, removeFromCart, limparCarrinho,
     modalAlerta, setModalAlerta, exibirAlerta, atualizarItemPeloRealtime, toastAviso,
-    // 🟢 Exportando as funções do combo
     comboParaConfigurar, setComboParaConfigurar, finalizarAdicaoCombo
   };
 }

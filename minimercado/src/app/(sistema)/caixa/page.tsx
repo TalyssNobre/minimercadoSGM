@@ -64,7 +64,7 @@ const handleFinalizarVenda = async (statusVenda: 'PAGO' | 'PENDENTE') => {
           quantity: item.quantity,
           unit_price: precoBase, 
           item_discount: descontoUnitario,
-          customizacao: item.customizacao || [] // O backend lê isso para baixar o estoque da bebida escolhida
+          customizacao: item.customizacao || []
         };
       });
 
