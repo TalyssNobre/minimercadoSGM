@@ -7,6 +7,7 @@ export interface Membro {
   id: number;
   team_id: number;
   name: string;
+  tem_pendencia?: boolean;
 }
 
 

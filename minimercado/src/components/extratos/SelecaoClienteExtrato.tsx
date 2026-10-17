@@ -60,7 +60,22 @@ export default function SelecaoClienteExtrato({ equipes, membros, selectedTeam, 
           {isMemberDropdownOpen && selectedTeam && (
             <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
               {membrosFiltrados.length === 0 ? <div className="px-4 py-3 text-sm text-gray-500">Nenhum integrante cadastrado.</div> : membrosFiltrados.map(m => (
-                <div key={m.id} onClick={() => { setSelectedMember(m); setIsMemberDropdownOpen(false); resetSelection(); }} className="px-4 py-3 hover:bg-[#15665a] hover:text-white cursor-pointer text-sm border-b border-gray-50 last:border-0">{m.name}</div>
+                <div 
+                  key={m.id} 
+                  onClick={() => { setSelectedMember(m); setIsMemberDropdownOpen(false); resetSelection(); }} 
+                  className="px-4 py-3 hover:bg-[#15665a] hover:text-white cursor-pointer text-sm border-b border-gray-50 last:border-0 flex justify-between items-center group"
+                >
+                  <span className={m.tem_pendencia ? "text-red-600 font-semibold group-hover:text-white" : ""}>
+                    {m.name}
+                  </span>
+                  
+                  {m.tem_pendencia && (
+                    <span className="flex items-center gap-2">
+                      <span className="text-[10px] text-red-500 font-bold group-hover:text-white">DEVENDO</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm border border-white group-hover:bg-white group-hover:border-transparent"></span>
+                    </span>
+                  )}
+                </div>
               ))}
             </div>
           )}

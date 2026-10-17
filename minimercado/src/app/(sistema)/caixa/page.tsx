@@ -1,20 +1,21 @@
 'use client';
 import React, { useState } from 'react';
 
-// UI e Subcomponentes
+
 import { ModalAlerta } from '@/src/components/ui/ModalAlerta';
+import { ModalConfirmacao } from '@/src/components/ui/ModalConfirmacao'; 
 import SelecaoCliente from '@/src/components/pdv/SelecaoCliente';
 import GradeProdutos from '@/src/components/pdv/GradeProdutos';
 import CarrinhoLateral from '@/src/components/pdv/CarrinhoLateral';
 import ModalEscolhaCombo from '@/src/components/pdv/ModalEscolhaCombo';
 
-// Hooks
+
 import { usePDVDados } from '@/src/components/pdv/hooks/usePDVDados';
 import { useCarrinho } from '@/src/components/pdv/hooks/useCarrinho';
 import { Equipe, Membro } from '@/src/components/pdv/types';
 import { useRealtimeSync } from '@/src/hooks/useRealtimeSync';
 
-// Controllers
+
 import { createSale } from '@/src/Server/controllers/SaleController';
 import { getLoggedUserController } from '@/src/Server/controllers/UserController';
 
@@ -30,8 +31,23 @@ export default function CaixaPage() {
   const [selectedTeam, setSelectedTeam] = useState<Equipe | null>(null);
   const [selectedMember, setSelectedMember] = useState<Membro | null>(null);
   const [isFinalizando, setIsFinalizando] = useState(false);
+  
+  const [isModalPagamentoOpen, setIsModalPagamentoOpen] = useState(false);
 
-const handleFinalizarVenda = async (statusVenda: 'PAGO' | 'PENDENTE') => {
+  const solicitarFinalizacao = (statusVenda: 'PAGO' | 'PENDENTE') => {
+
+    if (carrinho.cart.length === 0) return carrinho.exibirAlerta("O carrinho está vazio!", 'error');
+    if (!selectedMember) return carrinho.exibirAlerta("Selecione um cliente!", 'error');
+    if (isFinalizando) return;
+
+    if (statusVenda === 'PAGO') {
+      setIsModalPagamentoOpen(true); 
+    } else {
+      handleFinalizarVenda('PENDENTE'); 
+    }
+  };
+
+  const handleFinalizarVenda = async (statusVenda: 'PAGO' | 'PENDENTE') => {
     if (carrinho.cart.length === 0) return carrinho.exibirAlerta("O carrinho está vazio!", 'error');
     if (!selectedMember) return carrinho.exibirAlerta("Selecione um cliente!", 'error');
     if (isFinalizando) return;
@@ -53,7 +69,6 @@ const handleFinalizarVenda = async (statusVenda: 'PAGO' | 'PENDENTE') => {
       formData.append('user_id', vendedorId.toString());
       formData.append('status', statusVenda === 'PAGO' ? 'Pago' : '');
       
-      // 🟢 Mapeia os itens enviando apenas o combo de forma limpa, anexando a customização nos bastidores
       const itensCarrinho = carrinho.cart.map(item => {
         const precoBase = item.product.base_price ? item.product.base_price : item.product.price;
         const precoEfetivo = item.product.price;
@@ -68,7 +83,6 @@ const handleFinalizarVenda = async (statusVenda: 'PAGO' | 'PENDENTE') => {
         };
       });
 
-      // Desconto real do caixa, sem gambiarras matemáticas
       formData.append('discount', carrinho.valorDescontoCalculado.toString());
 
       const agora = new Date();
@@ -133,7 +147,8 @@ const handleFinalizarVenda = async (statusVenda: 'PAGO' | 'PENDENTE') => {
               valorDescontoInput={carrinho.valorDescontoInput} setValorDescontoInput={carrinho.setValorDescontoInput}
               cartSubtotal={carrinho.cartSubtotal} valorDescontoCalculado={carrinho.valorDescontoCalculado} cartTotalFinal={carrinho.cartTotalFinal}
               updateQuantity={carrinho.updateQuantity} removeFromCart={carrinho.removeFromCart}
-              isFinalizando={isFinalizando} onFinalizarVenda={handleFinalizarVenda}
+              isFinalizando={isFinalizando} 
+              onFinalizarVenda={solicitarFinalizacao} 
             />
           </div>
 
@@ -143,6 +158,21 @@ const handleFinalizarVenda = async (statusVenda: 'PAGO' | 'PENDENTE') => {
             tipo={carrinho.modalAlerta.tipo}
             onClose={() => carrinho.setModalAlerta({ ...carrinho.modalAlerta, isOpen: false })}
           />
+
+          <ModalConfirmacao 
+            isOpen={isModalPagamentoOpen}
+            titulo="Confirmar Pagamento?"
+            mensagem="Você está prestes a finalizar esta venda como PAGA. Deseja continuar?"
+            tipo="warning"
+            textoConfirmar="Sim, Finalizar"
+            textoCancelar="Cancelar"
+            onConfirm={() => {
+              setIsModalPagamentoOpen(false); 
+              handleFinalizarVenda('PAGO');  
+            }}
+            onCancel={() => setIsModalPagamentoOpen(false)}
+          />
+
           {carrinho.comboParaConfigurar && (
             <ModalEscolhaCombo 
               produto={carrinho.comboParaConfigurar}

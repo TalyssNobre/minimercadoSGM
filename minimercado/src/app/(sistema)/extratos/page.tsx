@@ -1,15 +1,14 @@
 'use client';
 import React, { useState, useRef } from 'react';
-import { useReactToPrint } from 'react-to-print'; // 🟢 Biblioteca de impressão
+import { useReactToPrint } from 'react-to-print'; 
 
-// Subcomponentes
 import { ModalAlerta } from '@/src/components/ui/ModalAlerta';
 import SelecaoClienteExtrato from '@/src/components/extratos/SelecaoClienteExtrato';
 import TabelaExtrato from '@/src/components/extratos/TabelaExtrato';
 import ResumoExtrato from '@/src/components/extratos/ResumoExtrato';
-import { RelatorioExtrato } from '@/src/components/extratos/RelatorioExtrato'; // 🟢 Nosso novo relatório
+import { RelatorioExtrato } from '@/src/components/extratos/RelatorioExtrato'; 
 
-// Hooks
+
 import { useExtratos } from '@/src/components/extratos/hooks/useExtratos';
 
 export default function ExtratosPage() {

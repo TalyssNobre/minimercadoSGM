@@ -12,7 +12,6 @@ interface Props {
 export function InputPesquisa({ placeholder = "Pesquisar produto...", value, onChange, className = "" }: Props) {
   return (
     <div className={`relative ${className}`}>
-      {/* ÍCONE DE LUPA EM SVG PURO */}
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
         <svg 
           xmlns="http://www.w3.org/2000/svg" 

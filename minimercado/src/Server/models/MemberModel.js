@@ -18,9 +18,23 @@ export const updateMember = async(id, memberEntity) => {
 
 export const getAllMember = async() => {
     const supabase = await getSupabaseServer();
-    const{data,error} = await supabase.from("member").select("*").order("name", { ascending: true });
-   if(error){ throw new Error(error.message);
-    } return data;
+    const { data, error } = await supabase
+        .from("member")
+        .select(`
+            *,
+            Sale ( status )
+        `)
+        .order("name", { ascending: true });
+    if(error){ throw new Error(error.message);} 
+    const membrosComStatus = data.map(membro => {
+        const pendente = membro.Sale?.some(venda => venda.status === false); 
+        const { Sale, ...dadosMembro } = membro;
+        return {
+            ...dadosMembro,
+            tem_pendencia: !!pendente
+        };
+    });
+    return membrosComStatus;
 }
 
 export const getMemberById = async(id) => {

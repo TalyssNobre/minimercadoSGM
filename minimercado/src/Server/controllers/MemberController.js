@@ -52,7 +52,7 @@ export async function getAllMember() {
     if (!results || results.error) {
         return { success: false, message: results.error };
     }
-    return { success: true,data: results.team, data: results.member };
+    return { success: true, data: results.member }; 
     }catch (error) {
         return { success: false, message: error.message };
     }
