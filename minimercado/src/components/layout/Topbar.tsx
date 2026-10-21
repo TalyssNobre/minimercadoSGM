@@ -48,27 +48,25 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
   };
 
   return (
-    // 🟢 Trocado "hidden md:flex" por "hidden lg:flex" 
-    // Agora a Topbar some no iPad e só aparece em PC (>= 1024px)
     <nav className="hidden lg:flex w-full bg-[#0D9488] h-20 text-white shadow-lg px-6 justify-between items-center z-[50] sticky top-0">
       
-      <div className="flex items-center">
-        <div className="w-10"></div>
+      {/* 1. LADO ESQUERDO: Espaçador flex para garantir o centro exato */}
+      <div className="flex-1"></div>
+
+      {/* 2. CENTRO: Apenas o Nome (Sem Logo) */}
+      <div className="flex items-center justify-center flex-1">
+        <span className="text-3xl font-bold tracking-wide drop-shadow-sm">
+          Mercadinho
+        </span>
       </div>
 
-      <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-3">
-        <div className="w-14 h-14 bg-white rounded-full shadow-sm flex items-center justify-center overflow-hidden">
-          <img src="/logo.svg" alt="Logo" className="w-full h-full object-cover scale-125" />
-        </div>
-        <span className="text-2xl font-medium tracking-wide">Mercadinho</span>
-      </div>
-
-      <div className="flex items-center space-x-3">
+      {/* 3. LADO DIREITO: Perfil e Botão de Sair fixados na borda */}
+      <div className="flex items-center justify-end space-x-3 flex-1">
         <div className="flex flex-col text-right leading-none mr-2">
-          <span className="text-sm font-bold tracking-wide">
+          <span className="text-sm font-bold tracking-wide drop-shadow-sm">
             {nomeUsuario}
           </span>
-          <span className="text-[10px] uppercase font-medium opacity-80 mt-1">
+          <span className="text-[10px] uppercase font-medium opacity-90 mt-1">
             {cargoExibicao}
           </span>
         </div>
@@ -77,8 +75,8 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
         <button 
           onClick={handleLogout}
           disabled={isLoggingOut}
-          className={`p-2 rounded-full transition-all flex items-center justify-center min-w-[40px] ${
-            isLoggingOut ? 'bg-gray-500 cursor-not-allowed opacity-50' : 'bg-white/10 hover:bg-red-500'
+          className={`p-2 rounded-full transition-all flex items-center justify-center min-w-[40px] shadow-sm ${
+            isLoggingOut ? 'bg-gray-500 cursor-not-allowed opacity-50' : 'bg-white/10 hover:bg-red-500 hover:shadow-md'
           }`}
           title="Sair do sistema"
         >

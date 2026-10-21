@@ -5,25 +5,25 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex flex-col md:flex-row bg-white">
       
-      {/* LADO ESQUERDO: Área da Logo */}
-      <div className="w-full md:w-1/2 min-h-[30vh] md:min-h-screen flex items-center justify-center bg-fundo border-b md:border-b-0 border-gray-200 p-8">
+
+  <div className="w-full md:w-1/2 min-h-[30vh] md:min-h-screen flex items-center justify-center bg-fundo border-b md:border-b-0 border-gray-200 p-8">
         <div className="w-48 sm:w-64 md:w-80 lg:w-96 flex justify-center">
           <Image
-            src="/logo.svg"
+            src="/LogoImage.svg"
             alt="Logo Segue-Me"
             width={400}
             height={400}
             priority
+            unoptimized /* 🟢 ISSO EVITA QUE O NEXT.JS BORRE A IMAGEM */
             className="w-full h-auto object-contain drop-shadow-md"
           />
         </div>
       </div>
 
-      {/* LADO DIREITO: Área do Formulário COM IMAGEM DE FUNDO SVG */}
-      {/* 👇 AQUI FOI ALTERADO PARA /fundologin.svg 👇 */}
-      <div className="w-full md:w-1/2 relative flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-[url('/fundologin.svg')] bg-cover bg-center bg-no-repeat">
+
+      <div className="w-full md:w-1/2 relative flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-[url('/fundo2.svg')] bg-cover bg-center bg-no-repeat">
         
-        {/* Camada de película escura/clara sobre a imagem para não ofuscar o texto */}
+
         <div className="absolute inset-0 bg-verde-agua/10 backdrop-blur-[2px]"></div>
 
         {/* Card do Formulário (Fica por cima do fundo) */}
