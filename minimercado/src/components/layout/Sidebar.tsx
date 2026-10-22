@@ -85,7 +85,7 @@ export default function Sidebar() {
     <>
       {/* HEADER MOBILE */}
       <div 
-        className={`lg:hidden bg-[#0D9488] text-white px-4 flex justify-between items-center shadow-md fixed left-0 w-full z-[60] top-0 h-16 transition-transform duration-300 ease-in-out ${showMobileHeader ? 'translate-y-0' : '-translate-y-full'}`}
+        className={`lg:hidden bg-[#26086e] text-white px-4 flex justify-between items-center shadow-md fixed left-0 w-full z-[60] top-0 h-16 transition-transform duration-300 ease-in-out ${showMobileHeader ? 'translate-y-0' : '-translate-y-full'}`}
       >
         <h1 className="font-bold text-lg tracking-wide">MiniMercado SGM</h1>
         <button onClick={() => setIsMobileOpen(true)} className="p-2 bg-white/10 rounded-md">
@@ -100,7 +100,7 @@ export default function Sidebar() {
       )}
 
       {/* 🟢 CORREÇÃO IOS: h-[100dvh] resolve o problema da barra de endereço do Safari engolir o rodapé */}
-      <aside className={`bg-[#0F766E] text-white transition-all duration-300 flex flex-col fixed top-0 z-[80] shadow-2xl h-[100dvh] ${isMobileOpen ? 'left-0 w-64' : '-left-full lg:left-0'} lg:relative lg:flex ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}`}>
+      <aside className={`bg-[#26086e] text-white transition-all duration-300 flex flex-col fixed top-0 z-[80] shadow-2xl h-[100dvh] ${isMobileOpen ? 'left-0 w-64' : '-left-full lg:left-0'} lg:relative lg:flex ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}`}>
         
         {/* LOGO / BOTÃO RECOLHER MENU */}
         <div className="p-4 flex justify-between items-center border-b border-white/10">

@@ -85,7 +85,7 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
             <button 
               key={cat} 
               onClick={() => setSelectedCategory(cat)} 
-              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap active:scale-95 ${selectedCategory === cat ? 'bg-[#0D9488] text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'}`}
+              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap active:scale-95 ${selectedCategory === cat ? 'bg-[#26086e] text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'}`}
             >
               {cat}
             </button>

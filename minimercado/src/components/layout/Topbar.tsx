@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { logoutController } from '@/src/Server/controllers/UserController'; 
 
-// 🟢 1. IMPORTAMOS O NOSSO HOOK CENTRAL
+
 import { useUsuario } from '@/src/hooks/useUsuario';
 
 interface TopbarProps {
@@ -15,10 +15,10 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // 🟢 2. PUXAMOS OS DADOS INSTANTANEAMENTE DA MEMÓRIA DO SWR
+
   const { user, cargoUsuario, isLoading } = useUsuario();
 
-  // 🟢 3. LÓGICA DE NOME E CARGO SIMPLIFICADA (Sem precisar de useEffect)
+ 
   const nomeUsuario = isLoading 
     ? 'Carregando...' 
     : (user?.name ? user.name.split(' ')[0] : 'Usuário');
@@ -48,7 +48,7 @@ export default function Topbar({ tipoUsuario }: TopbarProps) {
   };
 
   return (
-    <nav className="hidden lg:flex w-full bg-[#0D9488] h-20 text-white shadow-lg px-6 justify-between items-center z-[50] sticky top-0">
+    <nav className="hidden lg:flex w-full bg-[#26086e] h-20 text-white shadow-lg px-6 justify-between items-center z-[50] sticky top-0">
       
       {/* 1. LADO ESQUERDO: Espaçador flex para garantir o centro exato */}
       <div className="flex-1"></div>

@@ -60,7 +60,7 @@ export default function ModalEscolhaCombo({ produto, allProducts, onClose, onCon
                         key={p.id}
                         type="button"
                         onClick={() => handleSelect(index, p)}
-                        className={`p-3 rounded-lg border text-sm font-medium transition-all text-left truncate ${selecoes[index]?.product_id === p.id ? 'bg-[#0D9488] text-white border-[#0D9488] shadow-md' : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700'}`}
+                        className={`p-3 rounded-lg border text-sm font-medium transition-all text-left truncate ${selecoes[index]?.product_id === p.id ? 'bg-[#26086e] text-white border-[#0D9488] shadow-md' : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700'}`}
                       >
                         {p.name}
                       </button>
