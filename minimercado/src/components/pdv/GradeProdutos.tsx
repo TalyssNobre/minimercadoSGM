@@ -51,14 +51,14 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
 
   const getCardStyle = (produto: Produto) => {
     if (produto.promo_status) return 'border-orange-300 hover:border-orange-500 shadow-orange-100/50';
-    if (produto.isCombo) return 'border-purple-300 hover:border-purple-500 shadow-purple-100/50';
+    if (produto.isCombo) return 'border-cyan-300 hover:border-cyan-500 shadow-cyan-100/50';
     return 'border-gray-100 hover:border-[#0D9488]/50 shadow-sm';
   };
 
   const getButtonStyle = (produto: Produto) => {
     if (produto.stock <= 0) return 'bg-gray-200 text-gray-500 cursor-not-allowed';
     if (produto.promo_status) return 'bg-orange-500 hover:bg-orange-600 text-white hover:shadow-orange-500/30';
-    if (produto.isCombo) return 'bg-purple-600 hover:bg-purple-700 text-white hover:shadow-purple-500/30';
+   if (produto.isCombo) return 'bg-cyan-500 hover:bg-cyan-600 text-white hover:shadow-cyan-500/30';
     return 'bg-[#0D9488] hover:bg-[#0f766e] text-white hover:shadow-teal-500/30';
   };
 
@@ -125,11 +125,11 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
                     </div>
                   )}
 
-                  {produto.isCombo && (
-                    <div className={`absolute -top-2 ${produto.promo_status ? 'left-16' : '-left-2'} bg-purple-600 text-white text-[10px] font-black px-2 py-1 rounded shadow-md z-20`}>
-                      COMBO
-                    </div>
-                  )}
+               {produto.isCombo && (
+  <div className={`absolute -top-2 ${produto.promo_status ? 'left-16' : '-left-2'} bg-cyan-500 text-white text-[10px] font-black px-2 py-1 rounded shadow-md z-20`}>
+    COMBO
+  </div>
+)}
 
                   <div className="w-full aspect-square bg-gray-50 rounded-lg mb-3 overflow-hidden relative">
                     <span className={`absolute top-1.5 right-1.5 text-[10px] px-1.5 py-0.5 rounded font-bold z-10 shadow-sm transition-colors ${produto.stock <= 0 ? 'bg-red-500 text-white' : 'bg-black/60 text-white'}`}>
@@ -161,9 +161,9 @@ export default function GradeProdutos({ produtos, categorias, isLoading, onAddTo
                         <span className="text-sm font-black text-orange-500 group-hover:scale-105 transition-transform">Por: {formatCurrency(produto.price)}</span>
                       </>
                     ) : (
-                      <span className={`text-sm font-black group-hover:scale-105 transition-transform ${produto.isCombo ? 'text-purple-700' : 'text-[#0D9488]'}`}>
-                        {formatCurrency(produto.price)}
-                      </span>
+                     <span className={`text-sm font-black group-hover:scale-105 transition-transform ${produto.isCombo ? 'text-cyan-600' : 'text-[#0D9488]'}`}>
+  {formatCurrency(produto.price)}
+</span>
                     )}
                   </div>
 

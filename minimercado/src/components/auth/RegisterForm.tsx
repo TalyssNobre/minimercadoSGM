@@ -73,12 +73,12 @@ export function RegisterForm() {
         
         <div className="flex flex-col gap-1.5">
           <label htmlFor="nome" className="text-sm font-bold text-gray-700">Nome Completo</label>
-          <input id="nome" type="text" value={nome} onChange={(e) => setNome(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#0D9488] outline-none transition-all" required />
+          <input id="nome" type="text" value={nome} onChange={(e) => setNome(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#26086e] outline-none transition-all" required />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="email" className="text-sm font-bold text-gray-700">E-mail</label>
-          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#0D9488] outline-none transition-all" required />
+          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#26086e] outline-none transition-all" required />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -92,13 +92,13 @@ export function RegisterForm() {
                 type={mostrarSenha ? "text" : "password"} 
                 value={senha} 
                 onChange={(e) => setSenha(e.target.value)} 
-                className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#0D9488] outline-none transition-all" 
+                className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#26086e] outline-none transition-all" 
                 required minLength={6} 
               />
               <button
                 type="button"
                 onClick={() => setMostrarSenha(!mostrarSenha)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0D9488] transition-colors focus:outline-none"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#26086e] transition-colors focus:outline-none"
               >
                 {mostrarSenha ? (
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>
@@ -118,7 +118,7 @@ export function RegisterForm() {
                 type={mostrarConfirmarSenha ? "text" : "password"} 
                 value={confirmarSenha} 
                 onChange={(e) => setConfirmarSenha(e.target.value)} 
-                className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#0D9488] outline-none transition-all" 
+                className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#26086e] outline-none transition-all" 
                 required minLength={6} 
               />
               <button
@@ -138,7 +138,7 @@ export function RegisterForm() {
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="perfil" className="text-sm font-bold text-gray-700">Perfil de Acesso</label>
-          <select id="perfil" value={perfil} onChange={(e) => setPerfil(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#0D9488] outline-none transition-all cursor-pointer">
+          <select id="perfil" value={perfil} onChange={(e) => setPerfil(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#26086e] outline-none transition-all cursor-pointer">
             <option value="Operador">Operador</option>
             <option value="Admin">Administrador</option>
           </select>
@@ -151,7 +151,7 @@ export function RegisterForm() {
         </div>
       </form>
 
-      {/* 🟢 MODAL DE ALERTA RENDERIZADO AQUI */}
+  
       <ModalAlerta 
         isOpen={modalAlerta.isOpen}
         mensagem={modalAlerta.mensagem}

@@ -38,14 +38,14 @@ export default function SelecaoClienteExtrato({ equipes, membros, selectedTeam, 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Dropdown de Equipe */}
         <div className="relative" ref={teamRef}>
-          <button type="button" onClick={() => setIsTeamDropdownOpen(!isTeamDropdownOpen)} className="w-full px-4 py-3 border border-gray-300 rounded-md text-left bg-white flex justify-between items-center focus:ring-2 focus:ring-[#15665a] transition-all shadow-sm">
+          <button type="button" onClick={() => setIsTeamDropdownOpen(!isTeamDropdownOpen)} className="w-full px-4 py-3 border border-gray-300 rounded-md text-left bg-white flex justify-between items-center focus:ring-2 focus:ring-[#8b67e0] transition-all shadow-sm">
             <span className="truncate text-gray-700 font-medium">{selectedTeam ? selectedTeam.name : '1º - Selecione a Equipe'}</span>
             <svg className={`w-4 h-4 text-gray-500 transition-transform ${isTeamDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
           </button>
           {isTeamDropdownOpen && (
             <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
               {equipes.length === 0 ? <div className="px-4 py-3 text-sm text-gray-500">Carregando equipes...</div> : equipes.map(t => (
-                <div key={t.id} onClick={() => { setSelectedTeam(t); setSelectedMember(null); setIsTeamDropdownOpen(false); resetSelection(); }} className="px-4 py-3 hover:bg-[#15665a] hover:text-white cursor-pointer text-sm border-b border-gray-50 last:border-0">{t.name}</div>
+                <div key={t.id} onClick={() => { setSelectedTeam(t); setSelectedMember(null); setIsTeamDropdownOpen(false); resetSelection(); }} className="px-4 py-3 hover:bg-[#8b67e0] hover:text-white cursor-pointer text-sm border-b border-gray-50 last:border-0">{t.name}</div>
               ))}
             </div>
           )}
@@ -53,7 +53,7 @@ export default function SelecaoClienteExtrato({ equipes, membros, selectedTeam, 
 
         {/* Dropdown de Membro */}
         <div className="relative" ref={memberRef}>
-          <button type="button" disabled={!selectedTeam} onClick={() => setIsMemberDropdownOpen(!isMemberDropdownOpen)} className="w-full px-4 py-3 border border-gray-300 rounded-md text-left bg-white flex justify-between items-center focus:ring-2 focus:ring-[#15665a] transition-all shadow-sm disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
+          <button type="button" disabled={!selectedTeam} onClick={() => setIsMemberDropdownOpen(!isMemberDropdownOpen)} className="w-full px-4 py-3 border border-gray-300 rounded-md text-left bg-white flex justify-between items-center focus:ring-2 focus:ring-[#26086e] transition-all shadow-sm disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
             <span className="truncate text-gray-700 font-medium">{selectedMember ? selectedMember.name : '2º - Selecione o Integrante'}</span>
             <svg className={`w-4 h-4 text-gray-500 transition-transform ${isMemberDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
           </button>
@@ -63,7 +63,7 @@ export default function SelecaoClienteExtrato({ equipes, membros, selectedTeam, 
                 <div 
                   key={m.id} 
                   onClick={() => { setSelectedMember(m); setIsMemberDropdownOpen(false); resetSelection(); }} 
-                  className="px-4 py-3 hover:bg-[#15665a] hover:text-white cursor-pointer text-sm border-b border-gray-50 last:border-0 flex justify-between items-center group"
+                  className="px-4 py-3 hover:bg-[#8b67e0] hover:text-white cursor-pointer text-sm border-b border-gray-50 last:border-0 flex justify-between items-center group"
                 >
                   <span className={m.tem_pendencia ? "text-red-600 font-semibold group-hover:text-white" : ""}>
                     {m.name}

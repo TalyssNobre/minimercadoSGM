@@ -40,10 +40,10 @@ export default function TabelaVendas({ isLoading, vendas, onCancelar }: Props) {
           ) : (
             vendas.map((venda) => {
               
-              // 🟢 CORREÇÃO DA MATEMÁTICA: O banco já manda o Líquido!
+        
               const desconto = venda.discount || 0;
-              const valorLiquido = venda.total_value || 0; // Ex: 8 reais
-              const valorBruto = valorLiquido + desconto; // Ex: 8 + 4 = 12 reais cortado
+              const valorLiquido = venda.total_value || 0; 
+              const valorBruto = valorLiquido + desconto; 
 
               return (
                 <tr key={venda.sale_id} className={`transition-colors ${!venda.status ? 'bg-red-50/50 opacity-75' : 'hover:bg-gray-50'}`}>

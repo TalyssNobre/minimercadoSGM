@@ -4,7 +4,7 @@ import { InputPesquisa } from '@/src/components/ui/InputPesquisa';
 
 interface Props {
   produtos: Product[]; 
-  categorias: Category[]; // 🟢 ADICIONADO: Para podermos ler o nome das Categorias
+  categorias: Category[]; 
   fetchStats: (id: number | string) => Promise<{ quantidadeSold: number; totalArrecadado: number; totalDesconto: number } | null>;
 }
 
@@ -42,7 +42,7 @@ const impactoEstoque = useMemo(() => {
       
       const comboArray: ComboItem[] = Array.isArray(comboParseado) ? comboParseado : [];
 
-      // 🟢 CORREÇÃO AQUI: Adicionado o "any" para o TypeScript não reclamar das propriedades novas
+
       return comboArray.map((item: any) => {
         const qtdPorCombo = item.quantity || item.qty || 1;
 
@@ -89,7 +89,7 @@ const impactoEstoque = useMemo(() => {
           {mostrarSugestoes && produtosFiltrados.length > 0 && (
             <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden">
               {produtosFiltrados.map(p => (
-                <button key={p.id} onClick={() => selecionarProduto(p)} className="w-full text-left px-4 py-3 hover:bg-[#0D9488]/10 text-sm text-gray-700 flex justify-between items-center border-b last:border-none border-gray-50">
+                <button key={p.id} onClick={() => selecionarProduto(p)} className="w-full text-left px-4 py-3 hover:bg-[#c6adff]/10 text-sm text-gray-700 flex justify-between items-center border-b last:border-none border-gray-50">
                   <span className="font-medium">{p.name}</span>
                   <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-400">Selecionar</span>
                 </button>

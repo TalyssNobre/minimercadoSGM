@@ -35,7 +35,7 @@ export default function CadastroProdutoPage() {
   // 🟢 2. NOVO STATE PARA O MODAL DE CONFIRMAÇÃO
   const [categoriaParaExcluir, setCategoriaParaExcluir] = useState<Categoria | null>(null);
 
-  const inputClasses = "w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] focus:border-[#0D9488] outline-none transition-all placeholder-gray-400 text-gray-800";
+  const inputClasses = "w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md focus:ring-1 focus:ring-[#26086e] focus:border-[#26086e] outline-none transition-all placeholder-gray-400 text-gray-800";
 
   const handleSalvarProduto = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,7 +156,7 @@ export default function CadastroProdutoPage() {
             {/* Lista com Scroll */}
             <div className="flex-1 overflow-y-auto pr-2 space-y-2 scrollbar-thin">
               {categoriasHook.categorias.map(cat => (
-                <div key={cat.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg hover:border-[#0D9488]/30 transition-colors">
+                <div key={cat.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg hover:border-[#c6adff]/30 transition-colors">
                   {categoriasHook.editandoId === cat.id ? (
                     <div className="flex-1 flex items-center gap-2">
                       <input type="text" autoFocus value={categoriasHook.editandoNome} onChange={e => categoriasHook.setEditandoNome(e.target.value)} className="flex-1 px-3 py-1.5 text-sm border rounded outline-none focus:ring-2 focus:ring-[#0D9488]" />

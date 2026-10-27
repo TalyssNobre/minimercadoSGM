@@ -32,14 +32,14 @@ export default function ModalSalvarEquipe({ isOpen, equipeOriginal, onClose, onS
   return (
     <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-        <div className="bg-[#0D9488] px-6 py-4 font-bold text-white">
+        <div className="bg-[#26086e] px-6 py-4 font-bold text-white">
           {equipeOriginal ? 'Editar Equipe' : 'Nova Equipe'}
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <input 
             type="text" required value={nome} onChange={(e) => setNome(e.target.value)} 
             placeholder="Nome da Equipe" 
-            className="w-full px-4 py-2 border rounded-md outline-none focus:ring-2 focus:ring-[#0D9488]" 
+            className="w-full px-4 py-2 border rounded-md outline-none focus:ring-2 focus:ring-[#26086e]" 
           />
           <div className="flex items-center gap-3 p-2 border rounded-md">
             <input type="color" value={cor} onChange={(e) => setCor(e.target.value)} className="w-10 h-10 cursor-pointer border-none p-0" />

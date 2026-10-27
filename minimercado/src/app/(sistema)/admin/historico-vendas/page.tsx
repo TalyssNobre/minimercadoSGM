@@ -53,7 +53,7 @@ export default function HistoricoVendasPage() {
                   type="date"
                   value={historico.filtroData}
                   onChange={(e) => historico.setFiltroData(e.target.value)}
-                  className="w-full px-3 py-2 pr-8 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] outline-none text-gray-700 text-sm shadow-sm"
+                  className="w-full px-3 py-2 pr-8 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#26086e] outline-none text-gray-700 text-sm shadow-sm"
                 />
                 {historico.filtroData && (
                   <button 
@@ -75,7 +75,7 @@ export default function HistoricoVendasPage() {
               <select 
                 value={historico.filtroVendedor}
                 onChange={(e) => historico.setFiltroVendedor(e.target.value)}
-                className="w-full sm:w-48 px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] outline-none text-gray-700 text-sm shadow-sm"
+                className="w-full sm:w-48 px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#26086e] outline-none text-gray-700 text-sm shadow-sm"
               >
                 <option value="Todos">{historico.isLoading ? 'Carregando...' : 'Todos'}</option>
                 {historico.operadores.map(op => (

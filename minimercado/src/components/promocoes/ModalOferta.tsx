@@ -9,7 +9,7 @@ export default function ModalOferta({ promocoes }: { promocoes: any }) {
   return (
     <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col text-left">
-        <div className="bg-[#0D9488] px-6 py-4 flex justify-between items-center text-white font-bold">
+        <div className="bg-[#26086e] px-6 py-4 flex justify-between items-center text-white font-bold">
           <h2>Criar Oferta Relâmpago</h2>
           <button onClick={modais.fecharModais}>✕</button>
         </div>

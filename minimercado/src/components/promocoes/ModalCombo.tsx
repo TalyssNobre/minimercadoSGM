@@ -3,12 +3,12 @@ import { InputPesquisa } from '@/src/components/ui/InputPesquisa';
 
 export default function ModalCombo({ promocoes }: { promocoes: any }) {
   const { modais, comboForm, dados } = promocoes;
-  const inputClasses = "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] outline-none text-gray-700 transition-all";
+  const inputClasses = "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#26086e] outline-none text-gray-700 transition-all";
 
   return (
     <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
-        <div className="bg-[#0D9488] px-6 py-4 flex justify-between items-center text-white font-bold">
+        <div className="bg-[#26086e] px-6 py-4 flex justify-between items-center text-white font-bold">
           <h2>{comboForm.idEditando ? 'Editar Combo' : 'Configurar Novo Combo'}</h2>
           <button onClick={modais.fecharModais}>✕</button>
         </div>

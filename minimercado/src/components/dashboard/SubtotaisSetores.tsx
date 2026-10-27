@@ -26,7 +26,7 @@ export default function SubtotaisSetores({ categories, totaisPorCategoria, activ
             key={cat.id} 
             onClick={() => setActiveTab(cat.id)}
             className={`bg-white rounded-xl p-5 border shadow-sm transition-all cursor-pointer border-l-4
-              ${activeTab === cat.id ? 'border-[#0D9488] ring-2 ring-[#0D9488]/20' : 'border-gray-100 hover:border-[#0D9488]/50 border-l-[#0D9488]'}
+              ${activeTab === cat.id ? 'border-[#26086E] ring-2 ring-[#26086e]/20' : 'border-gray-100 hover:border-[#26086e]/50 border-l-[#26086e]'}
             `}
           >
             <p className="text-sm font-bold text-gray-600 truncate">{cat.name}</p>

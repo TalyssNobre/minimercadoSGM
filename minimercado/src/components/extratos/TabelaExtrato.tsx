@@ -33,10 +33,10 @@ export default function TabelaExtrato({ activeTab, setActiveTab, comprasVisiveis
   return (
     <>
       <div className="flex flex-col sm:flex-row bg-gray-100 border-b border-gray-200">
-        <button onClick={() => mudarAba('PENDENTE')} className={`flex-1 py-3 text-sm font-bold transition-colors ${activeTab === 'PENDENTE' ? 'bg-[#15665a] text-white' : 'text-gray-600 hover:bg-gray-200'}`}>
+        <button onClick={() => mudarAba('PENDENTE')} className={`flex-1 py-3 text-sm font-bold transition-colors ${activeTab === 'PENDENTE' ? 'bg-[#8b67e0] text-white' : 'text-gray-600 hover:bg-gray-200'}`}>
           Histórico de Compras Pendentes
         </button>
-        <button onClick={() => mudarAba('PAGO')} className={`flex-1 py-3 text-sm font-bold transition-colors ${activeTab === 'PAGO' ? 'bg-[#15665a] text-white' : 'text-gray-600 hover:bg-gray-200'}`}>
+        <button onClick={() => mudarAba('PAGO')} className={`flex-1 py-3 text-sm font-bold transition-colors ${activeTab === 'PAGO' ? 'bg-[#8b67e0] text-white' : 'text-gray-600 hover:bg-gray-200'}`}>
           Histórico de Compras Pagas
         </button>
       </div>

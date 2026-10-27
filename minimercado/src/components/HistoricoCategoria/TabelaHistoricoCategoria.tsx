@@ -24,7 +24,7 @@ export default function TabelaHistoricoCategoria({ categories, historico, active
           <button
             onClick={() => setActiveTab('Todos')}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap
-              ${activeTab === 'Todos' ? 'bg-[#0D9488] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
+              ${activeTab === 'Todos' ? 'bg-[#26086e] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
             `}
           >
             Todos
@@ -34,7 +34,7 @@ export default function TabelaHistoricoCategoria({ categories, historico, active
               key={cat.id}
               onClick={() => setActiveTab(cat.id)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap
-                ${activeTab === cat.id ? 'bg-[#0D9488] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
+                ${activeTab === cat.id ? 'bg-[#26086e] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
               `}
             >
               {cat.name}

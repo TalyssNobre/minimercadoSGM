@@ -30,7 +30,7 @@ export default function MeuHistoricoPage() {
           <h2 className="text-2xl font-bold text-gray-800 tracking-tight">Meu Histórico de Vendas</h2>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-sm text-gray-500">Operador:</span>
-            <span className="text-sm font-bold text-[#0D9488] uppercase">
+            <span className="text-sm font-bold text-[#8b67e0] uppercase">
               {operadorAtual ? operadorAtual.name : 'Carregando...'}
             </span>
           </div>
@@ -44,7 +44,7 @@ export default function MeuHistoricoPage() {
               type="date"
               value={filtroData}
               onChange={(e) => setFiltroData(e.target.value)}
-              className="w-full px-3 py-2 pr-8 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] outline-none text-gray-700 text-sm shadow-sm"
+              className="w-full px-3 py-2 pr-8 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#26086e] outline-none text-gray-700 text-sm shadow-sm"
             />
             {filtroData && (
               <button 
