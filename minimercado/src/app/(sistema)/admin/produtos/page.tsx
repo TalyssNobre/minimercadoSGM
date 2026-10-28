@@ -159,8 +159,8 @@ export default function CadastroProdutoPage() {
                 <div key={cat.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg hover:border-[#c6adff]/30 transition-colors">
                   {categoriasHook.editandoId === cat.id ? (
                     <div className="flex-1 flex items-center gap-2">
-                      <input type="text" autoFocus value={categoriasHook.editandoNome} onChange={e => categoriasHook.setEditandoNome(e.target.value)} className="flex-1 px-3 py-1.5 text-sm border rounded outline-none focus:ring-2 focus:ring-[#0D9488]" />
-                      <button onClick={() => categoriasHook.handleAtualizarCategoria(cat.id)} className="text-green-600 hover:text-green-800 font-bold text-xs uppercase px-2 py-1 bg-green-100 rounded">Salvar</button>
+                      <input type="text" autoFocus value={categoriasHook.editandoNome} onChange={e => categoriasHook.setEditandoNome(e.target.value)} className="flex-1 px-3 py-1.5 text-sm border rounded outline-none focus:ring-1 focus:ring-[#26086e]" />
+                      <button onClick={() => categoriasHook.handleAtualizarCategoria(cat.id)} className="text-green-600 hover:text-green-800 font-bold text-xs uppercase px-2 py-1 bg-purple-100 rounded">Salvar</button>
                       <button onClick={() => categoriasHook.setEditandoId(null)} className="text-gray-500 hover:text-gray-700 font-bold text-xs uppercase px-2 py-1 bg-gray-200 rounded">✕</button>
                     </div>
                   ) : (

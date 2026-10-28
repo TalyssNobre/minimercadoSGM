@@ -4,7 +4,7 @@ import { InputPesquisa } from '@/src/components/ui/InputPesquisa';
 
 export default function ModalOferta({ promocoes }: { promocoes: any }) {
   const { modais, ofertaForm, dados } = promocoes;
-  const inputClasses = "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] outline-none text-gray-700 transition-all";
+  const inputClasses = "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#26086e] outline-none text-gray-700 transition-all";
 
   return (
     <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
@@ -49,7 +49,7 @@ export default function ModalOferta({ promocoes }: { promocoes: any }) {
           
           <div>
             <label className="block text-xs font-black text-gray-400 uppercase mb-1">Preço Promocional</label>
-            {/* 🟢 MÁGICA 2: Input de preço flexível, permitindo apagar e ficar vazio */}
+            
             <input 
               type="number" 
               step="0.01"

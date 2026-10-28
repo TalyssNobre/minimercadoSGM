@@ -18,7 +18,7 @@ export default function ModalEditarProduto({ isOpen, produtoOriginal, categorias
   const imagemHook = useImageUpload();
   const [imagemAtualUrl, setImagemAtualUrl] = useState<string | null>(null);
 
-  const inputClasses = "w-full px-3 py-2.5 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0D9488] focus:border-[#0D9488] outline-none transition-all text-gray-700";
+  const inputClasses = "w-full px-3 py-2.5 bg-white border border-gray-300 rounded-md focus:ring-1 focus:ring-[#26086e] focus:border-[#26086e] outline-none transition-all text-gray-700";
 
   useEffect(() => {
     if (produtoOriginal) {
@@ -40,7 +40,7 @@ export default function ModalEditarProduto({ isOpen, produtoOriginal, categorias
   return (
     <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
-        <div className="bg-[#0D9488] px-6 py-4">
+        <div className="bg-[#26086e] px-6 py-4">
           <h2 className="text-lg font-bold text-white">Editar Produto</h2>
         </div>
         
