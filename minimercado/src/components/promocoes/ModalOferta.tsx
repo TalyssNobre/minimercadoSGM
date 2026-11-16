@@ -2,6 +2,8 @@ import React from 'react';
 import { ButtonSistema } from '@/src/components/ui/ButtonSistema';
 import { InputPesquisa } from '@/src/components/ui/InputPesquisa';
 
+import BotaoFecharCustomizado from '@/src/components/ui/CloseButton';
+
 export default function ModalOferta({ promocoes }: { promocoes: any }) {
   const { modais, ofertaForm, dados } = promocoes;
   const inputClasses = "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#26086e] outline-none text-gray-700 transition-all";
@@ -11,7 +13,10 @@ export default function ModalOferta({ promocoes }: { promocoes: any }) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col text-left">
         <div className="bg-[#26086e] px-6 py-4 flex justify-between items-center text-white font-bold">
           <h2>Criar Oferta Relâmpago</h2>
-          <button onClick={modais.fecharModais}>✕</button>
+          
+          {/* 🟢 SUBSTITUIÇÃO DO BOTÃO AQUI */}
+          <BotaoFecharCustomizado onClick={modais.fecharModais} />
+          
         </div>
         
         <div className="p-6 space-y-4">
@@ -21,8 +26,6 @@ export default function ModalOferta({ promocoes }: { promocoes: any }) {
                 value={ofertaForm.buscaTexto} 
                 onChange={(val: string) => {
                   ofertaForm.setBuscaTexto(val);
-                  // 🟢 MÁGICA 1: Se o usuário voltar a digitar ou apagar, reseta o ID. 
-                  // Isso força ele a clicar na listinha para confirmar a escolha.
                   ofertaForm.setOfertaProdutoId('');
                 }} 
                 placeholder="Nome do produto..." 
@@ -38,9 +41,10 @@ export default function ModalOferta({ promocoes }: { promocoes: any }) {
                       ofertaForm.setOfertaProdutoId(String(p.id));
                       ofertaForm.setBuscaTexto(p.name);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-teal-50"
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-teal-50 flex justify-between items-center"
                   >
-                    {p.name} - <span className="font-bold text-[#0D9488]">R$ {p.price}</span>
+                    <span>{p.name}</span>
+                    <span className="font-bold text-[#0D9488]">R$ {p.price}</span>
                   </button>
                 ))}
               </div>

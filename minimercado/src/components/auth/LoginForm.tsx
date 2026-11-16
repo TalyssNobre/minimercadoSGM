@@ -74,7 +74,7 @@ export function LoginForm() {
           placeholder="seu@email.com"
           value={email} 
           onChange={(e) => setEmail(e.target.value)} 
-          className="w-full px-4 py-3.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#0D9488] outline-none transition-all" 
+          className="w-full px-4 py-3.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#26086e] outline-none transition-all" 
           required 
         />
       </div>
@@ -92,7 +92,7 @@ export function LoginForm() {
             value={senha} 
             onChange={(e) => setSenha(e.target.value)} 
             // 🟢 4. Adicionei um padding-right (pr-12) maior para o texto não passar por cima do olho
-            className="w-full pl-4 pr-12 py-3.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#0D9488] outline-none transition-all" 
+            className="w-full pl-4 pr-12 py-3.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#26086e] outline-none transition-all" 
             required 
           />
           
@@ -100,7 +100,7 @@ export function LoginForm() {
           <button
             type="button" // Importante ser "button" para não submeter o formulário
             onClick={() => setMostrarSenha(!mostrarSenha)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0D9488] transition-colors focus:outline-none"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#26086e] transition-colors focus:outline-none"
             title={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
           >
             {mostrarSenha ? (

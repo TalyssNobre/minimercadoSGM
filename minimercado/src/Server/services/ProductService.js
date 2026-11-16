@@ -34,25 +34,29 @@ export const createProduct = async({data, image}) => {
         }
 }
     
-    let imageUrl = null;
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-    const MAX_SIZE = 2 * 1024 * 1024;   
+  let imageUrl = null;
 
-    if (!allowedTypes.includes(image.type)) {
-    return { error: "Formato de image inválido.Use JPG, PNG ou WebP" };
-    }
-        
-    if (image && image.size > 0 && image.size <= MAX_SIZE) {
+    if (image && image.size > 0) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        const MAX_SIZE = 2 * 1024 * 1024;   
+
+        if (!allowedTypes.includes(image.type)) {
+            return { error: "Formato de imagem inválido. Use JPG, PNG ou WebP" };
+        }
+
+        if (image.size > MAX_SIZE) {
+            return { error: "Imagem incompatível: deve ter no máximo 2MB" };
+        }
+
         const fileExt = image.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         const fileBuffer = await image.arrayBuffer();
 
-        const { error: uploadError } = await supabase.storage.from('produtos').upload(fileName, fileBuffer, {contentType: image.type });
-        if (uploadError) return { error: "Erro ao fazer upload da image no Storage." };
+        const { error: uploadError } = await supabase.storage.from('produtos').upload(fileName, fileBuffer, { contentType: image.type });
+        if (uploadError) return { error: "Erro ao fazer upload da imagem no Storage." };
 
-    const { data: publicUrlData } = supabase.storage.from('produtos').getPublicUrl(fileName);
-
-    imageUrl = publicUrlData.publicUrl;
+        const { data: publicUrlData } = supabase.storage.from('produtos').getPublicUrl(fileName);
+        imageUrl = publicUrlData.publicUrl;
     }
 
     const finalData = {

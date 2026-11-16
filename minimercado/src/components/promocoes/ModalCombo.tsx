@@ -1,6 +1,9 @@
 import React from 'react';
 import { InputPesquisa } from '@/src/components/ui/InputPesquisa';
 
+import { CloseButton } from '@heroui/react';
+import BotaoFecharCustomizado from '../ui/CloseButton';
+
 export default function ModalCombo({ promocoes }: { promocoes: any }) {
   const { modais, comboForm, dados } = promocoes;
   const inputClasses = "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#26086e] outline-none text-gray-700 transition-all";
@@ -10,7 +13,7 @@ export default function ModalCombo({ promocoes }: { promocoes: any }) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
         <div className="bg-[#26086e] px-6 py-4 flex justify-between items-center text-white font-bold">
           <h2>{comboForm.idEditando ? 'Editar Combo' : 'Configurar Novo Combo'}</h2>
-          <button onClick={modais.fecharModais}>✕</button>
+         <BotaoFecharCustomizado onClick={modais.fecharModais} />
         </div>
         
         <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
